@@ -37,7 +37,7 @@ class UserManagementController extends Controller
       
         $plans = \App\Models\MembershipPlan::all();
 
-        return view('admin.user_management', compact(
+        return view('admin.user-management', compact(
             'users',
             'search',
             'roles',
