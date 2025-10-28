@@ -14,12 +14,14 @@ class MembershipPlan extends Model
     protected $primaryKey = 'plan_id';
     protected $fillable = [
         'name',
+        'details',
         'price',
         'duration_days',
+
     ];
 
-    public function member()
+    public function members()
     {
-        return $this->hasOne(MemberProfile::class, 'plan_id', 'plan_id');
+        return $this->hasMany(MemberProfile::class, 'plan_id', 'plan_id');
     }
 }

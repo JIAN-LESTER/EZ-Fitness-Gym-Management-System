@@ -162,7 +162,7 @@ class UserManagementController extends Controller
 
         $user->save();
 
-        // Handle member profile
+       
         if ($user->role === 'member') {
             $memberData = [
                 'plan_id' => $validated['plan_id'] ?? null,

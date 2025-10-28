@@ -4,167 +4,302 @@
 @section('header', 'User Management')
 
 @section('content')
-    <header class="p-4 flex justify-end items-center">
+    <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+
+     <!-- Header / Add Button -->
+    <div class="flex justify-between items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+        <h2 class="text-2xl font-bold text-gray-800">User Management</h2>
         <button onclick="openModal('addUserModal')"
-            class="flex items-center px-3 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700">
+            class="flex items-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                class="w-5 h-5 mr-2">
+                class="w-5 h-5">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             Add User
         </button>
-    </header>
+    </div>
 
-    <main class="bg-white shadow-md rounded-lg overflow-hidden">
-        <section class="p-4 border-t border-b border-gray-200" aria-label="Search users">
-            <form method="GET" action="{{ route('admin.user_management') }}" class="flex gap-2 items-center" role="search">
-                <label for="search" class="sr-only">Search by name</label>
-                <input type="text" id="search" name="search" value="{{ request('search') }}" placeholder="Search by name or username..."
-                    class="border-gray-200 border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-gray-500">
-                <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
-                    Search
-                </button>
-                @if(request('search'))
-                    <a href="{{ route('admin.user_management') }}" class="text-gray-500 hover:underline px-2">Clear</a>
-                @endif
-            </form>
-        </section>
 
-        <section class="overflow-x-auto" aria-labelledby="users-table">
-            <table class="min-w-full border border-gray-200 text-sm" role="table">
-                <caption id="users-table" class="sr-only">List of all users</caption>
-                <thead class="bg-gray-100 text-gray-700">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left">Name</th>
-                        <th scope="col" class="px-6 py-3 text-left">Username</th>
-                        <th scope="col" class="px-6 py-3 text-left">Role</th>
-                        <th scope="col" class="px-6 py-3 text-left">Status</th>
-                        <th scope="col" class="px-6 py-3 text-left">Membership</th>
-                        <th scope="col" class="px-6 py-3 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    @forelse($users as $user)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4">
-                                <button onclick="showUser('{{ $user->user_id }}')" 
-                                   class="block hover:text-blue-600 transition-colors text-left w-full">
-                                    <p class="font-medium text-gray-900">{{ $user->first_name }} {{ $user->last_name }}</p>
-                                    <p class="text-gray-500 text-sm">{{ $user->email }}</p>
-                                </button>
-                            </td>
+<div class="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+    <form method="GET" action="{{ route('admin.user_management') }}" class="space-y-4" role="search">
+        
+        <div class="flex flex-wrap lg:flex-nowrap items-center gap-3">
 
-                            <td class="px-6 py-4">
-                                <span class="text-gray-700">{{ $user->username }}</span>
-                            </td>
-
-                            <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs rounded-full 
-                                    {{ $user->role === 'admin' ? 'bg-red-100 text-red-700' : 
-                                       ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700') }}">
-                                    {{ ucfirst($user->role) }}
-                                </span>
-                            </td>
-
-                            <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs rounded-full 
-                                    {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
-                                    {{ ucfirst($user->status) }}
-                                </span>
-                            </td>
-
-                            <td class="px-6 py-4">
-                                @if($user->member)
-                                    <div class="text-sm">
-                                        <span class="px-2 py-1 text-xs rounded-full 
-                                            {{ $user->member->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700' }}">
-                                            {{ $user->member->plan->name ?? 'No Plan' }}
-                                        </span>
-                                        @if($user->member->end_date)
-                                            <p class="text-xs text-gray-500 mt-1">
-                                                Expires: {{ \Carbon\Carbon::parse($user->member->end_date)->format('M d, Y') }}
-                                            </p>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-gray-400 text-xs">Not a member</span>
-                                @endif
-                            </td>
-
-                            <td class="px-4 py-2 text-center">
-                                <div class="flex items-center justify-center space-x-3">
-                                    <button onclick="showUser('{{ $user->user_id }}')" 
-                                       class="text-green-500 hover:text-green-700" title="View">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
-
-                                    <button onclick="editUser('{{ $user->user_id }}')" 
-                                            class="text-blue-500 hover:text-blue-700" title="Edit">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
-                                        </svg>
-                                    </button>
-
-                                    <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')"
-                                        class="text-red-500 hover:text-red-700" title="Delete">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                No users found.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-
-            @if($users->total() > 0)
-                <div class="flex items-center justify-between p-4 text-sm text-gray-600">
-                    <div>
-                        Showing 
-                        <span class="font-medium">{{ $users->firstItem() }}</span>
-                        to 
-                        <span class="font-medium">{{ $users->lastItem() }}</span>
-                        of 
-                        <span class="font-medium">{{ $users->total() }}</span> users
+            <div class="flex-1 min-w-[200px]">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
                     </div>
+                    <input type="text" id="search" name="search" value="{{ request('search') }}" 
+                        placeholder="Search by name or username..."
+                        class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all">
+                </div>
+            </div>
 
-                    <div class="flex space-x-2">
-                        @if($users->onFirstPage())
-                            <span class="px-3 py-1 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed">Previous</span>
-                        @else
-                            <a href="{{ $users->previousPageUrl() }}"
-                                class="px-3 py-1 rounded-lg bg-gray-600 text-white hover:bg-gray-700">Previous</a>
-                        @endif
+            <!-- Filter Dropdown - FIXED VERSION -->
+            <div class="relative w-full sm:w-auto">
+                <button type="button" onclick="toggleFilterDropdown()" 
+                    class="w-full sm:w-auto flex items-center justify-between gap-2 bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-xl hover:border-gray-300 shadow-sm transition-all duration-300 font-semibold whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                    Filters
+                    <span id="filterCount" class="hidden ml-1 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-full">0</span>
+                    <svg class="w-4 h-4 transition-transform" id="filterDropdownIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
 
-                        @if($users->hasMorePages())
-                            <a href="{{ $users->nextPageUrl() }}"
-                                class="px-3 py-1 rounded-lg bg-gray-600 text-white hover:bg-gray-700">Next</a>
-                        @else
-                            <span class="px-3 py-1 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed">Next</span>
-                        @endif
+                <!-- Dropdown Menu with FIXED positioning -->
+                <div id="filterDropdown" class="hidden fixed mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 max-h-[calc(100vh-200px)] overflow-y-auto z-[9999]">
+                    <div class="p-4 space-y-4">
+                        <!-- Role Filter -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Filter by Role</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                    <input type="checkbox" name="roles[]" value="member" 
+                                        {{ in_array('member', request('roles', [])) ? 'checked' : '' }}
+                                        onchange="updateFilterCount()"
+                                        class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Member</span>
+                                    <span class="ml-auto px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">Member</span>
+                                </label>
+
+                                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                    <input type="checkbox" name="roles[]" value="staff" 
+                                        {{ in_array('staff', request('roles', [])) ? 'checked' : '' }}
+                                        onchange="updateFilterCount()"
+                                        class="w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Staff</span>
+                                    <span class="ml-auto px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">Staff</span>
+                                </label>
+
+                                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                    <input type="checkbox" name="roles[]" value="admin" 
+                                        {{ in_array('admin', request('roles', [])) ? 'checked' : '' }}
+                                        onchange="updateFilterCount()"
+                                        class="w-4 h-4 text-red-600 rounded focus:ring-2 focus:ring-red-500">
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Admin</span>
+                                    <span class="ml-auto px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">Admin</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="border-t border-gray-200"></div>
+
+                        <!-- Status Filter -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Filter by Status</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                    <input type="checkbox" name="user_status[]" value="active" 
+                                        {{ in_array('active', request('user_status', [])) ? 'checked' : '' }}
+                                        onchange="updateFilterCount()"
+                                        class="w-4 h-4 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Active</span>
+                                    <span class="ml-auto px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Active</span>
+                                </label>
+
+                                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                    <input type="checkbox" name="user_status[]" value="inactive" 
+                                        {{ in_array('inactive', request('user_status', [])) ? 'checked' : '' }}
+                                        onchange="updateFilterCount()"
+                                        class="w-4 h-4 text-gray-600 rounded focus:ring-2 focus:ring-gray-500">
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Inactive</span>
+                                    <span class="ml-auto px-2 py-0.5 text-xs bg-gray-200 text-gray-600 rounded-full">Inactive</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="border-t border-gray-200 pt-4 flex gap-2">
+                            <button type="button" onclick="clearAllFilters()" 
+                                class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                Clear All
+                            </button>
+                            <button type="submit" 
+                                class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors">
+                                Apply Filters
+                            </button>
+                        </div>
                     </div>
                 </div>
-            @endif
-        </section>
-    </main>
+            </div>
 
+            <!-- Search Button -->
+            <div class="w-full sm:w-auto">
+                <button type="submit"
+                    class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    Search
+                </button>
+            </div>
+
+            <!-- Clear Button -->
+            @if(request('search') || request('roles') || request('user_status'))
+                <div class="w-full sm:w-auto">
+                    <a href="{{ route('admin.user_management') }}"
+                        class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-all duration-300 font-semibold shadow-md whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Clear Filters
+                    </a>
+                </div>
+            @endif
+        </div>
+    </form>
+</div>
+
+    <!-- Users Table -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full">
+            <thead>
+                <tr class="bg-gray-100 border-b border-gray-200">
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">User</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Username</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Membership</th>
+                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-100">
+                @forelse($users as $user)
+                    <tr class="hover:bg-gray-50 transition-colors group">
+                        <!-- User Info -->
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
+                                    {{ strtoupper(substr($user->first_name ?? 'U', 0, 1)) }}{{ strtoupper(substr($user->last_name ?? 'N', 0, 1)) }}
+                                </div>
+                                <div>
+                                    <button onclick="showUser('{{ $user->user_id }}')" class="hover:text-gray-900 transition-colors text-left w-full">
+                                        <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
+                                        <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-4 text-gray-700 font-medium">{{ $user->username }}</td>
+
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                {{ $user->role === 'admin' ? 'bg-red-100 text-red-700' : 
+                                   ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700') }}">
+                                {{ ucfirst($user->role) }}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
+                                {{ ucfirst($user->status) }}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4 text-gray-700">
+                            @if($user->member)
+                                <div class="text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                        {{ $user->member->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700' }}">
+                                        {{ $user->member->plan->name ?? 'No Plan' }}
+                                    </span>
+                                    @if($user->member->end_date)
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            Expires: {{ \Carbon\Carbon::parse($user->member->end_date)->format('M d, Y') }}
+                                        </p>
+                                    @endif
+                                </div>
+                            @else
+                                <span class="text-gray-400 text-xs">Not a member</span>
+                            @endif
+                        </td>
+
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-3">
+                                <button onclick="showUser('{{ $user->user_id }}')" class="text-gray-500 hover:text-gray-700" title="View">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+
+                                <button onclick="editUser('{{ $user->user_id }}')" class="text-blue-500 hover:text-blue-700" title="Edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                                    </svg>
+                                </button>
+
+                                <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')" class="text-red-500 hover:text-red-700" title="Delete">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            <div class="flex flex-col items-center justify-center">
+                                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <p class="text-lg font-medium">No users found</p>
+                                <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if($users->total() > 0)
+        <div class="flex flex-col sm:flex-row items-center justify-between p-4 sm:p-6 bg-gray-50 border-t border-gray-200 gap-4">
+            <div class="text-sm text-gray-600">
+                Showing <span class="font-semibold text-gray-900">{{ $users->firstItem() }}</span> to
+                <span class="font-semibold text-gray-900">{{ $users->lastItem() }}</span> of
+                <span class="font-semibold text-gray-900">{{ $users->total() }}</span> users
+            </div>
+
+            <div class="flex gap-2">
+                @if($users->onFirstPage())
+                    <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Prev</span>
+                @else
+                    <a href="{{ $users->previousPageUrl() }}" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-md transition-all duration-200 font-medium">Prev</a>
+                @endif
+
+                <span class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium sm:hidden">
+                    {{ $users->currentPage() }} / {{ $users->lastPage() }}
+                </span>
+
+                @if($users->hasMorePages())
+                    <a href="{{ $users->nextPageUrl() }}" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-md transition-all duration-200 font-medium">Next</a>
+                @else
+                    <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Next</span>
+                @endif
+            </div>
+        </div>
+    @endif
+    </div>
     <div id="addUserModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
         <div class="absolute inset-0" onclick="closeModal('addUserModal')"></div>
 
@@ -468,88 +603,89 @@
     </div>
 
     <script>
-        function toggleMemberFields(mode) {
-            const roleSelect = document.getElementById(mode === 'add' ? 'role' : 'edit_role');
-            const memberFields = document.getElementById(mode === 'add' ? 'addMemberFields' : 'editMemberFields');
-            
-            if (roleSelect.value === 'member') {
-                memberFields.style.display = 'block';
-            } else {
-                memberFields.style.display = 'none';
-            }
+    
+
+    // Your existing JavaScript functions
+    function toggleMemberFields(mode) {
+        const roleSelect = document.getElementById(mode === 'add' ? 'role' : 'edit_role');
+        const memberFields = document.getElementById(mode === 'add' ? 'addMemberFields' : 'editMemberFields');
+        
+        if (roleSelect.value === 'member') {
+            memberFields.style.display = 'block';
+        } else {
+            memberFields.style.display = 'none';
         }
+    }
 
-        function openDeleteModal(actionUrl) {
-            document.getElementById('deleteForm').action = actionUrl;
-            openModal('deleteConfirmModal');
-        }
+    function openDeleteModal(actionUrl) {
+        document.getElementById('deleteForm').action = actionUrl;
+        openModal('deleteConfirmModal');
+    }
 
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.remove('hidden');
-        }
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.remove('hidden');
+    }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        }
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
 
-        function editUser(userId) {
-            fetch(`/admin/user_crud/edit/${userId}`)
-                .then(res => res.json())
-                .then(user => {
-                    document.getElementById('editUserId').value = user.user_id;
-                    document.getElementById('edit_first_name').value = user.first_name;
-                    document.getElementById('edit_last_name').value = user.last_name;
-                    document.getElementById('edit_username').value = user.username;
-                    document.getElementById('edit_email').value = user.email;
-                    document.getElementById('edit_role').value = user.role;
-                    document.getElementById('edit_status').value = user.status;
+    function editUser(userId) {
+        fetch(`/admin/user_crud/edit/${userId}`)
+            .then(res => res.json())
+            .then(user => {
+                document.getElementById('editUserId').value = user.user_id;
+                document.getElementById('edit_first_name').value = user.first_name;
+                document.getElementById('edit_last_name').value = user.last_name;
+                document.getElementById('edit_username').value = user.username;
+                document.getElementById('edit_email').value = user.email;
+                document.getElementById('edit_role').value = user.role;
+                document.getElementById('edit_status').value = user.status;
 
-                    // Populate member fields if available
-                    if (user.member) {
-                        document.getElementById('edit_plan_id').value = user.member.plan_id || '';
-                        document.getElementById('edit_sex').value = user.member.sex || '';
-                        document.getElementById('edit_birthday').value = user.member.birthday || '';
-                        document.getElementById('edit_height').value = user.member.height || '';
-                        document.getElementById('edit_weight').value = user.member.weight || '';
-                        document.getElementById('edit_mobile_number').value = user.member.mobile_number || '';
-                    }
+                if (user.member) {
+                    document.getElementById('edit_plan_id').value = user.member.plan_id || '';
+                    document.getElementById('edit_sex').value = user.member.sex || '';
+                    document.getElementById('edit_birthday').value = user.member.birthday || '';
+                    document.getElementById('edit_height').value = user.member.height || '';
+                    document.getElementById('edit_weight').value = user.member.weight || '';
+                    document.getElementById('edit_mobile_number').value = user.member.mobile_number || '';
+                }
 
-                    toggleMemberFields('edit');
+                toggleMemberFields('edit');
 
-                    document.getElementById('editUserForm').action = `/admin/user_crud/update/${user.user_id}`;
-                    openModal('editUserModal');
-                });
-        }
+                document.getElementById('editUserForm').action = `/admin/user_crud/update/${user.user_id}`;
+                openModal('editUserModal');
+            });
+    }
 
-        function showUser(userId) {
-            openModal('userShowModal');
-            
-            document.getElementById('userShowContent').innerHTML = `
-                <div class="flex justify-center items-center py-12">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
-                </div>
-            `;
+    function showUser(userId) {
+        openModal('userShowModal');
+        
+        document.getElementById('userShowContent').innerHTML = `
+            <div class="flex justify-center items-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
+            </div>
+        `;
 
-            fetch(`/admin/user_crud/show/${userId}`)
-                .then(res => {
-                    if (!res.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return res.json();
-                })
-                .then(user => {
-                    renderUserDetails(user);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('userShowContent').innerHTML = `
-                        <div class="text-center py-12">
-                            <p class="text-red-600">Error loading user details</p>
-                        </div>
-                    `;
-                });
-        }
-
+        fetch(`/admin/user_crud/show/${userId}`)
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return res.json();
+            })
+            .then(user => {
+                renderUserDetails(user);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('userShowContent').innerHTML = `
+                    <div class="text-center py-12">
+                        <p class="text-red-600">Error loading user details</p>
+                    </div>
+                `;
+            });
+    }
         function renderUserDetails(user) {
             const content = document.getElementById('userShowContent');
             
@@ -760,6 +896,71 @@
         document.addEventListener('DOMContentLoaded', function() {
             toggleMemberFields('add');
         });
+
+        function toggleFilterDropdown() {
+    const dropdown = document.getElementById('filterDropdown');
+    const button = event.target.closest('button');
+    const icon = document.getElementById('filterDropdownIcon');
+    
+    // Calculate position
+    const rect = button.getBoundingClientRect();
+    dropdown.style.left = rect.left + 'px';
+    dropdown.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+    
+    dropdown.classList.toggle('hidden');
+    icon.classList.toggle('rotate-180');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('filterDropdown');
+    const button = event.target.closest('button[onclick="toggleFilterDropdown()"]');
+    
+    if (!button && !dropdown.contains(event.target)) {
+        dropdown.classList.add('hidden');
+        document.getElementById('filterDropdownIcon').classList.remove('rotate-180');
+    }
+});
+
+// Update filter count badge
+function updateFilterCount() {
+    const checkboxes = document.querySelectorAll('#filterDropdown input[type="checkbox"]:checked');
+    const count = checkboxes.length;
+    const badge = document.getElementById('filterCount');
+    
+    if (count > 0) {
+        badge.textContent = count;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+// Clear all filters
+function clearAllFilters() {
+    const checkboxes = document.querySelectorAll('#filterDropdown input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    updateFilterCount();
+    
+    // Submit form to clear filters
+    const form = document.querySelector('form[role="search"]');
+    form.submit();
+}
+
+// Remove individual filter
+function removeFilter(name, value) {
+    const form = document.querySelector('form[role="search"]');
+    const checkbox = form.querySelector(`input[name="${name}"][value="${value}"]`);
+    if (checkbox) {
+        checkbox.checked = false;
+        form.submit();
+    }
+}
+
+// Initialize filter count on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateFilterCount();
+});
     </script>
 
 @endsection
