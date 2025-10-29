@@ -32,6 +32,12 @@ class MembershipPlanController extends Controller
             'details' => 'nullable|string|max:255|',
             'price' => 'required|numeric|min:0',
             'duration_days' => 'required|integer|min:1',
+        ],[
+            'name.required' => 'Plan name is required',
+            'name.unique' => 'The plan name has already been taken',
+            'price.required' => 'Price is required',
+            'price.numeric' => 'Price must be a valid number',
+            'duration_days.required' => 'Duration (in days) is required',
         ]);
 
              $authUser = Auth::user();
@@ -57,6 +63,12 @@ class MembershipPlanController extends Controller
             'details' => 'nullable|string|max:255|',
             'price' => 'required|numeric|min:0',
             'duration_days' => 'required|integer|min:1',
+        ],[
+            'name.required' => 'Plan name is required',
+            'name.unique' => 'The plan name has already been taken',
+            'price.required' => 'Price is required',
+            'price.numeric' => 'Price must be a valid number',
+            'duration_days.required' => 'Duration (in days) is required',
         ]);
 
                       $authUser = Auth::user();

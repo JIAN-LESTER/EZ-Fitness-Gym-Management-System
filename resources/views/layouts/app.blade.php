@@ -10,6 +10,8 @@
     <title>@yield('title', 'Dashboard')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         [x-cloak] {
             display: none !important;
@@ -29,7 +31,7 @@ $member = $user->member;
 
     <!-- Sidebar -->
     <aside
-        class="bg-gray-800 text-white dark:bg-white dark:text-gray-800 shadow-md flex flex-col transition-all duration-300"
+        class="bg-gray-800 text-white dark:bg-white dark:text-gray-800 shadow-md flex flex-col transition-all duration-800"
         :class="sidebarOpen ? 'w-60' : 'w-16'">
 
         <div class="p-4 font-bold text-white dark:text-gray-800 text-lg truncate">
@@ -259,18 +261,18 @@ $member = $user->member;
 
     @if($user->role === 'member' && $member && $member->status === 'inactive')
         <div id="completeMembershipModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+            <div class="relative bg-white text-gray-800 dark:bg-white dark:text-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
 
-                <div class="bg-green-600 text-white p-5 rounded-t-2xl">
+                <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
                     <div class="flex items-center space-x-3">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
-                        <h2 class="text-xl font-semibold">Complete Your Profile</h2>
+                        <h2 class="text-xl font-semibold">Complete Your Membership Profile</h2>
                     </div>
-                    <p class="text-green-100 text-sm mt-1">Please complete your membership information to continue.</p>
+                    <p class="text-gray-100 text-sm mt-1">Please complete your membership information to continue.</p>
                 </div>
 
                 <form id="completeProfileForm" action="{{ route('profile.complete-member-profile') }}" method="POST"
@@ -278,79 +280,139 @@ $member = $user->member;
                     @csrf
                     @method('PUT')
 
-                    <div>
-                        <label for="plan_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Membership Plan <span class="text-red-500">*</span>
-                        </label>
-                        <select name="plan_id" id="plan_id" required
-                            class="mt-2 block w-full rounded-xl border-gray-300 bg-gray-200 dark:border-gray-600 
-                                   dark:bg-gray-800 dark:text-gray-200 px-4 py-3 focus:ring-green-500 focus:border-green-500">
-                            <option value="">Select a plan</option>
-                            @foreach($plans as $plan)
-                                <option value="{{ $plan->plan_id }}">{{ $plan->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+     <div x-data="{ open: false, selected: '', selectedId: '' }" class="relative">
+    <label for="plan_id" class="block text-sm font-medium text-gray-800">
+        Membership Plan <span class="text-red-500">*</span>
+    </label>
+
+    <!-- Hidden input that actually submits the value -->
+    <input type="hidden" name="plan_id" x-model="selectedId">
+
+    <button type="button" @click="open = !open"
+        class="mt-2 w-full flex justify-between items-center rounded-xl border border-gray-800 bg-gray-200 px-4 py-3">
+        <span x-text="selected || 'Select a plan'"></span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
+
+    <div x-show="open" @click.away="open = false"
+         class="absolute mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-md z-50">
+        @foreach($plans as $plan)
+            <div @click="
+                    selected = '{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }}';
+                    selectedId = '{{ $plan->plan_id }}';
+                    open = false
+                "
+                class="flex justify-between px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                <span>{{ $plan->name }}</span>
+                <span>₱{{ number_format($plan->price, 2) }}</span>
+            </div>
+        @endforeach
+    </div>
+
+    @error('plan_id')
+        <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+    @enderror
+</div>
+
+
+
+        
+
+<div class="mb-4">
+  <span class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">
+    Sex <span class="text-red-500">*</span>
+  </span>
+
+  <!-- Flex container for avatars -->
+  <div class="flex items-center space-x-6">
+    <!-- Male -->
+    <label class="relative cursor-pointer">
+      <input type="radio" name="sex" value="male" {{ old('sex')=='male' ? 'checked' : '' }} class="peer sr-only">
+      <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800 
+                  flex items-center justify-center transition duration-200 bg-gray-100 hover:bg-gray-200">
+        <img src="https://cdn-icons-png.flaticon.com/512/921/921106.png" 
+             alt="Male avatar" class="w-10 h-10 object-contain opacity-90">
+      </div>
+      <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Male</span>
+    </label>
+
+    <!-- Female -->
+    <label class="relative cursor-pointer">
+      <input type="radio" name="sex" value="female" {{ old('sex')=='female' ? 'checked' : '' }} class="peer sr-only">
+      <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800 
+                  flex items-center justify-center transition duration-200 bg-gray-100 hover:bg-gray-200">
+        <img src="https://cdn-icons-png.flaticon.com/512/921/921124.png" 
+             alt="Female avatar" class="w-10 h-10 object-contain opacity-90">
+      </div>
+      <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Female</span>
+    </label>
+  </div>
+
+  <!-- ✅ Error message outside the flex container -->
+  <div class="mt-1">
+    @error('sex')
+      <span class="text-red-500 text-xs block">{{ $message }}</span>
+    @enderror
+  </div>
+</div>
+
 
                     <div>
-                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Sex <span class="text-red-500">*</span>
-                        </span>
-                        <div class="flex items-center space-x-6">
-                            <label class="flex items-center space-x-2">
-                                <input type="radio" name="sex" value="male" required
-                                    class="text-green-600 focus:ring-green-500">
-                                <span class="text-gray-700 dark:text-gray-300">Male</span>
-                            </label>
-                            <label class="flex items-center space-x-2">
-                                <input type="radio" name="sex" value="female" required
-                                    class="text-green-600 focus:ring-green-500">
-                                <span class="text-gray-700 dark:text-gray-300">Female</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="birthday" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label for="birthday" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
                             Birthday <span class="text-red-500">*</span>
                         </label>
-                        <input type="date" name="birthday" id="birthday" required
-                            class="mt-2 block w-full rounded-xl border-gray-300 bg-gray-200 dark:border-gray-600 
-                                   dark:bg-gray-800 dark:text-gray-200 px-4 py-3 focus:ring-green-500 focus:border-green-500">
+                        <input type="date" name="birthday" id="birthday" 
+                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 
+                                 px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
+                                         @error('birthday')
+          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        @enderror
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="height" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label for="height" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
                                 Height (cm)
                             </label>
                             <input type="number" step="0.1" name="height" id="height"
-                                class="mt-2 block w-full rounded-xl border-gray-300 bg-gray-200 dark:border-gray-600 
-                                       dark:bg-gray-800 dark:text-gray-200 px-4 py-3 focus:ring-green-500 focus:border-green-500">
+                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 
+                                       px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
+                                               @error('height')
+          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        @enderror
                         </div>
                         <div>
-                            <label for="weight" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label for="weight" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
                                 Weight (kg)
                             </label>
                             <input type="number" step="0.1" name="weight" id="weight"
-                                class="mt-2 block w-full rounded-xl border-gray-300 bg-gray-200 dark:border-gray-600 
-                                       dark:bg-gray-800 dark:text-gray-200 px-4 py-3 focus:ring-green-500 focus:border-green-500">
+                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 
+                                       px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
+                                               @error('weight')
+          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        @enderror
                         </div>
                     </div>
 
                     <div>
-                        <label for="mobile_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label for="mobile_number" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
                             Mobile Number <span class="text-red-500">*</span>
                         </label>
-                        <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789" required
+                        <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789" 
                             pattern="[0-9]{11}"
-                            class="mt-2 block w-full rounded-xl border-gray-300 bg-gray-200 dark:border-gray-600 
-                                   dark:bg-gray-800 dark:text-gray-200 px-4 py-3 focus:ring-green-500 focus:border-green-500">
+                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 
+                                   px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
+                                           @error('mobile_number')
+          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        @enderror
                     </div>
 
                     <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
                         <button type="submit"
-                            class="px-6 py-3 rounded-xl bg-green-600 text-white hover:bg-green-700 font-medium">
+                            class="px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium">
                             Complete Profile
                         </button>
                     </div>
@@ -367,7 +429,7 @@ $member = $user->member;
         <div
             class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border border-gray-200 dark:border-gray-700">
 
-            <div class="flex justify-between items-center p-6 bg-gray-50 dark:bg-gray-900/50">
+            <div class="flex justify-between items-center p-6 bg-gray-200 text-gray-800 dark:bg-gray-900/50">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white">My Profile</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">View your account information</p>
@@ -395,27 +457,27 @@ $member = $user->member;
                     </h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                        <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                             <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">First Name</p>
                             <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $user->first_name }}</p>
                         </div>
-                        <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                        <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                             <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Last Name</p>
                             <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $user->last_name }}</p>
                         </div>
                     </div>
 
-                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                    <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Username</p>
                         <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $user->username }}</p>
                     </div>
 
-                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                    <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email Address</p>
                         <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $user->email }}</p>
                     </div>
 
-                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                    <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Role</p>
                         <span
                             class="inline-block px-3 py-1 text-sm rounded-full 
@@ -440,22 +502,22 @@ $member = $user->member;
                             </h3>
 
                             <div
-                                class="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                                <p class="text-xs font-medium text-green-600 dark:text-green-400 mb-1">Current Plan</p>
-                                <p class="text-lg font-bold text-green-900 dark:text-green-300">
+                                class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/20 rounded-xl border border-gray-200 dark:border-gray-800">
+                                <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Current Plan</p>
+                                <p class="text-lg font-bold text-gray-900 dark:text-gray-800">
                                     {{ $memberProfile->plan->name ?? 'N/A' }}</p>
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
                                 @if($memberProfile->sex)
-                                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                                    <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sex</p>
                                         <p class="text-base font-semibold text-gray-900 dark:text-white capitalize">
                                             {{ $memberProfile->sex }}</p>
                                     </div>
                                 @endif
                                 @if($memberProfile->birthday)
-                                    <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                                    <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Birthday</p>
                                         <p class="text-base font-semibold text-gray-900 dark:text-white">
                                             {{ \Carbon\Carbon::parse($memberProfile->birthday)->format('M d, Y') }}</p>
@@ -476,14 +538,14 @@ $member = $user->member;
 
                                     <div class="grid grid-cols-2 gap-4">
                                         @if($memberProfile->height)
-                                            <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                                            <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                                                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Height</p>
                                                 <p class="text-base font-semibold text-gray-900 dark:text-white">
                                                     {{ $memberProfile->height }} <span class="text-sm font-normal">cm</span></p>
                                             </div>
                                         @endif
                                         @if($memberProfile->weight)
-                                            <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                                            <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                                                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Weight</p>
                                                 <p class="text-base font-semibold text-gray-900 dark:text-white">
                                                     {{ $memberProfile->weight }} <span class="text-sm font-normal">kg</span></p>
@@ -492,7 +554,7 @@ $member = $user->member;
                                     </div>
 
                                     @if($memberProfile->mobile_number)
-                                        <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                                        <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                                             <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Mobile Number</p>
                                             <p class="text-base font-semibold text-gray-900 dark:text-white">
                                                 {{ $memberProfile->mobile_number }}</p>
@@ -511,7 +573,7 @@ $member = $user->member;
                                         d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
                                 <div>
-                                    <p class="text-sm font-semibold text-amber-900 dark:text-amber-300">Profile Incomplete</p>
+                                    <p class="text-sm font-semibold text-amber-900 dark:text-amber-800">Profile Incomplete</p>
                                     <p class="text-sm text-amber-700 dark:text-amber-400 mt-1">Please complete your membership
                                         profile to access all features.</p>
                                 </div>
@@ -522,9 +584,9 @@ $member = $user->member;
             </div>
 
             <div
-                class="flex justify-end gap-3 p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
+                class="flex justify-end gap-3 p-6 bg-gray-200 text-gray-800 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
                 <button onclick="closeProfileModal()"
-                    class="px-6 py-2.5 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 font-medium transition-colors">
+                    class="px-6 py-2.5 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-800 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 font-medium transition-colors">
                     Close
                 </button>
             </div>
@@ -535,11 +597,11 @@ $member = $user->member;
     <div id="editProfileModal"
         class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/40">
         <div
-            class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border border-gray-200 dark:border-gray-700">
+            class="bg-white  rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border ">
 
-            <div class="flex justify-between items-center p-6 bg-gray-50 dark:bg-gray-900/50">
+            <div class="flex justify-between items-center p-6 bg-gray-800">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Edit Profile</h2>
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Edit Profile</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Update your account information</p>
                 </div>
                 <button onclick="closeEditProfileModal()"
@@ -560,7 +622,7 @@ $member = $user->member;
                     {{-- Personal Information Section --}}
                     <div class="space-y-4">
                         <h3
-                            class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                            class="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -571,35 +633,35 @@ $member = $user->member;
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="first_name"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">First
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">First
                                     Name</label>
                                 <input type="text" name="first_name" id="first_name" value="{{ $user->first_name }}"
                                     required
-                                    class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                    class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                             </div>
                             <div>
                                 <label for="last_name"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Last
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Last
                                     Name</label>
                                 <input type="text" name="last_name" id="last_name" value="{{ $user->last_name }}"
                                     required
-                                    class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                    class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                             </div>
                         </div>
 
                         <div>
                             <label for="username"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Username</label>
                             <input type="text" name="username" id="username" value="{{ $user->username }}" required
-                                class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                         </div>
 
                         <div>
                             <label for="email"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Email
                                 Address</label>
                             <input type="email" name="email" id="email" value="{{ $user->email }}" required
-                                class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                         </div>
                     </div>
 
@@ -607,7 +669,7 @@ $member = $user->member;
                     @if($user->role === 'member' && $memberProfile)
                         <div class="space-y-4">
                             <h3
-                                class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                                class="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -617,10 +679,10 @@ $member = $user->member;
 
                             <div>
                                 <label for="plan_id"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Membership
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Membership
                                     Plan</label>
-                                <select name="plan_id" id="plan_id"
-                                    class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                <select name="plan_id" id="plan_id" disabled
+                                    class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                     <option value="">Keep current plan</option>
                                     @foreach($plans as $plan)
                                         <option value="{{ $plan->plan_id }}" {{ $memberProfile->plan_id == $plan->plan_id ? 'selected' : '' }}>
@@ -633,9 +695,9 @@ $member = $user->member;
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="sex"
-                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sex</label>
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Sex</label>
                                     <select name="sex" id="sex"
-                                        class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                        class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                         <option value="male" {{ $memberProfile->sex == 'male' ? 'selected' : '' }}>Male
                                         </option>
                                         <option value="female" {{ $memberProfile->sex == 'female' ? 'selected' : '' }}>Female
@@ -644,38 +706,38 @@ $member = $user->member;
                                 </div>
                                 <div>
                                     <label for="birthday"
-                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Birthday</label>
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Birthday</label>
                                     <input type="date" name="birthday" id="birthday" value="{{ $memberProfile->birthday }}"
-                                        class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                        class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label for="height"
-                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Height
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Height
                                         (cm)</label>
                                     <input type="number" step="0.1" name="height" id="height"
                                         value="{{ $memberProfile->height }}"
-                                        class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                        class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                 </div>
                                 <div>
                                     <label for="weight"
-                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Weight
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Weight
                                         (kg)</label>
                                     <input type="number" step="0.1" name="weight" id="weight"
                                         value="{{ $memberProfile->weight }}"
-                                        class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                        class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                 </div>
                             </div>
 
                             <div>
                                 <label for="mobile_number"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mobile
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Mobile
                                     Number</label>
                                 <input type="tel" name="mobile_number" id="mobile_number"
                                     value="{{ $memberProfile->mobile_number }}"
-                                    class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                    class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                             </div>
                         </div>
                     @endif
@@ -683,50 +745,50 @@ $member = $user->member;
                     {{-- Security Section --}}
                     <div class="space-y-4">
                         <h3
-                            class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                            class="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
                             Change Password
-                            <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(Optional)</span>
+                            <span class="text-xs font-normal text-gray-800">(Optional)</span>
                         </h3>
 
                         <div>
                             <label for="old_password"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Current
                                 Password</label>
                             <input type="password" name="old_password" id="old_password"
-                                class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="new_password"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">New
                                     Password</label>
                                 <input type="password" name="new_password" id="new_password"
-                                    class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                    class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                             </div>
                             <div>
                                 <label for="new_password_confirmation"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm New
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Confirm New
                                     Password</label>
                                 <input type="password" name="new_password_confirmation" id="new_password_confirmation"
-                                    class="block w-full rounded-xl border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-900/50 dark:text-white px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                    class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div
-                    class="flex justify-end gap-3 p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
+                    class="flex justify-end gap-3 p-6  text-gray-800 border-t border-gray-200 dark:border-gray-700">
                     <button type="button" onclick="closeEditProfileModal()"
-                        class="px-6 py-2.5 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 font-medium transition-colors">
+                        class="px-6 py-2.5 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-800 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 font-medium transition-colors">
                         Cancel
                     </button>
                     <button type="submit"
-                        class="px-6 py-2.5 rounded-xl bg-green-600 text-white hover:bg-green-700 font-medium transition-colors shadow-lg shadow-green-500/30">
+                        class="px-6 py-2.5 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors shadow-lg shadow-gray-500/30">
                         Save Changes
                     </button>
                 </div>
@@ -739,104 +801,463 @@ $member = $user->member;
 
     <script src="//unpkg.com/alpinejs" defer></script>
 
-    <script>
+   <script>
+function openProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
 
-        function openProfileModal() {
-            const modal = document.getElementById('profileModal');
-            if (modal) {
-                modal.classList.remove('hidden');
+function closeProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function openEditProfileModal() {
+    const modal = document.getElementById('editProfileModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeEditProfileModal() {
+    const modal = document.getElementById('editProfileModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function opencompleteMembershipModal() {
+    const modal = document.getElementById('completeMembershipModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+// Validation Utility Functions
+const showError = (element, message) => {
+    element.classList.remove('border-gray-800');
+    element.classList.add('border-red-500');
+
+    const container = element.closest('div');
+    let errorSpan = container.querySelector('.error-message');
+    if (!errorSpan) {
+        errorSpan = document.createElement('p');
+        errorSpan.className = 'error-message text-red-600 text-xs mt-1 block';
+        container.appendChild(errorSpan);
+    }
+    errorSpan.textContent = message;
+};
+
+const clearError = (element) => {
+    element.classList.remove('border-red-500');
+    element.classList.add('border-gray-800');
+    
+    const container = element.closest('div');
+    const errorSpan = container.querySelector('.error-message');
+    if (errorSpan) errorSpan.remove();
+};
+
+const clearAllErrors = (form) => {
+    form.querySelectorAll('.error-message').forEach(el => el.remove());
+    form.querySelectorAll('.border-red-500').forEach(el => {
+        el.classList.remove('border-red-500');
+        el.classList.add('border-gray-800');
+    });
+};
+
+// Complete Profile Form Validation
+document.addEventListener('DOMContentLoaded', function () {
+    const completeProfileForm = document.getElementById('completeProfileForm');
+    
+    if (completeProfileForm) {
+        completeProfileForm.addEventListener('submit', function (e) {
+            let valid = true;
+            clearAllErrors(this);
+
+            // Get Alpine.js data for plan selection
+            const planContainer = this.querySelector('[x-data]');
+            const planButton = planContainer?.querySelector('button');
+            const hiddenPlanInput = this.querySelector('input[name="plan_id"]');
+            
+            // Plan validation
+            if (!hiddenPlanInput || !hiddenPlanInput.value) {
+                if (planButton) {
+                    planButton.classList.add('border-red-500');
+                    const errorDiv = document.createElement('p');
+                    errorDiv.className = 'error-message text-red-600 text-xs mt-1 block';
+                    errorDiv.textContent = 'Please select a membership plan';
+                    planContainer.appendChild(errorDiv);
+                }
+                valid = false;
             }
-        }
 
-        function closeProfileModal() {
-            const modal = document.getElementById('profileModal');
-            if (modal) {
-                modal.classList.add('hidden');
+            // Sex validation
+            const sex = this.querySelector('input[name="sex"]:checked');
+            if (!sex) {
+                const sexContainer = this.querySelector('.mb-4');
+                const errorDiv = sexContainer.querySelector('.mt-1');
+                if (errorDiv) {
+                    let error = errorDiv.querySelector('.error-message');
+                    if (!error) {
+                        error = document.createElement('p');
+                        error.className = 'error-message text-red-600 text-xs block';
+                        errorDiv.appendChild(error);
+                    }
+                    error.textContent = 'Please select your sex';
+                }
+                valid = false;
             }
-        }
 
-        function openEditProfileModal() {
-            const modal = document.getElementById('editProfileModal');
-            if (modal) {
-                modal.classList.remove('hidden');
+            // Birthday validation
+            const birthday = this.querySelector('input[name="birthday"]');
+            if (!birthday.value) {
+                showError(birthday, 'Birthday is required');
+                valid = false;
             }
-        }
 
-        function closeEditProfileModal() {
-            const modal = document.getElementById('editProfileModal');
-            if (modal) {
-                modal.classList.add('hidden');
+            // Height validation
+            const height = this.querySelector('input[name="height"]');
+            if (height.value && (height.value <= 0 || height.value > 300)) {
+                showError(height, 'Please enter a valid height (1-300 cm)');
+                valid = false;
             }
-        }
 
-        // Close modals on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeProfileModal();
-                closeEditProfileModal();
+            // Weight validation
+            const weight = this.querySelector('input[name="weight"]');
+            if (weight.value && (weight.value <= 0 || weight.value > 500)) {
+                showError(weight, 'Please enter a valid weight (1-500 kg)');
+                valid = false;
+            }
+
+            // Mobile number validation
+            const mobile = this.querySelector('input[name="mobile_number"]');
+            const mobilePattern = /^(09|\+639)\d{9}$/;
+            if (!mobile.value) {
+                showError(mobile, 'Mobile number is required');
+                valid = false;
+            } else if (!mobilePattern.test(mobile.value)) {
+                showError(mobile, 'Enter a valid mobile number (e.g., 09123456789)');
+                valid = false;
+            }
+
+            if (!valid) {
+                e.preventDefault();
+                const firstError = this.querySelector('.error-message');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             }
         });
 
-        // Close modals when clicking outside
-        document.getElementById('profileModal')?.addEventListener('click', (e) => {
-            if (e.target.id === 'profileModal') closeProfileModal();
-        });
+        // Live validation for complete profile form
+        const birthday = completeProfileForm.querySelector('input[name="birthday"]');
+        const height = completeProfileForm.querySelector('input[name="height"]');
+        const weight = completeProfileForm.querySelector('input[name="weight"]');
+        const mobile = completeProfileForm.querySelector('input[name="mobile_number"]');
 
-        document.getElementById('editProfileModal')?.addEventListener('click', (e) => {
-            if (e.target.id === 'editProfileModal') closeEditProfileModal();
-        });
-
-
-        function opencompleteMembershipModal() {
-            const modal = document.getElementById('completeMembershipModal');
-            if (modal) {
-                modal.classList.remove('hidden');
-            }
+        if (birthday) {
+            birthday.addEventListener('blur', function() {
+                if (this.value) clearError(this);
+            });
         }
 
-        function closecompleteMembershipModal() {
-            const modal = document.getElementById('completeMembershipModal');
-            if (modal) {
-                modal.classList.add('hidden');
-            }
-        }
-
-
-        document.addEventListener("DOMContentLoaded", function () {
-            @if(session('showProfileModal'))
-                openEditProfileModal();
-            @elseif($member && $member->status === 'inactive')
-
-                setTimeout(function () {
-                    opencompleteMembershipModal();
-                }, 1000);
-            @endif
-        });
-
-
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape') {
-                closeProfileModal();
-                closeEditProfileModal();
-                @if($member && $member->status === 'inactive')
-                    closecompleteMembershipModal();
-                @endif
-            }
-        });
-
-
-        @if($member && $member->status === 'inactive')
-            document.addEventListener('click', function (event) {
-                const modal = document.getElementById('completeMembershipModal');
-                if (modal && event.target === modal) {
-
-                    event.preventDefault();
+        if (height) {
+            height.addEventListener('blur', function() {
+                if (this.value && (this.value <= 0 || this.value > 300)) {
+                    showError(this, 'Please enter a valid height (1-300 cm)');
+                } else if (this.value) {
+                    clearError(this);
                 }
             });
-        @endif
-    </script>
+        }
 
-    @stack('scripts')
+        if (weight) {
+            weight.addEventListener('blur', function() {
+                if (this.value && (this.value <= 0 || this.value > 500)) {
+                    showError(this, 'Please enter a valid weight (1-500 kg)');
+                } else if (this.value) {
+                    clearError(this);
+                }
+            });
+        }
+
+        if (mobile) {
+            mobile.addEventListener('blur', function() {
+                const mobilePattern = /^(09|\+639)\d{9}$/;
+                if (this.value && !mobilePattern.test(this.value)) {
+                    showError(this, 'Enter a valid mobile number (e.g., 09123456789)');
+                } else if (this.value) {
+                    clearError(this);
+                }
+            });
+        }
+    }
+
+    // Edit Profile Form Validation
+    const editProfileForm = document.querySelector('#editProfileModal form');
+    
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', function (e) {
+            let valid = true;
+            clearAllErrors(this);
+
+            // Personal Information validation
+            const firstName = this.querySelector('input[name="first_name"]');
+            const lastName = this.querySelector('input[name="last_name"]');
+            const username = this.querySelector('input[name="username"]');
+            const email = this.querySelector('input[name="email"]');
+
+            if (!firstName.value.trim()) {
+                showError(firstName, 'First name is required');
+                valid = false;
+            }
+
+            if (!lastName.value.trim()) {
+                showError(lastName, 'Last name is required');
+                valid = false;
+            }
+
+            if (!username.value.trim()) {
+                showError(username, 'Username is required');
+                valid = false;
+            } else if (username.value.length < 3) {
+                showError(username, 'Username must be at least 3 characters');
+                valid = false;
+            }
+
+            // Email validation
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email.value.trim()) {
+                showError(email, 'Email is required');
+                valid = false;
+            } else if (!emailPattern.test(email.value)) {
+                showError(email, 'Please enter a valid email address');
+                valid = false;
+            }
+
+            // Member-specific validation
+            const sex = this.querySelector('select[name="sex"]');
+            const birthday = this.querySelector('input[name="birthday"]');
+            const height = this.querySelector('input[name="height"]');
+            const weight = this.querySelector('input[name="weight"]');
+            const mobile = this.querySelector('input[name="mobile_number"]');
+
+            if (height && height.value && (height.value <= 0 || height.value > 300)) {
+                showError(height, 'Please enter a valid height (1-300 cm)');
+                valid = false;
+            }
+
+            if (weight && weight.value && (weight.value <= 0 || weight.value > 500)) {
+                showError(weight, 'Please enter a valid weight (1-500 kg)');
+                valid = false;
+            }
+
+            if (mobile && mobile.value) {
+                const mobilePattern = /^(09|\+639)\d{9}$/;
+                if (!mobilePattern.test(mobile.value)) {
+                    showError(mobile, 'Enter a valid mobile number (e.g., 09123456789)');
+                    valid = false;
+                }
+            }
+
+            // Password validation (only if user is trying to change password)
+            const oldPassword = this.querySelector('input[name="old_password"]');
+            const newPassword = this.querySelector('input[name="new_password"]');
+            const confirmPassword = this.querySelector('input[name="new_password_confirmation"]');
+
+            if (oldPassword.value || newPassword.value || confirmPassword.value) {
+                if (!oldPassword.value) {
+                    showError(oldPassword, 'Current password is required to change password');
+                    valid = false;
+                }
+
+                if (!newPassword.value) {
+                    showError(newPassword, 'New password is required');
+                    valid = false;
+                } else if (newPassword.value.length < 8) {
+                    showError(newPassword, 'Password must be at least 8 characters');
+                    valid = false;
+                }
+
+                if (!confirmPassword.value) {
+                    showError(confirmPassword, 'Please confirm your new password');
+                    valid = false;
+                } else if (newPassword.value !== confirmPassword.value) {
+                    showError(confirmPassword, 'Passwords do not match');
+                    valid = false;
+                }
+            }
+
+            if (!valid) {
+                e.preventDefault();
+                const firstError = this.querySelector('.error-message');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+
+        // Live validation for edit profile form
+        const firstName = editProfileForm.querySelector('input[name="first_name"]');
+        const lastName = editProfileForm.querySelector('input[name="last_name"]');
+        const username = editProfileForm.querySelector('input[name="username"]');
+        const email = editProfileForm.querySelector('input[name="email"]');
+        const birthday = editProfileForm.querySelector('input[name="birthday"]');
+        const height = editProfileForm.querySelector('input[name="height"]');
+        const weight = editProfileForm.querySelector('input[name="weight"]');
+        const mobile = editProfileForm.querySelector('input[name="mobile_number"]');
+        const newPassword = editProfileForm.querySelector('input[name="new_password"]');
+        const confirmPassword = editProfileForm.querySelector('input[name="new_password_confirmation"]');
+
+        if (firstName) {
+            firstName.addEventListener('blur', function() {
+                if (this.value.trim()) clearError(this);
+            });
+        }
+
+        if (lastName) {
+            lastName.addEventListener('blur', function() {
+                if (this.value.trim()) clearError(this);
+            });
+        }
+
+        if (username) {
+            username.addEventListener('blur', function() {
+                if (this.value.trim() && this.value.length >= 3) {
+                    clearError(this);
+                } else if (this.value.trim() && this.value.length < 3) {
+                    showError(this, 'Username must be at least 3 characters');
+                }
+            });
+        }
+
+        if (email) {
+            email.addEventListener('blur', function() {
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (this.value.trim() && emailPattern.test(this.value)) {
+                    clearError(this);
+                } else if (this.value.trim()) {
+                    showError(this, 'Please enter a valid email address');
+                }
+            });
+        }
+
+        if (birthday) {
+            birthday.addEventListener('blur', function() {
+                if (this.value) {
+                    clearError(this);
+                }
+            });
+        }
+
+        if (height) {
+            height.addEventListener('blur', function() {
+                if (this.value && (this.value <= 0 || this.value > 300)) {
+                    showError(this, 'Please enter a valid height (1-300 cm)');
+                } else if (this.value) {
+                    clearError(this);
+                }
+            });
+        }
+
+        if (weight) {
+            weight.addEventListener('blur', function() {
+                if (this.value && (this.value <= 0 || this.value > 500)) {
+                    showError(this, 'Please enter a valid weight (1-500 kg)');
+                } else if (this.value) {
+                    clearError(this);
+                }
+            });
+        }
+
+        if (mobile) {
+            mobile.addEventListener('blur', function() {
+                const mobilePattern = /^(09|\+639)\d{9}$/;
+                if (this.value && !mobilePattern.test(this.value)) {
+                    showError(this, 'Enter a valid mobile number (e.g., 09123456789)');
+                } else if (this.value) {
+                    clearError(this);
+                }
+            });
+        }
+
+        if (newPassword) {
+            newPassword.addEventListener('blur', function() {
+                if (this.value && this.value.length < 8) {
+                    showError(this, 'Password must be at least 8 characters');
+                } else if (this.value) {
+                    clearError(this);
+                }
+            });
+        }
+
+        if (confirmPassword) {
+            confirmPassword.addEventListener('blur', function() {
+                if (this.value && newPassword.value !== this.value) {
+                    showError(this, 'Passwords do not match');
+                } else if (this.value) {
+                    clearError(this);
+                }
+            });
+        }
+    }
+});
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+    @if(session('success'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Toastify({
+                    text: "{{ session('success') }}",
+                    duration: 3000,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: "linear-gradient(to right, #10b981, #059669)",
+                    stopOnFocus: true,
+                }).showToast();
+            });
+        </script>
+    @endif
+
+    @if(session('error'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Toastify({
+                    text: "{{ session('error') }}",
+                    duration: 3000,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
+                    stopOnFocus: true,
+                }).showToast();
+            });
+        </script>
+    @endif
+
+    @if($errors->any())
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Toastify({
+                    text: "{{ $errors->first() }}",
+                    duration: 4000,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
+                    stopOnFocus: true,
+                }).showToast();
+            });
+        </script>
+    @endif
+
+
 </body>
 
 </html>

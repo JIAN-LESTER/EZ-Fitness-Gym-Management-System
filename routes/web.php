@@ -122,3 +122,9 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
 
 Route::get('/logs', [LogController::class, 'viewLogs'])->name('logs.show');
 
+
+
+Route::get('/check-username', [AuthController::class, 'checkUsername'])->name('check.username');
+Route::get('/check-email', [AuthController::class, 'checkEmail'])->name('check.email');
+
+

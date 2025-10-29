@@ -50,9 +50,16 @@ class MemberProfileController extends Controller
             'plan_id' => 'required|exists:membership_plans,plan_id',
             'sex' => 'required|in:male,female',
             'birthday' => 'required|date',
-            'height' => 'nullable|numeric|min:0',
-            'weight' => 'nullable|numeric|min:0',
+            'height' => 'required|numeric|min:0',
+            'weight' => 'required|numeric|min:0',
             'mobile_number' => 'required|string|max:15',
+        ],[
+            'sex.required' => 'Please select you sex',
+            'mobile_number.required' => 'Mobile number is required',
+            'weight.required' => 'Weight is required',
+            'height.required' => 'Height is required',
+            'birthday.required' => 'Birthday is required',
+            'plan_id.required' => 'Membership plan is required',
         ]);
 
         $memberProfile = MemberProfile::firstOrNew(['user_id' => $member->user_id]);
@@ -133,10 +140,7 @@ class MemberProfileController extends Controller
             ->with('success', 'Membership profile updated successfully!');
     }
 
-    
 
-
-    
     public function checkProfileCompletion(string $memberId)
     {
         $member = User::findOrFail($memberId);

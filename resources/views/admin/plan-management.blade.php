@@ -32,6 +32,7 @@
                         <input type="text" name="search" id="search" value="{{ $search ?? '' }}"
                             placeholder="Search by plan name or price..."
                             class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all">
+                            
                     </div>
                 </div>
                 <button type="submit"
@@ -137,27 +138,37 @@
                 @csrf
                 <div>
                     <label for="add_name" class="block text-sm font-semibold text-gray-700 mb-2">Plan Name</label>
-                    <input type="text" name="name" id="add_name" required
+                    <input type="text" name="name" id="add_name" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all"
                         placeholder="e.g., Basic Plan">
+                                @error('add_name')
+          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        @enderror
                 </div>
                 <div>
                     <label for="add_details" class="block text-sm font-semibold text-gray-700 mb-2">Details</label>
-                    <input type="text" name="details" id="add_details" required
+                    <input type="text" name="details" id="add_details" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all"
                         placeholder="e.g., This plan is good for 1 year">
+                              
                 </div>
                 <div>
                     <label for="add_price" class="block text-sm font-semibold text-gray-700 mb-2">Price (₱)</label>
-                    <input type="number" name="price" id="add_price" step="0.01" min="0" required
+                    <input type="number" name="price" id="add_price" step="0.01" min="0" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all"
                         placeholder="0.00">
+                                @error('add_price')
+          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        @enderror
                 </div>
                 <div>
                     <label for="add_duration" class="block text-sm font-semibold text-gray-700 mb-2">Duration (Days)</label>
-                    <input type="number" name="duration_days" id="add_duration" min="1" required
+                    <input type="number" name="duration_days" id="add_duration" min="1" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all"
                         placeholder="30">
+                                @error('add_duration')
+          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        @enderror
                 </div>
                 <div class="flex gap-3 pt-4">
                     <button type="button" onclick="closeModal('addPlanModal')"
@@ -190,24 +201,34 @@
                 @method('PUT')
                 <div>
                     <label for="edit_name" class="block text-sm font-semibold text-gray-700 mb-2">Plan Name</label>
-                    <input type="text" name="name" id="edit_name" required
+                    <input type="text" name="name" id="edit_name" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all">
+                                @error('edit_name')
+          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        @enderror
                 </div>
                 <div>
                     <label for="edit_details" class="block text-sm font-semibold text-gray-700 mb-2">Details</label>
-                    <input type="text" name="details" id="edit_details" required
+                    <input type="text" name="details" id="edit_details" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all">
+                          
                 </div>
                 <div>
                     <label for="edit_price" class="block text-sm font-semibold text-gray-700 mb-2">Price (₱)</label>
-                    <input type="number" name="price" id="edit_price" step="0.01" min="0" required
+                    <input type="number" name="price" id="edit_price" step="0.01" min="0" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all">
+                                @error('edit_price')
+          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        @enderror
                 </div>
                 <div>
                     <label for="edit_duration" class="block text-sm font-semibold text-gray-700 mb-2">Duration
                         (Days)</label>
-                    <input type="number" name="duration_days" id="edit_duration" min="1" required
+                    <input type="number" name="duration_days" id="edit_duration" min="1" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all">
+                                @error('edit_duration')
+          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        @enderror
                 </div>
                 <div class="flex gap-3 pt-4">
                     <button type="button" onclick="closeModal('editPlanModal')"
@@ -263,14 +284,176 @@
     </div>
 
     <script>
+        // Validation Utility Functions
+        const showError = (element, message) => {
+            element.classList.remove('border-gray-200');
+            element.classList.add('border-red-500');
+            
+            const container = element.closest('div');
+            let errorSpan = container.querySelector('.error-message');
+            if (!errorSpan) {
+                errorSpan = document.createElement('p');
+                errorSpan.className = 'error-message text-red-600 text-xs mt-1 block';
+                container.appendChild(errorSpan);
+            }
+            errorSpan.textContent = message;
+        };
+
+        const clearError = (element) => {
+            element.classList.remove('border-red-500');
+            element.classList.add('border-gray-200');
+            
+            const container = element.closest('div');
+            const errorSpan = container.querySelector('.error-message');
+            if (errorSpan) errorSpan.remove();
+        };
+
+        const clearAllErrors = (form) => {
+            form.querySelectorAll('.error-message').forEach(el => el.remove());
+            form.querySelectorAll('.border-red-500').forEach(el => {
+                el.classList.remove('border-red-500');
+                el.classList.add('border-gray-200');
+            });
+        };
+
         function openModal(modalId) {
-            document.getElementById(modalId).classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
+            const modal = document.getElementById(modalId);
+            const scrollY = window.scrollY;
+            
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
+            
+            modal.classList.remove('hidden');
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-            document.body.style.overflow = 'auto';
+            const modal = document.getElementById(modalId);
+            const scrollY = document.body.style.top;
+            
+            modal.classList.add('hidden');
+            
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            
+            const form = modal.querySelector('form');
+            if (form) {
+                clearAllErrors(form);
+                form.reset();
+            }
+        }
+
+        function validatePlanForm(form) {
+            let valid = true;
+            clearAllErrors(form);
+            
+            const name = form.querySelector('[name="name"]');
+     
+            const price = form.querySelector('[name="price"]');
+            const duration = form.querySelector('[name="duration_days"]');
+            
+            // Validate Plan Name
+            if (!name.value.trim()) {
+                showError(name, 'Plan name is required');
+                valid = false;
+            } else if (name.value.trim().length < 3) {
+                showError(name, 'Plan name must be at least 3 characters');
+                valid = false;
+            } else if (name.value.trim().length > 100) {
+                showError(name, 'Plan name must not exceed 100 characters');
+                valid = false;
+            }
+            
+            
+            // Validate Price
+            if (!price.value || price.value === '') {
+                showError(price, 'Price is required');
+                valid = false;
+            } else if (parseFloat(price.value) < 0) {
+                showError(price, 'Price cannot be negative');
+                valid = false;
+            } else if (parseFloat(price.value) === 0) {
+                showError(price, 'Price must be greater than 0');
+                valid = false;
+            } else if (parseFloat(price.value) > 999999.99) {
+                showError(price, 'Price is too large');
+                valid = false;
+            }
+            
+            // Validate Duration
+            if (!duration.value || duration.value === '') {
+                showError(duration, 'Duration is required');
+                valid = false;
+            } else if (parseInt(duration.value) < 1) {
+                showError(duration, 'Duration must be at least 1 day');
+                valid = false;
+            } else if (parseInt(duration.value) > 3650) {
+                showError(duration, 'Duration cannot exceed 3650 days (10 years)');
+                valid = false;
+            }
+            
+            if (!valid && typeof toastr !== 'undefined') {
+                toastr.error('Please fix the errors in the form');
+            }
+            
+            return valid;
+        }
+
+        function setupLiveValidation(form) {
+            const name = form.querySelector('[name="name"]');
+ 
+            const price = form.querySelector('[name="price"]');
+            const duration = form.querySelector('[name="duration_days"]');
+            
+            // Name validation
+            name.addEventListener('blur', function() {
+                if (this.value.trim() && this.value.trim().length >= 3 && this.value.trim().length <= 100) {
+                    clearError(this);
+                }
+            });
+            
+            name.addEventListener('input', function() {
+                if (this.value.trim() && this.value.trim().length >= 3) {
+                    clearError(this);
+                }
+            });
+            
+            
+            
+            details.addEventListener('input', function() {
+                if (this.value.trim() && this.value.trim().length >= 10) {
+                    clearError(this);
+                }
+            });
+            
+            // Price validation
+            price.addEventListener('blur', function() {
+                if (this.value && parseFloat(this.value) > 0 && parseFloat(this.value) <= 999999.99) {
+                    clearError(this);
+                }
+            });
+            
+            price.addEventListener('input', function() {
+                if (this.value && parseFloat(this.value) > 0) {
+                    clearError(this);
+                }
+            });
+            
+            // Duration validation
+            duration.addEventListener('blur', function() {
+                if (this.value && parseInt(this.value) >= 1 && parseInt(this.value) <= 3650) {
+                    clearError(this);
+                }
+            });
+            
+            duration.addEventListener('input', function() {
+                if (this.value && parseInt(this.value) >= 1) {
+                    clearError(this);
+                }
+            });
         }
 
         function editPlan(plan) {
@@ -283,12 +466,92 @@
         }
 
         function openDeleteModal(plan) {
-            document.getElementById('deletePlanName').textContent = `Plan: ${plan.name} (₱${parseFloat(plan.price).toFixed(2)})`;
-            document.getElementById('deletePlanForm').action = `/xadmin/plans/${plan.plan_id}`;
-            openModal('deletePlanModal');
+            Swal.fire({
+                title: 'Delete Membership Plan?',
+                html: `
+                    <div class="text-left space-y-2">
+                        <p class="text-gray-700">You are about to delete:</p>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="font-semibold text-gray-900">${plan.name}</p>
+                            <p class="text-sm text-gray-600">${plan.details}</p>
+                            <p class="text-sm text-gray-600 mt-2">Price: ₱${parseFloat(plan.price).toFixed(2)}</p>
+                            <p class="text-sm text-gray-600">Duration: ${plan.duration_days} days</p>
+                            ${plan.members_count > 0 ? `<p class="text-sm text-red-600 mt-2 font-medium">⚠️ ${plan.members_count} member(s) are using this plan</p>` : ''}
+                        </div>
+                        <p class="text-red-600 font-medium mt-4">This action cannot be undone!</p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel',
+                width: '600px',
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    confirmButton: 'swal-confirm-btn',
+                    cancelButton: 'swal-cancel-btn'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/admin/plans/${plan.plan_id}`;
+                    
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_token';
+                    csrfInput.value = csrfToken;
+                    
+                    const methodInput = document.createElement('input');
+                    methodInput.type = 'hidden';
+                    methodInput.name = '_method';
+                    methodInput.value = 'DELETE';
+                    
+                    form.appendChild(csrfInput);
+                    form.appendChild(methodInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
         }
 
-   
+        // Initialize on DOM Ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup Add Plan Form Validation
+            const addPlanForm = document.querySelector('#addPlanModal form');
+            if (addPlanForm) {
+                addPlanForm.addEventListener('submit', function(e) {
+                    if (!validatePlanForm(this)) {
+                        e.preventDefault();
+                    }
+                });
+                setupLiveValidation(addPlanForm);
+            }
+            
+            // Setup Edit Plan Form Validation
+            const editPlanForm = document.querySelector('#editPlanForm');
+            if (editPlanForm) {
+                editPlanForm.addEventListener('submit', function(e) {
+                    if (!validatePlanForm(this)) {
+                        e.preventDefault();
+                    }
+                });
+                setupLiveValidation(editPlanForm);
+            }
+            
+            // Toastr Configuration
+            if (typeof toastr !== 'undefined') {
+                toastr.options = {
+                    "closeButton": true,
+                    "progressBar": true,
+                    "positionClass": "toast-top-right",
+                    "timeOut": "3000"
+                };
+            }
+        });
 
         // Close modals on Escape key
         document.addEventListener('keydown', function (e) {

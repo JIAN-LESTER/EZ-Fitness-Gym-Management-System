@@ -28,8 +28,18 @@ class ProfileController extends Controller
             'last_name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username,' . $user->user_id . ',user_id',
             'email' => 'required|email|unique:users,email,' . $user->user_id . ',user_id',
-            'old_password' => 'nullable|required_with:new_password',
+            'old_password' => 'required_with:new_password',
             'new_password' => 'nullable|min:6|confirmed',
+        ],[
+            'first_name.required' => 'First name is required',
+            'last_name.required' => 'Last name is required',
+            'username.required' => 'Username is required',
+            'username.unique' => 'The username has already been taken',
+            'email.required' => 'Email is required',
+            'email.unique' => 'The email has already been taken',
+            'old_password.required_with' => 'Current password is required to set a new password',
+            'new_password.min' => 'New password must be at least 6 characters',
+            'new_password.confirmed' => 'New password confirmation does not match',
         ]);
 
         // Update basic user info
@@ -60,9 +70,10 @@ class ProfileController extends Controller
                     'height' => 'nullable|numeric|min:0',
                     'weight' => 'nullable|numeric|min:0',
                     'mobile_number' => 'nullable|string|max:15',
+                ], [
+                    'plan_id.exists' => 'The selected plan is invalid.',
                 ]);
 
-                // Only update fields that were provided
                 if ($request->filled('plan_id')) {
                     $memberProfile->plan_id = $memberValidated['plan_id'];
                 }
