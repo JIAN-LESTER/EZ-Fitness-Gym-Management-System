@@ -1,18 +1,18 @@
-<?php
+    <?php
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailVerificationController;
-use App\Http\Controllers\LogsController;
+
 use App\Http\Controllers\MemberProfileController;
+use App\Http\Controllers\MembershipPlanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SnapshotsController;
 use App\Http\Controllers\TwoFactorAuthController;
 use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\WeatherController;
-use App\Http\Controllers\WeatherReportsController;
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MapsController;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -54,6 +54,24 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
+
+
+Route::get('/member/dashboard', [MemberProfileController::class, 'dashboard'])->name('member.dashboard');
+Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'profile'])->name('profile.profile');
+    Route::get('/profile/edit/{userID}', [MemberProfileController::class, 'editProfile'])->name('profile.edit');
+    
+    // For first-time profile completion (inactive members)
+    Route::put('/profile/complete-membership', [MemberProfileController::class, 'completeMemberProfile'])->name('profile.complete-member-profile');
+    
+    // For updating existing profiles (active members)
+    Route::put('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+});
+
+
 Route::get('/save-qrcode', function () {
 
     $fileName = 'qrcode.png';
@@ -85,7 +103,39 @@ Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->
 Route::post('/email/verification-notification', [AuthController::class, 'resendVerification'])
     ->name('verification.send');
 
+Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
+
+
+Route::prefix('admin')->middleware(['auth'])->group(function () {
+    Route::get('/plan-management', [App\Http\Controllers\MembershipPlanController::class, 'index'])->name('admin.plan_management');
+    Route::post('/plans', [App\Http\Controllers\MembershipPlanController::class, 'store'])->name('plans.store');
+    Route::put('/plans/{id}', [App\Http\Controllers\MembershipPlanController::class, 'update'])->name('plans.update');
+    Route::delete('/plans/{id}', [App\Http\Controllers\MembershipPlanController::class, 'destroy'])->name('plans.destroy');
+});
+
+
+
+
+
+// Email verification routes
+
+// Resend verification 
+Route::post('/email/verification-notification', [AuthController::class, 'resendVerification'])
+    ->name('verification.send');
+
 // Verification link
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
     ->middleware(['signed'])
     ->name('verification.verify');
+
+
+    use App\Http\Controllers\LogController;
+
+Route::get('/logs', [LogController::class, 'viewLogs'])->name('logs.show');
+
+
+
+Route::get('/check-username', [AuthController::class, 'checkUsername'])->name('check.username');
+Route::get('/check-email', [AuthController::class, 'checkEmail'])->name('check.email');
+
+

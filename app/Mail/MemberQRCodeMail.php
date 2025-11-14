@@ -21,6 +21,9 @@ class MemberQRCodeMail extends Mailable
 
     public function build()
     {
+ 
+        $this->member->load(['user', 'plan']);
+        
         return $this->markdown('emails.member_qr')
                     ->subject('Your Membership QR Code')
                     ->attach($this->qrCodePath, [
@@ -28,8 +31,10 @@ class MemberQRCodeMail extends Mailable
                         'mime' => 'image/png',
                     ])
                     ->with([
-                        'name' => "{$this->member->fname} {$this->member->lname}",
-                        'email' => $this->member->email,
+                        'name' => "{$this->member->user->first_name} {$this->member->user->last_name}",
+                        'email' => $this->member->user->email ?? 'N/A',
+                        'plan' => $this->member->plan->name ?? 'N/A',
+                        'duration' => $this->member->plan->duration_days ?? 'N/A',
                     ]);
     }
 }
