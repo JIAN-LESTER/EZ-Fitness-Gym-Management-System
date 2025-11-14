@@ -18,40 +18,41 @@ use App\Http\Controllers\MapsController;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
-    Route::get('/', [AuthController::class, 'showLoginForm'])->name('home');
-    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('loginForm');
-    Route::post('/login', [AuthController::class, 'login'])->name('login');
-    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('registerForm');
-    Route::post('/register', [AuthController::class, 'register'])->name('register');
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/', [AuthController::class, 'showLoginForm'])->name('home');
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('loginForm');
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('registerForm');
+Route::post('/register', [AuthController::class, 'register'])->name('register');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth'])->group(function () {
 
 
 
-        Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {
-            Route::get('/dashboard', function () {
-                return view('admin.dashboard');
-            })->name('admin.dashboard');
-        });
-
-        Route::prefix('member')->name('member.')->group(function () {
-            Route::get('/dashboard', function () {
-                return view('member.dashboard');
-            })->name('member.dashboard');
-        });
-
+    Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {
+        Route::get('/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('admin.dashboard');
     });
 
-    Route::get('/member/dashboard', [MemberProfileController::class, 'dashboard'])->name('member.dashboard');
-    Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-
-
-          Route::middleware(['auth'])->group(function () {
-        Route::get('/profile', [MemberProfileController::class, 'profile'])->name('profile.profile');
-        Route::get('/profile/edit/{userID}', [MemberProfileController::class, 'editProfile'])->name('profile.edit');
-        Route::put('/profile/update', [MemberProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::prefix('member')->name('member.')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('member.dashboard');
+        })->name('member.dashboard');
     });
+
+});
+
+Route::get('/member/dashboard', [MemberProfileController::class, 'dashboard'])->name('member.dashboard');
+Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [MemberProfileController::class, 'profile'])->name('profile.profile');
+    Route::get('/profile/edit/{userID}', [MemberProfileController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/profile/update', [MemberProfileController::class, 'updateProfile'])->name('profile.update');
+});
+
 
 
 
@@ -73,24 +74,34 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/save-qrcode', function () {
 
-    $fileName = 'qrcode.png'; 
+    $fileName = 'qrcode.png';
 
-    
-    QrCode::format('png') 
-          ->size(300)      
-          ->generate('Hello, world!', storage_path("app/public/{$fileName}"));
+
+    QrCode::format('png')
+        ->size(300)
+        ->generate('Hello, world!', storage_path("app/public/{$fileName}"));
 
     return "QR code saved as {$fileName}";
 });
 
-    Route::prefix('admin/user_crud')->name('admin.')->group(function () {
-        Route::get('/create', [UserManagementController::class, 'create'])->name('users-create');
-        Route::post('/store', [UserManagementController::class, 'store'])->name('users-store');
-        Route::get('/show/{id}', [UserManagementController::class, 'show'])->name('show');
-        Route::get('/edit/{id}', [UserManagementController::class, 'edit'])->name('users-edit');
-        Route::put('/update/{id}', [UserManagementController::class, 'update'])->name('update');
-        Route::delete('/destroy/{id}', [UserManagementController::class, 'destroy'])->name('users-destroy');
-    });
+Route::prefix('admin/user_crud')->name('admin.')->group(function () {
+    Route::get('/create', [UserManagementController::class, 'create'])->name('users-create');
+    Route::post('/store', [UserManagementController::class, 'store'])->name('users-store');
+    Route::get('/show/{id}', [UserManagementController::class, 'show'])->name('show');
+    Route::get('/edit/{id}', [UserManagementController::class, 'edit'])->name('users-edit');
+    Route::put('/update/{id}', [UserManagementController::class, 'update'])->name('update');
+    Route::delete('/destroy/{id}', [UserManagementController::class, 'destroy'])->name('users-destroy');
+});
+
+Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
+
+
+
+// Email verification routes
+
+// Resend verification 
+Route::post('/email/verification-notification', [AuthController::class, 'resendVerification'])
+    ->name('verification.send');
 
 Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
 
