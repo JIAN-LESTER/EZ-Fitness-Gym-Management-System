@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
+import flowbite from 'flowbite/plugin';
 
 export default defineConfig({
     plugins: [
@@ -9,6 +10,6 @@ export default defineConfig({
             refresh: true,
         }),
         tailwindcss(),
-        require('flowbite/plugin'),
+        flowbite,
     ],
 });
