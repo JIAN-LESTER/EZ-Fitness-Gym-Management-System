@@ -21,7 +21,7 @@
       @csrf
       <section>
         <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-        <input type="text" id="username" name="username" 
+        <input type="text" id="username" name="username"
           class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-600 focus:outline-none" />
         @error('username')
           <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
@@ -30,7 +30,7 @@
 
       <section>
         <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-        <input type="password" id="password" name="password" 
+        <input type="password" id="password" name="password"
           class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-600 focus:outline-none" />
         @error('password')
           <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
@@ -54,7 +54,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
     <script>
     @if(session('success'))
         Toastify({
@@ -98,7 +98,7 @@
   form.addEventListener('submit', function(e) {
       let isValid = true;
 
-     
+
 
       // Password validation
       if (!passwordInput.value.trim()) {
@@ -119,7 +119,7 @@
   function showError(input, message) {
       input.classList.add('border-red-500');
       input.classList.remove('border-gray-300');
-      
+
       let errorSpan = input.nextElementSibling;
       if (!errorSpan || !errorSpan.classList.contains('error-message')) {
           errorSpan = document.createElement('span');
@@ -132,7 +132,7 @@
   function clearError(input) {
       input.classList.remove('border-red-500');
       input.classList.add('border-gray-300');
-      
+
       const errorSpan = input.nextElementSibling;
       if (errorSpan && errorSpan.classList.contains('error-message')) {
           errorSpan.remove();

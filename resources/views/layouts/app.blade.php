@@ -19,22 +19,24 @@
     </style>
 </head>
 
-<body x-data="{ sidebarOpen: true }"
+<body x-data="{ sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false' }"
+    x-init="$watch('sidebarOpen', val => localStorage.setItem('sidebarOpen', val))"
     class="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
     <?php $user = Auth::user();
 
 $member = $user->member;
-    
-    
+
+
     ?>
 
     <!-- Sidebar -->
     <aside
-        class="bg-gray-800 text-white dark:bg-white dark:text-gray-800 shadow-md flex flex-col transition-all duration-800"
-        :class="sidebarOpen ? 'w-60' : 'w-16'">
+    x-cloak
+    class="bg-gray-800 text-white dark:bg-gray-800 dark:text-white shadow-md flex flex-col"
+    :class="sidebarOpen ? 'w-60' : 'w-16'">
 
-        <div class="p-4 font-bold text-white dark:text-gray-800 text-lg truncate">
+        <div  class="flex justify-center items-center p-4 pb-5 pt-5 font-bold text-white dark:text-white text-lg truncate">
             <span x-show="sidebarOpen" x-cloak class="transition-opacity">EZ Fitness</span>
             <span x-show="!sidebarOpen" x-cloak class="transition-opacity">EZ</span>
         </div>
@@ -42,7 +44,7 @@ $member = $user->member;
         <nav class="flex-1 px-2 space-y-2">
             @if(auth()->user()->role === 'admin')
                             <a href="{{ route('admin.dashboard') }}" @click="profileOpen = false"
-                                class="flex items-center space-x-2 px-4 py-2 dark:text-gray-800 hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white rounded {{ request()->routeIs('admin.dashboard') ? 'bg-white text-gray-800 dark:bg-gray-800 dark:text-white' : '' }}">
+                               class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.dashboard') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -51,8 +53,7 @@ $member = $user->member;
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Dashboard</span>
                             </a>
 
-                            <a href="{{ route('admin.user_management') }}" @click="profileOpen = false" class="flex items-center space-x-2 px-4 py-2 dark:text-gray-800 hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white rounded 
-                   {{ request()->routeIs('admin.user_management') ? 'bg-white text-gray-800 dark:bg-gray-800 dark:text-white' : '' }}">
+                            <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -61,8 +62,7 @@ $member = $user->member;
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Users</span>
                             </a>
 
-                            <a href="{{ route('admin.plan_management') }}" @click="profileOpen = false" class="flex items-center space-x-2 px-4 py-2 dark:text-gray-800 hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white rounded 
-                   {{ request()->routeIs('admin.plan_management') ? 'bg-white text-gray-800 dark:bg-gray-800 dark:text-white' : '' }}">
+                            <a href="{{ route('admin.plan_management') }}" @click="profileOpen = false"  class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.plan_management') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -71,7 +71,7 @@ $member = $user->member;
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Membership Plans</span>
                             </a>
                                   <a href="#" @click="profileOpen = false"
-                                class="flex items-center space-x-2 px-4 py-2 dark:text-gray-800 hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white rounded {{ request()->routeIs('logs.show') ? 'bg-white text-gray-800 dark:bg-gray-800 dark:text-white' : '' }}">
+                                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -80,7 +80,7 @@ $member = $user->member;
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Inventory</span>
                             </a>
                                   <a href="#" @click="profileOpen = false"
-                                class="flex items-center space-x-2 px-4 py-2 dark:text-gray-800 hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white rounded {{ request()->routeIs('logs.show') ? 'bg-white text-gray-800 dark:bg-gray-800 dark:text-white' : '' }}">
+                                 class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -89,7 +89,7 @@ $member = $user->member;
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Sales</span>
                             </a>
                                       <a href="#" @click="profileOpen = false"
-                                class="flex items-center space-x-2 px-4 py-2 dark:text-gray-800 hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white rounded {{ request()->routeIs('logs.show') ? 'bg-white text-gray-800 dark:bg-gray-800 dark:text-white' : '' }}">
+                                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -98,7 +98,7 @@ $member = $user->member;
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Transactions</span>
                             </a>
                                       <a href="#" @click="profileOpen = false"
-                                class="flex items-center space-x-2 px-4 py-2 dark:text-gray-800 hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white rounded {{ request()->routeIs('logs.show') ? 'bg-white text-gray-800 dark:bg-gray-800 dark:text-white' : '' }}">
+                                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -107,7 +107,7 @@ $member = $user->member;
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Attendance Logs</span>
                             </a>
                             <a href="{{ route('logs.show') }}" @click="profileOpen = false"
-                                class="flex items-center space-x-2 px-4 py-2 dark:text-gray-800 hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white rounded {{ request()->routeIs('logs.show') ? 'bg-white text-gray-800 dark:bg-gray-800 dark:text-white' : '' }}">
+                                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -118,7 +118,7 @@ $member = $user->member;
 
             @elseif(auth()->user()->role === 'member')
                 <a href="{{ route('member.dashboard') }}" @click="profileOpen = false"
-                    class="flex items-center space-x-2 px-4 py-2 dark:text-gray-800 hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white rounded {{ request()->routeIs('user.dashboard') ? 'bg-white text-gray-800 dark:bg-gray-800 dark:text-white' : '' }}">
+                    class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -128,7 +128,7 @@ $member = $user->member;
                 </a>
 
                 <a href="#" @click="profileOpen = false"
-                    class="flex items-center space-x-2 px-4 py-2 dark:text-gray-800 hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white rounded {{ request()->routeIs('user.dashboard') ? 'bg-white text-gray-800 dark:bg-gray-800 dark:text-white' : '' }}">
+                    class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -146,10 +146,10 @@ $member = $user->member;
     <div class="flex-1 @yield('fullscreen', 'flex flex-col')">
         <!-- Header - conditionally positioned for fullscreen pages -->
         <header
-            class="@yield('header-class', 'relative') bg-white text-gray-800 p-4 flex justify-between items-center shadow-sm dark:bg-gray-800 dark:text-white z-30">
+            class="@yield('header-class', 'relative') h-16 bg-gray-800 text-white p-4 flex justify-between items-center shadow-sm dark:bg-white dark:text-gray-800 z-30">
             <div class="flex items-center space-x-3">
                 <button @click="sidebarOpen = !sidebarOpen"
-                    class="p-2 rounded hover:bg-gray-800 hover:text-white dark:hover:bg-white dark:hover:text-gray-800 focus:outline-none transition-colors">
+                    class="p-2 rounded hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white focus:outline-none transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -160,8 +160,7 @@ $member = $user->member;
             </div>
 
             <div x-data="{ profileOpen: false }" class="relative">
-                <button @click="profileOpen = !profileOpen" class="flex items-center space-x-2 focus:outline-none px-3 py-2 rounded transition-colors 
-               hover:bg-gray-700 hover:text-white">
+                <button @click="profileOpen = !profileOpen" class="flex items-center space-x-2 focus:outline-none px-3 py-2 rounded transition-colors hover:bg-gray-200 hover:text-gray-800">
                     <div class="flex items-center space-x-2">
                         <div class="relative">
                             <div
@@ -181,7 +180,7 @@ $member = $user->member;
                     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150"
                     x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                    class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg z-50 border border-gray-200">
+                    class="translate-y-4 absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg z-50 border border-gray-200">
 
                     <div class="px-4 py-3 border-b border-gray-200">
                         <p class="text-sm font-medium text-gray-900">
@@ -319,7 +318,7 @@ $member = $user->member;
 
 
 
-        
+
 
 <div class="mb-4">
   <span class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">
@@ -331,9 +330,9 @@ $member = $user->member;
     <!-- Male -->
     <label class="relative cursor-pointer">
       <input type="radio" name="sex" value="male" {{ old('sex')=='male' ? 'checked' : '' }} class="peer sr-only">
-      <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800 
+      <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800
                   flex items-center justify-center transition duration-200 bg-gray-100 hover:bg-gray-200">
-        <img src="https://cdn-icons-png.flaticon.com/512/921/921106.png" 
+        <img src="https://cdn-icons-png.flaticon.com/512/921/921106.png"
              alt="Male avatar" class="w-10 h-10 object-contain opacity-90">
       </div>
       <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Male</span>
@@ -342,9 +341,9 @@ $member = $user->member;
     <!-- Female -->
     <label class="relative cursor-pointer">
       <input type="radio" name="sex" value="female" {{ old('sex')=='female' ? 'checked' : '' }} class="peer sr-only">
-      <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800 
+      <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800
                   flex items-center justify-center transition duration-200 bg-gray-100 hover:bg-gray-200">
-        <img src="https://cdn-icons-png.flaticon.com/512/921/921124.png" 
+        <img src="https://cdn-icons-png.flaticon.com/512/921/921124.png"
              alt="Female avatar" class="w-10 h-10 object-contain opacity-90">
       </div>
       <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Female</span>
@@ -364,8 +363,8 @@ $member = $user->member;
                         <label for="birthday" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
                             Birthday <span class="text-red-500">*</span>
                         </label>
-                        <input type="date" name="birthday" id="birthday" 
-                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 
+                        <input type="date" name="birthday" id="birthday"
+                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600
                                  px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
                                          @error('birthday')
           <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
@@ -378,7 +377,7 @@ $member = $user->member;
                                 Height (cm)
                             </label>
                             <input type="number" step="0.1" name="height" id="height"
-                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 
+                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600
                                        px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
                                                @error('height')
           <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
@@ -389,7 +388,7 @@ $member = $user->member;
                                 Weight (kg)
                             </label>
                             <input type="number" step="0.1" name="weight" id="weight"
-                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 
+                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600
                                        px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
                                                @error('weight')
           <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
@@ -401,9 +400,9 @@ $member = $user->member;
                         <label for="mobile_number" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
                             Mobile Number <span class="text-red-500">*</span>
                         </label>
-                        <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789" 
+                        <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789"
                             pattern="[0-9]{11}"
-                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 
+                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600
                                    px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
                                            @error('mobile_number')
           <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
@@ -480,7 +479,7 @@ $member = $user->member;
                     <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Role</p>
                         <span
-                            class="inline-block px-3 py-1 text-sm rounded-full 
+                            class="inline-block px-3 py-1 text-sm rounded-full
                         {{ $user->role === 'admin' ? 'bg-red-100 text-red-700' :
     ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700') }}">
                             {{ ucfirst($user->role) }}
@@ -855,7 +854,7 @@ const showError = (element, message) => {
 const clearError = (element) => {
     element.classList.remove('border-red-500');
     element.classList.add('border-gray-800');
-    
+
     const container = element.closest('div');
     const errorSpan = container.querySelector('.error-message');
     if (errorSpan) errorSpan.remove();
@@ -872,7 +871,7 @@ const clearAllErrors = (form) => {
 // Complete Profile Form Validation
 document.addEventListener('DOMContentLoaded', function () {
     const completeProfileForm = document.getElementById('completeProfileForm');
-    
+
     if (completeProfileForm) {
         completeProfileForm.addEventListener('submit', function (e) {
             let valid = true;
@@ -882,7 +881,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const planContainer = this.querySelector('[x-data]');
             const planButton = planContainer?.querySelector('button');
             const hiddenPlanInput = this.querySelector('input[name="plan_id"]');
-            
+
             // Plan validation
             if (!hiddenPlanInput || !hiddenPlanInput.value) {
                 if (planButton) {
@@ -999,7 +998,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Edit Profile Form Validation
     const editProfileForm = document.querySelector('#editProfileModal form');
-    
+
     if (editProfileForm) {
         editProfileForm.addEventListener('submit', function (e) {
             let valid = true;
