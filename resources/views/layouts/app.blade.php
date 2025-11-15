@@ -70,7 +70,7 @@ $member = $user->member;
                                 </svg>
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Membership Plans</span>
                             </a>
-                                  <a href="#" @click="profileOpen = false"
+                                  <a href="products" @click="profileOpen = false"
                                 class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">

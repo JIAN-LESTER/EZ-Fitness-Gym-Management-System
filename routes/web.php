@@ -140,3 +140,11 @@ Route::get('/check-username', [AuthController::class, 'checkUsername'])->name('c
 Route::get('/check-email', [AuthController::class, 'checkEmail'])->name('check.email');
 
 
+Route::prefix('products')->name('products.')->group(function () {
+    Route::get('/', [ProductController::class, 'index'])->name('index');
+    Route::post('/', [ProductController::class, 'store'])->name('store');
+    Route::get('/{id}', [ProductController::class, 'show'])->name('show');
+    Route::get('/{id}/edit', [ProductController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [ProductController::class, 'update'])->name('update');
+    Route::delete('/{id}', [ProductController::class, 'destroy'])->name('destroy');
+});

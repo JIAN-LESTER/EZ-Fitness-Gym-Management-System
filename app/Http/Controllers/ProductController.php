@@ -2,97 +2,124 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Models\Product;
+use App\Models\Product;
+use App\Models\Categories;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource with search and filters
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with(['category','inventory'])->get();
-        return response()->json($products);
+        $query = Product::with(['category', 'inventory']);
+
+        // Search functionality
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by category
+        if ($request->has('categories') && !empty($request->categories)) {
+            $query->whereIn('category_id', $request->categories);
+        }
+
+        // Filter by status
+        if ($request->has('product_status') && !empty($request->product_status)) {
+            $query->whereIn('status', $request->product_status);
+        }
+
+        $products = $query->paginate(10);
+        $categories = Categories::all();
+
+        return view('products.index', compact('products', 'categories'));
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
+     * Store a newly created resource in storage
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'category_id' => 'required|integer',
+            'category_id' => 'required|integer|exists:categories,category_id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'status' => 'required|string|max:50',
+            'status' => 'required|in:available,unavailable',
         ]);
 
-        $product = Product::with(['category', 'inventory','stockIns','stockOuts'])
+        $product = Product::create($validated);
+        
+        return redirect()->route('products.index')
+            ->with('success', 'Product added successfully!');
+    }
+
+    /**
+     * Display the specified resource
+     */
+    public function show(string $id)
+    {
+        try {
+            $product = Product::with(['category', 'inventory'])
+                ->where('product_id', $id)
+                ->firstOrFail();
+            
+            return response()->json($product);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Product not found',
+                'message' => $e->getMessage()
+            ], 404);
+        }
+    }
+
+    /**
+     * Show the form for editing the specified resource
+     */
+    public function edit(string $id)
+    {
+        $product = Product::with(['category', 'inventory'])
             ->findOrFail($id);
         
         return response()->json($product);
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update a product
+     * Update the specified resource in storage
      */
     public function update(Request $request, string $id)
     {
         $product = Product::findOrFail($id);
 
         $validated = $request->validate([
-            'category_id' => 'sometimes|integer',
-            'name' => 'sometimes|string|255',
+            'category_id' => 'sometimes|integer|exists:categories,category_id',
+            'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'price' => 'sometimes|numeric|min:0',
-            'status' => 'sometimes|string|max:50',
+            'status' => 'sometimes|in:available,unavailable',
         ]);
 
         $product->update($validated);
-        return response()->json($product);
+        
+        return redirect()->route('products.index')
+            ->with('success', 'Product updated successfully!');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage
      */
     public function destroy(string $id)
     {
         $product = Product::findOrFail($id);
-        $product ->delete();
+        $product->delete();
 
-        return response()->json(['message' => 'Product deleted successfully']);
-    }
-
-    public function view()
-    {
-        $products = \App\Models\Product::with(['category', 'inventory'])->get();
-        return view('products.index', compact('products'));
+        return redirect()->route('products.index')
+            ->with('success', 'Product deleted successfully!');
     }
 }

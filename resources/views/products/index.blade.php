@@ -1,47 +1,713 @@
 @extends('layouts.app')
-@section('title', 'Dashboard')
-@section('header', 'Dashboard')
+
+@section('title', 'Products Management')
+@section('header', 'Products Management')
+
+<style>
+/* Custom Scrollbar for Modals */
+.modal-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+    background: #F3F4F6;
+    border-radius: 10px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+    background: #9CA3AF;
+    border-radius: 10px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #6B7280;
+}
+
+.modal-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #9CA3AF #F3F4F6;
+    scroll-behavior: smooth;
+}
+</style>
 
 @section('content')
+    <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
 
-<body class="bg-gray-100 min-h-screen flex flex-col items-center p-8">
+        <!-- Header / Add Button -->
+        <div class="flex justify-between items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800">Products Management</h2>
+            <button onclick="openModal('addProductModal')"
+                class="flex items-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Add Product
+            </button>
+        </div>
 
-    <div class="w-full max-w-6xl bg-white rounded-xl shadow-md p-6">
-        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Product List</h1>
+        <!-- Search and Filter Section -->
+        <div class="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <form method="GET" action="{{ route('products.index') }}" class="space-y-4" role="search">
+                <div class="flex flex-wrap lg:flex-nowrap items-center gap-3">
+                    <!-- Search Input -->
+                    <div class="flex-1 min-w-[200px]">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </div>
+                            <input type="text" id="search" name="search" value="{{ request('search') }}" 
+                                placeholder="Search by name or description..."
+                                class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all">
+                        </div>
+                    </div>
 
+                    <!-- Filter Dropdown -->
+                    <div class="relative w-full sm:w-auto">
+                        <button type="button" onclick="toggleFilterDropdown()" 
+                            class="w-full sm:w-auto flex items-center justify-between gap-2 bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-xl hover:border-gray-300 shadow-sm transition-all duration-300 font-semibold whitespace-nowrap">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                            </svg>
+                            Filters
+                            <span id="filterCount" class="hidden ml-1 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-full">0</span>
+                            <svg class="w-4 h-4 transition-transform" id="filterDropdownIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+
+                        <!-- Filter Dropdown Content -->
+                        <div id="filterDropdown" class="hidden fixed mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 max-h-[calc(100vh-200px)] overflow-y-auto z-[9999]">
+                            <div class="p-4 space-y-4">
+                                <!-- Category Filter -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-3">Filter by Category</label>
+                                    <div class="space-y-2">
+                                        @foreach($categories as $category)
+                                            <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                                <input type="checkbox" name="categories[]" value="{{ $category->category_id }}" 
+                                                    {{ in_array($category->category_id, request('categories', [])) ? 'checked' : '' }}
+                                                    onchange="updateFilterCount()"
+                                                    class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                                                <span class="ml-3 text-sm font-medium text-gray-700">{{ $category->name }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-gray-200"></div>
+
+                                <!-- Status Filter -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-3">Filter by Status</label>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                            <input type="checkbox" name="product_status[]" value="available" 
+                                                {{ in_array('available', request('product_status', [])) ? 'checked' : '' }}
+                                                onchange="updateFilterCount()"
+                                                class="w-4 h-4 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                                            <span class="ml-3 text-sm font-medium text-gray-700">Available</span>
+                                            <span class="ml-auto px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Available</span>
+                                        </label>
+
+                                        <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                            <input type="checkbox" name="product_status[]" value="unavailable" 
+                                                {{ in_array('unavailable', request('product_status', [])) ? 'checked' : '' }}
+                                                onchange="updateFilterCount()"
+                                                class="w-4 h-4 text-red-600 rounded focus:ring-2 focus:ring-red-500">
+                                            <span class="ml-3 text-sm font-medium text-gray-700">Unavailable</span>
+                                            <span class="ml-auto px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">Unavailable</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="border-t border-gray-200 pt-4 flex gap-2">
+                                    <button type="button" onclick="clearAllFilters()" 
+                                        class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                        Clear All
+                                    </button>
+                                    <button type="submit" 
+                                        class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors">
+                                        Apply Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Button -->
+                    <div class="w-full sm:w-auto">
+                        <button type="submit"
+                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            Search
+                        </button>
+                    </div>
+
+                    <!-- Clear Filters -->
+                    @if(request('search') || request('categories') || request('product_status'))
+                        <div class="w-full sm:w-auto">
+                            <a href="{{ route('products.index') }}"
+                                class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-all duration-300 font-semibold shadow-md whitespace-nowrap">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                Clear Filters
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </form>
+        </div>
+
+        <!-- Products Table -->
         <div class="overflow-x-auto">
-            <table class="min-w-full border border-gray-200 rounded-lg">
-                <thead class="bg-gray-800 text-white">
-                    <tr>
-                        <th class="px-4 py-2 text-left">ID</th>
-                        <th class="px-4 py-2 text-left">Category</th>
-                        <th class="px-4 py-2 text-left">Name</th>
-                        <th class="px-4 py-2 text-left">Description</th>
-                        <th class="px-4 py-2 text-left">Price</th>
-                        <th class="px-4 py-2 text-left">Status</th>
+            <table class="min-w-full">
+                <thead>
+                    <tr class="bg-gray-100 border-b border-gray-200">
+                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">ID</th>
+                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
+                        <th class="hidden md:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Price</th>
+                        <th class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
-                    @foreach ($products as $product)
-                        <tr class="hover:bg-gray-100 transition">
-                            <td class="px-4 py-2 text-gray-700">{{ $product->product_id }}</td>
-                            <td class="px-4 py-2 text-gray-700">{{ $product->category->name ?? 'N/A' }}</td>
-                            <td class="px-4 py-2 font-medium text-gray-800">{{ $product->name }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ $product->description }}</td>
-                            <td class="px-4 py-2 text-gray-700">₱{{ number_format($product->price, 2) }}</td>
-                            <td class="px-4 py-2">
-                                <span class="px-2 py-1 rounded-full text-sm 
-                                    {{ $product->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($products as $product)
+                        <tr class="hover:bg-gray-50 transition-colors group">
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 text-gray-700 font-medium whitespace-nowrap text-sm">#{{ $product->product_id }}</td>
+                            
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 min-w-[150px]">
+                                <button onclick="showProduct('{{ $product->product_id }}')" class="hover:text-gray-900 transition-colors text-left w-full">
+                                    <p class="font-semibold text-gray-900 text-sm sm:text-base">{{ $product->name }}</p>
+                                    <p class="text-gray-500 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-none">{{ Str::limit($product->description, 50) }}</p>
+                                    <p class="text-gray-600 text-xs mt-1 md:hidden">{{ $product->category->name ?? 'N/A' }}</p>
+                                </button>
+                            </td>
+
+                            <td class="hidden md:table-cell px-3 sm:px-6 py-3 sm:py-4 text-gray-700 text-sm">{{ $product->category->name ?? 'N/A' }}</td>
+
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 text-gray-700 font-semibold text-sm whitespace-nowrap">₱{{ number_format($product->price, 2) }}</td>
+
+                            <td class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap
+                                    {{ $product->status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                                     {{ ucfirst($product->status) }}
                                 </span>
                             </td>
+
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 text-center">
+                                <div class="flex items-center justify-center gap-2 sm:gap-3">
+                                    <button onclick="showProduct('{{ $product->product_id }}')" class="text-gray-500 hover:text-gray-700 p-1" title="View">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+
+                                    <button onclick="editProduct('{{ $product->product_id }}')" class="text-blue-500 hover:text-blue-700 p-1" title="Edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                                        </svg>
+                                    </button>
+
+                                    <button onclick="openDeleteModal('{{ route('products.destroy', $product->product_id) }}')" class="text-red-500 hover:text-red-700 p-1" title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-3 sm:px-6 py-8 sm:py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center justify-center">
+                                    <svg class="w-12 h-12 sm:w-16 sm:h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                                    </svg>
+                                    <p class="text-base sm:text-lg font-medium">No products found</p>
+                                    <p class="text-xs sm:text-sm mt-1">Try adjusting your search or filter criteria</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        @if($products->total() > 0)
+            <div class="flex flex-col sm:flex-row items-center justify-between p-4 sm:p-6 bg-gray-50 border-t border-gray-200 gap-4">
+                <div class="text-sm text-gray-600">
+                    Showing <span class="font-semibold text-gray-900">{{ $products->firstItem() }}</span> to
+                    <span class="font-semibold text-gray-900">{{ $products->lastItem() }}</span> of
+                    <span class="font-semibold text-gray-900">{{ $products->total() }}</span> products
+                </div>
+
+                <div class="flex gap-2">
+                    @if($products->onFirstPage())
+                        <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Prev</span>
+                    @else
+                        <a href="{{ $products->previousPageUrl() }}" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-md transition-all duration-200 font-medium">Prev</a>
+                    @endif
+
+                    <span class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium sm:hidden">
+                        {{ $products->currentPage() }} / {{ $products->lastPage() }}
+                    </span>
+
+                    @if($products->hasMorePages())
+                        <a href="{{ $products->nextPageUrl() }}" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-md transition-all duration-200 font-medium">Next</a>
+                    @else
+                        <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Next</span>
+                    @endif
+                </div>
+            </div>
+        @endif
     </div>
 
-</body>
+    <!-- Add Product Modal -->
+    <div id="addProductModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+        <div class="absolute inset-0" onclick="closeModal('addProductModal')"></div>
+
+        <div class="relative bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+            <header class="bg-gray-600 text-white p-5 rounded-t-2xl flex-shrink-0">
+                <h2 class="text-xl font-semibold">Add New Product</h2>
+            </header>
+
+            <div class="overflow-y-auto flex-1 modal-scrollbar">
+                <form action="{{ route('products.store') }}" method="POST" class="p-6 md:p-8 space-y-6">
+                    @csrf
+
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" id="name" required
+                            class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                        @error('name')
+                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="category_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category <span class="text-red-500">*</span></label>
+                        <select name="category_id" id="category_id" required
+                            class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                            <option value="">Select a category</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->category_id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('category_id')
+                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                        <textarea name="description" id="description" rows="3"
+                            class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500"></textarea>
+                        @error('description')
+                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Price (₱) <span class="text-red-500">*</span></label>
+                            <input type="number" step="0.01" name="price" id="price" required min="0"
+                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                        </div>
+
+                        <div>
+                            <label for="edit_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status <span class="text-red-500">*</span></label>
+                            <select name="status" id="edit_status" required
+                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                <option value="available">Available</option>
+                                <option value="unavailable">Unavailable</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-gray-100 dark:bg-gray-900 pb-2">
+                        <button type="button" onclick="closeModal('addProductModal')"
+                            class="px-6 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
+                        <button type="submit"
+                            class="px-6 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto">Add Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Product Modal -->
+    <div id="productShowModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden p-4">
+        <div class="absolute inset-0" onclick="closeModal('productShowModal')"></div>
+
+        <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto modal-scrollbar">
+            <header class="bg-gray-600 text-white p-4 sm:p-5 rounded-t-2xl sticky top-0 z-10 flex justify-between items-center">
+                <h2 class="text-lg sm:text-xl font-semibold">Product Details</h2>
+                <button onclick="closeModal('productShowModal')" class="text-white hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </header>
+
+            <div id="productShowContent" class="p-4 sm:p-6">
+                <div class="flex justify-center items-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Edit Product Modal -->
+    <div id="editProductModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden p-4">
+        <div class="absolute inset-0" onclick="closeModal('editProductModal')"></div>
+
+        <div class="relative bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <header class="bg-gray-600 text-white p-4 sm:p-5 rounded-t-2xl flex-shrink-0">
+                <h2 class="text-lg sm:text-xl font-semibold">Edit Product</h2>
+            </header>
+
+            <div class="overflow-y-auto flex-1 modal-scrollbar">
+                <form id="editProductForm" method="POST" class="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
+                    @csrf
+                    @method('PUT')
+
+                    <div>
+                        <label for="edit_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" id="edit_name" required
+                            class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                    </div>
+
+                    <div>
+                        <label for="edit_category_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category <span class="text-red-500">*</span></label>
+                        <select name="category_id" id="edit_category_id" required
+                            class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                            <option value="">Select a category</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->category_id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="edit_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                        <textarea name="description" id="edit_description" rows="3"
+                            class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit_price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Price (₱) <span class="text-red-500">*</span></label>
+                            <input type="number" step="0.01" name="price" id="edit_price" required min="0"
+                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                        </div>
+
+                        <div>
+                            <label for="edit_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status <span class="text-red-500">*</span></label>
+                            <select name="status" id="edit_status" required
+                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                <option value="available">Available</option>
+                                <option value="unavailable">Unavailable</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-gray-100 dark:bg-gray-900 pb-2">
+                        <button type="button" onclick="closeModal('editProductModal')"
+                            class="px-6 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
+                        <button type="submit"
+                            class="px-6 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto">Update Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Modal Functions
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        const scrollY = window.scrollY;
+        
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        
+        modal.classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        const scrollY = document.body.style.top;
+        
+        modal.classList.add('hidden');
+        
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+
+    // Filter Functions
+    function toggleFilterDropdown() {
+        const dropdown = document.getElementById('filterDropdown');
+        const button = event.target.closest('button');
+        const icon = document.getElementById('filterDropdownIcon');
+        
+        const rect = button.getBoundingClientRect();
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+        
+        dropdown.classList.toggle('hidden');
+        icon.classList.toggle('rotate-180');
+    }
+
+    function updateFilterCount() {
+        const checkboxes = document.querySelectorAll('#filterDropdown input[type="checkbox"]:checked');
+        const count = checkboxes.length;
+        const badge = document.getElementById('filterCount');
+        
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+    }
+
+    function clearAllFilters() {
+        const checkboxes = document.querySelectorAll('#filterDropdown input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+        updateFilterCount();
+        
+        const form = document.querySelector('form[role="search"]');
+        if (form) form.submit();
+    }
+
+    // Edit Product Function
+    function editProduct(productId) {
+        fetch(`/products/${productId}/edit`)
+            .then(res => res.json())
+            .then(product => {
+                document.getElementById('edit_name').value = product.name;
+                document.getElementById('edit_category_id').value = product.category_id;
+                document.getElementById('edit_description').value = product.description || '';
+                document.getElementById('edit_price').value = product.price;
+                document.getElementById('edit_status').value = product.status;
+
+                document.getElementById('editProductForm').action = `/products/${product.product_id}`;
+                openModal('editProductModal');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to load product data');
+            });
+    }
+
+    // Show Product Function
+    function showProduct(productId) {
+        openModal('productShowModal');
+        
+        document.getElementById('productShowContent').innerHTML = `
+            <div class="flex justify-center items-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
+            </div>
+        `;
+
+        fetch(`/products/${productId}`)
+            .then(res => {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.json();
+            })
+            .then(product => {
+                renderProductDetails(product);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('productShowContent').innerHTML = `
+                    <div class="text-center py-12">
+                        <p class="text-red-600">Error loading product details</p>
+                    </div>
+                `;
+            });
+    }
+
+    function renderProductDetails(product) {
+        const content = document.getElementById('productShowContent');
+        const statusColor = product.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+        
+        let html = `
+            <div class="space-y-6">
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">${product.name}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Product ID: #${product.product_id}</p>
+                        </div>
+                        <span class="px-3 py-1 text-sm rounded-full ${statusColor}">${product.status.charAt(0).toUpperCase() + product.status.slice(1)}</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Category</p>
+                            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${product.category ? product.category.name : 'N/A'}</p>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Price</p>
+                            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">₱${parseFloat(product.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                        </div>
+                    </div>
+
+                    ${product.description ? `
+                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Description</h4>
+                            <p class="text-gray-600 dark:text-gray-400">${product.description}</p>
+                        </div>
+                    ` : ''}
+
+                    ${product.inventory ? `
+                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4">Inventory Information</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Quantity</p>
+                                    <p class="text-gray-800 dark:text-gray-200 font-medium">${product.inventory.quantity || 0}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${product.created_at ? `
+                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Created At</p>
+                                    <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(product.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                </div>
+                                ${product.updated_at ? `
+                                    <div>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Last Updated</p>
+                                        <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(product.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                        <button onclick="closeModal('productShowModal'); editProduct('${product.product_id}');" 
+                                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Edit Product
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        content.innerHTML = html;
+    }
+
+    // Delete Modal with SweetAlert
+    function openDeleteModal(actionUrl) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = actionUrl;
+                    
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_token';
+                    csrfInput.value = csrfToken;
+                    
+                    const methodInput = document.createElement('input');
+                    methodInput.type = 'hidden';
+                    methodInput.name = '_method';
+                    methodInput.value = 'DELETE';
+                    
+                    form.appendChild(csrfInput);
+                    form.appendChild(methodInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        } else {
+            if (confirm('Are you sure you want to delete this product?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = actionUrl;
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = csrfToken;
+                
+                const methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'DELETE';
+                
+                form.appendChild(csrfInput);
+                form.appendChild(methodInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    }
+
+    // Initialize on DOM Ready
+    document.addEventListener('DOMContentLoaded', function() {
+        updateFilterCount();
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('filterDropdown');
+            const button = event.target.closest('button[onclick="toggleFilterDropdown()"]');
+            
+            if (!button && dropdown && !dropdown.contains(event.target)) {
+                dropdown.classList.add('hidden');
+                const icon = document.getElementById('filterDropdownIcon');
+                if (icon) icon.classList.remove('rotate-180');
+            }
+        });
+
+        // Handle Escape key to close modals
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const openModals = document.querySelectorAll('.backdrop-blur-sm:not(.hidden)');
+                openModals.forEach(modal => {
+                    const modalId = modal.id;
+                    if (modalId) closeModal(modalId);
+                });
+            }
+        });
+    });
+    </script>
 
 @endsection
+ 
