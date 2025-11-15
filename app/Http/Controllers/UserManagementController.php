@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Logs;
+use App\Models\MemberProfile;
 use App\Models\User;
 use Auth;
 use Illuminate\Http\Request;
@@ -67,6 +68,18 @@ class UserManagementController extends Controller
             'height' => 'nullable|numeric',
             'weight' => 'nullable|numeric',
             'mobile_number' => 'nullable|string|max:20',
+        ], [
+            'first_name.required' => 'First name is required',
+            'last_name.required' => 'Last name is required',
+            'username.required' => 'Username is required',
+            'email.required' => 'Email is required',
+            'username.unique' => 'The username has already been taken',
+            'email.unique' => 'The email has already been taken',
+            'password.required' => 'Password is required',
+            'password.min' => 'Password must be at least 6 characters',
+            'password.confirmed' => 'Password confirmation does not match',
+
+
         ]);
 
         $authUser = Auth::user();
@@ -84,7 +97,7 @@ class UserManagementController extends Controller
 
       
         if ($user->role === 'member' && ($request->has('plan_id') || $request->has('sex'))) {
-            \App\Models\MemberProfile::create([
+            MemberProfile::create([
                 'user_id' => $user->user_id,
                 'plan_id' => $validated['plan_id'] ?? null,
                 'sex' => $validated['sex'] ?? null,
@@ -112,20 +125,34 @@ class UserManagementController extends Controller
         return response()->json($user);
     }
 
-    public function edit($id)
-    {
-        $user = User::with('member')->findOrFail($id);
+   public function edit($id)
+{
+    $user = User::with('member')->findOrFail($id);
 
-        return response()->json([
-            'user_id' => $user->user_id,
-            'first_name' => $user->first_name,
-            'last_name' => $user->last_name,
-            'username' => $user->username,
-            'email' => $user->email,
-            'role' => $user->role,
-            'status' => $user->status,
-        ]);
+    $response = [
+        'user_id' => $user->user_id,
+        'first_name' => $user->first_name,
+        'last_name' => $user->last_name,
+        'username' => $user->username,
+        'email' => $user->email,
+        'role' => $user->role,
+        'status' => $user->status,
+    ];
+
+    // Add member data if exists
+    if ($user->member) {
+        $response['member'] = [
+            'plan_id' => $user->member->plan_id,
+            'sex' => $user->member->sex,
+            'birthday' => $user->member->birthday,
+            'height' => $user->member->height,
+            'weight' => $user->member->weight,
+            'mobile_number' => $user->member->mobile_number,
+        ];
     }
+
+    return response()->json($response);
+}
 
     public function update(Request $request, string $id)
     {
@@ -146,6 +173,14 @@ class UserManagementController extends Controller
             'height' => 'nullable|numeric',
             'weight' => 'nullable|numeric',
             'mobile_number' => 'nullable|string|max:20',
+        ],[
+            'first_name.required' => 'First name is required',
+            'last_name.required' => 'Last name is required',
+            'username.required' => 'Username is required',
+            'username.unique' => 'The username has already been taken',
+            'email.required' => 'Email is required',
+            'email.unique' => 'The email has already been taken',
+
         ]);
 
         $user->first_name = $validated['first_name'];
@@ -162,7 +197,7 @@ class UserManagementController extends Controller
 
         $user->save();
 
-        // Handle member profile
+       
         if ($user->role === 'member') {
             $memberData = [
                 'plan_id' => $validated['plan_id'] ?? null,
@@ -217,13 +252,15 @@ class UserManagementController extends Controller
                 ->with('error', 'You cannot delete your own account.');
         }
 
-        $userToDelete->delete();
-
         Logs::create([
             'user_id' => $currentUser->user_id,
             'action' => "{$currentUser->last_name} deleted user: {$userToDelete->last_name}.",
             'timestamp' => now(),
         ]);
+
+        $userToDelete->delete();
+
+  
 
         return redirect()->route('admin.user_management')
             ->with('success', 'User deleted successfully');

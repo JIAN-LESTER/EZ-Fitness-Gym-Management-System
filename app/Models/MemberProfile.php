@@ -11,6 +11,8 @@ class MemberProfile extends Model
     use HasFactory, Notifiable;
 
     public $timestamps = false;
+    protected $table = 'member_profiles';
+
 
          protected $primaryKey = 'member_id'; 
 
