@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MapsController;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\ProductController;
 
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('home');
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('loginForm');
@@ -89,3 +90,7 @@ Route::post('/email/verification-notification', [AuthController::class, 'resendV
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
     ->middleware(['signed'])
     ->name('verification.verify');
+
+
+Route::apiResource('products', ProductController::class);
+Route::get('/products', [ProductController::class, 'view']);
