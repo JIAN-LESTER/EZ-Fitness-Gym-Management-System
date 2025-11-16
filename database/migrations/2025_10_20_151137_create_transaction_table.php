@@ -1,34 +1,31 @@
-<?php
+    <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+    use Illuminate\Database\Migrations\Migration;
+    use Illuminate\Database\Schema\Blueprint;
+    use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-
-    public $timestamps = false;
-
-    public function up(): void
+    return new class extends Migration
     {
-        Schema::create('transactions', function (Blueprint $table) {
-            $table->id('transaction_id');
-            $table->foreignId('sales_id')->references('sales_id')->on('sales')->onDelete('cascade');
-            $table->decimal('amount_paid', 10, 2);
-            $table->enum('payment_method', ['cash', 'credit_card', 'qr']);
-            $table->string('qr_code')->nullable();
-            $table->timestamp('transaction_date');
-        });
-    }
+        /**
+         * Run the migrations.
+         */
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('transactions');
-    }
-};
+
+        public function up(): void
+        {
+            Schema::create('transactions', function (Blueprint $table) {
+                $table->id('transaction_id');
+                $table->enum('type', ['sales', 'stock_in', 'stock_out']);
+                $table->foreignId('sales_id')->nullable()->references('sales_id')->on('sales')->onDelete('cascade');
+                $table->timestamps();
+            });
+        }
+
+        /**
+         * Reverse the migrations.
+         */
+        public function down(): void
+        {
+            Schema::dropIfExists('transactions');
+        }
+    };

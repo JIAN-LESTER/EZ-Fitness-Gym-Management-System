@@ -79,8 +79,28 @@ $member = $user->member;
                                 </svg>
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Inventory</span>
                             </a>
-                                  <a href="#" @click="profileOpen = false"
-                                 class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
+
+                                  <a href="{{ route('pos.index') }}" @click="profileOpen = false"
+                    class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('pos.index') ? 'bg-white/20 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-cloak class="transition-opacity">POS</span>
+                </a>
+
+                            <a href="{{ route('categories.index') }}" @click="profileOpen = false"
+                    class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('categories.index') ? 'bg-white/20 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-cloak class="transition-opacity">Categories</span>
+                </a>
+                                  <a href="{{ route('sales.index') }}" @click="profileOpen = false"
+                                 class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('sales.index') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -88,8 +108,8 @@ $member = $user->member;
                                 </svg>
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Sales</span>
                             </a>
-                                      <a href="#" @click="profileOpen = false"
-                                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
+                                      <a href="{{ route('transactions.index') }}" @click="profileOpen = false"
+                                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('transactions.index') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -127,15 +147,7 @@ $member = $user->member;
                     <span x-show="sidebarOpen" x-cloak class="transition-opacity">Dashboard</span>
                 </a>
 
-                <a href="#" @click="profileOpen = false"
-                    class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
-                    </svg>
-                    <span x-show="sidebarOpen" x-cloak class="transition-opacity">Store</span>
-                </a>
+          
             @endif
 
 

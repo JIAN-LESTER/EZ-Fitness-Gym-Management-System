@@ -14,10 +14,7 @@ class Transactions extends Model
     protected $primaryKey = 'transaction_id';
     protected $fillable = [
         'sales_id',
-        'amount_paid',
-        'payment_method',
-        'qr_code',
-        'transaction_date'
+        'type',
     ];
 
     public function sale()

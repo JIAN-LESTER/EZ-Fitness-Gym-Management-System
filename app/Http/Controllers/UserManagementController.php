@@ -214,7 +214,7 @@ class UserManagementController extends Controller
                 $user->member->update($memberData);
             } else if ($request->has('plan_id') || $request->has('sex')) {
                
-                \App\Models\MemberProfile::create(array_merge($memberData, [
+                MemberProfile::create(array_merge($memberData, [
                     'user_id' => $user->user_id,
                     'status' => 'inactive',
                 ]));

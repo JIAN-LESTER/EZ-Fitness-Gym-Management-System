@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inventory;
+use App\Models\Logs;
 use App\Models\Product;
 use App\Models\Categories;
+use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -20,22 +22,22 @@ class ProductController extends Controller
         // Search functionality - name or description
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
-            $query->whereHas('product', function($q) use ($search) {
+            $query->whereHas('product', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
         // Filter by category
         if ($request->has('categories') && !empty($request->categories)) {
-            $query->whereHas('product', function($q) use ($request) {
+            $query->whereHas('product', function ($q) use ($request) {
                 $q->whereIn('category_id', $request->categories);
             });
         }
 
         // Filter by product status
         if ($request->has('product_status') && !empty($request->product_status)) {
-            $query->whereHas('product', function($q) use ($request) {
+            $query->whereHas('product', function ($q) use ($request) {
                 $q->whereIn('status', $request->product_status);
             });
         }
@@ -51,6 +53,7 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+
         $validated = $request->validate([
             'category_id' => 'required|integer|exists:categories,category_id',
             'name' => 'required|string|max:255',
@@ -66,10 +69,10 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $fileName = 'product_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            
+
             // Store in storage/app/public/products
             $path = $file->storeAs('products', $fileName, 'public');
-            
+
             // Save only the relative path (products/filename.jpg)
             $imagePath = $path;
         }
@@ -84,10 +87,20 @@ class ProductController extends Controller
             'image' => $imagePath  // This will save as "products/product_xxx.jpg"
         ]);
 
+
+
         // Create inventory
         Inventory::create([
             'product_id' => $product->product_id,
             'quantity' => $validated['quantity'],
+        ]);
+
+        $currentUser = Auth::user();
+
+        Logs::create([
+            'user_id' => $currentUser->user_id,
+            'action' => "{$currentUser->last_name} added a new product: {$product->name}.",
+            'timestamp' => now(),
         ]);
 
         return redirect()->route('products.index')
@@ -155,10 +168,10 @@ class ProductController extends Controller
 
             $file = $request->file('image');
             $fileName = 'product_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            
+
             // Store in storage/app/public/products
             $path = $file->storeAs('products', $fileName, 'public');
-            
+
             // Save only the relative path
             $validated['image'] = $path;
         }
@@ -166,6 +179,14 @@ class ProductController extends Controller
         // Update records
         $product->update($validated);
         $inventory->update($inventoryValidated);
+
+        $currentUser = Auth::user();
+
+        Logs::create([
+            'user_id' => $currentUser->user_id,
+            'action' => "{$currentUser->last_name} updated a product: {$product->name}.",
+            'timestamp' => now(),
+        ]);
 
         return redirect()->route('products.index')
             ->with('success', 'Product updated successfully!');
@@ -183,6 +204,14 @@ class ProductController extends Controller
         if ($product->image && Storage::disk('public')->exists($product->image)) {
             Storage::disk('public')->delete($product->image);
         }
+
+        $currentUser = Auth::user();
+
+        Logs::create([
+            'user_id' => $currentUser->user_id,
+            'action' => "{$currentUser->last_name} deleted a product: {$product->name}.",
+            'timestamp' => now(),
+        ]);
 
         $inventory->delete();
         $product->delete();
