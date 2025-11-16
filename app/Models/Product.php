@@ -18,13 +18,14 @@ class Product extends Model
         'description',
         'price',
         'status',
+        'image',
 
 
     ];
 
     public function inventory()
     {
-        return $this->hasOne(Inventory::class, 'inventory_id', 'inventory_id');
+        return $this->hasOne(Inventory::class, 'product_id', 'product_id');
     }
 
     public function category()
