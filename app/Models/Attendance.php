@@ -17,6 +17,7 @@ class Attendance extends Model
         'check_in_time',
         'check_out_time',
         'status',
+        'duration,'
     ];
 
     public function member()
