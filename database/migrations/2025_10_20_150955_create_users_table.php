@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('role', ['admin', 'staff', 'member'])->default('member');
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->longText('avatar')->nullable();
+                      $table->timestamp('email_verified_at')->nullable();
             
             $table->rememberToken();
             $table->timestamps();

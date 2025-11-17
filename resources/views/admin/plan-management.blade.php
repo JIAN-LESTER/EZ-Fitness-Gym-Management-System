@@ -1,4 +1,10 @@
 @extends('layouts.app')
+@section('title', 'Plans')
+@section('header', 'Plans')
+
+
+
+
 
 @section('content')
     <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
@@ -21,7 +27,6 @@
             <form method="GET" action="{{ route('admin.plan_management') }}"
                 class="flex flex-wrap lg:flex-nowrap items-end gap-3">
                 <div class="flex-1 min-w-[200px]">
-                  
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,7 +37,6 @@
                         <input type="text" name="search" id="search" value="{{ $search ?? '' }}"
                             placeholder="Search by plan name or price..."
                             class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all">
-                            
                     </div>
                 </div>
                 <button type="submit"
@@ -55,63 +59,62 @@
             </form>
         </div>
 
-        <!-- Table -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full">
-                <thead>
-                    <tr class="bg-gray-100 border-b border-gray-200">
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Plan
-                            Name</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Details
-                                </th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Price
-                            </th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Duration (Days)</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Total
-                            Members</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($plans as $plan)
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4 text-gray-900 font-medium">{{ $plan->name }}</td>
-                            <td class="px-6 py-4 text-gray-900 font-medium">{{ $plan->details }}</td>
-                            <td class="px-6 py-4 text-gray-700 font-medium">₱{{ number_format($plan->price) }}</td>
-                            <td class="px-6 py-4 text-gray-700 font-medium">{{ $plan->duration_days }}</td>
-                            <td class="px-6 py-4 text-gray-700 font-medium">{{ $plan->members_count }}</td>
-                            <td class="px-6 py-4">
-                                <div class="flex gap-2">
-                                    <button onclick='editPlan(@json($plan))'
-                                        class="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold transition-all">
-                                        Edit
-                                    </button>
-                                    <button onclick='openDeleteModal(@json($plan))'
-                                        class="px-4 py-2 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 font-semibold transition-all">
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                                <div class="flex flex-col items-center">
-                                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <p class="text-lg font-medium">No plans found</p>
-                                    <p class="text-sm mt-1">Try adjusting your search criteria</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+        <!-- Cards Grid -->
+        <div class="p-6">
+            @forelse($plans as $plan)
+                @if($loop->first)
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @endif
+                
+                <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200">
+                    <!-- Plan Header -->
+                    <div class="mb-4">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $plan->name }}</h3>
+                        <p class="text-sm text-gray-600 line-clamp-2">{{ $plan->details }}</p>
+                    </div>
+
+                    <!-- Plan Details -->
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-600 font-medium">Price</span>
+                            <span class="text-lg font-bold text-gray-900">₱{{ number_format($plan->price) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-600 font-medium">Duration</span>
+                            <span class="text-sm font-semibold text-gray-700">{{ $plan->duration_days }} days</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2">
+                            <span class="text-sm text-gray-600 font-medium">Members</span>
+                            <span class="text-sm font-semibold text-gray-700">{{ $plan->members_count }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-2">
+                        <button onclick='editPlan(@json($plan))'
+                            class="flex-1 px-4 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold transition-all text-sm">
+                            Edit
+                        </button>
+                        <button onclick='openDeleteModal(@json($plan))'
+                            class="flex-1 px-4 py-2.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 font-semibold transition-all text-sm">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+
+                @if($loop->last)
+                    </div>
+                @endif
+            @empty
+                <div class="flex flex-col items-center justify-center py-16">
+                    <svg class="w-20 h-20 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p class="text-lg font-medium text-gray-500">No plans found</p>
+                    <p class="text-sm mt-1 text-gray-400">Try adjusting your search criteria</p>
+                </div>
+            @endforelse
         </div>
 
         <!-- Pagination -->
@@ -141,34 +144,33 @@
                     <input type="text" name="name" id="add_name" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all"
                         placeholder="e.g., Basic Plan">
-                                @error('add_name')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+                    @error('add_name')
+                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
                 </div>
                 <div>
                     <label for="add_details" class="block text-sm font-semibold text-gray-700 mb-2">Details</label>
                     <input type="text" name="details" id="add_details" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all"
                         placeholder="e.g., This plan is good for 1 year">
-                              
                 </div>
                 <div>
                     <label for="add_price" class="block text-sm font-semibold text-gray-700 mb-2">Price (₱)</label>
                     <input type="number" name="price" id="add_price" step="0.01" min="0" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all"
                         placeholder="0.00">
-                                @error('add_price')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+                    @error('add_price')
+                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
                 </div>
                 <div>
                     <label for="add_duration" class="block text-sm font-semibold text-gray-700 mb-2">Duration (Days)</label>
                     <input type="number" name="duration_days" id="add_duration" min="1" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all"
                         placeholder="30">
-                                @error('add_duration')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+                    @error('add_duration')
+                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
                 </div>
                 <div class="flex gap-3 pt-4">
                     <button type="button" onclick="closeModal('addPlanModal')"
@@ -203,32 +205,30 @@
                     <label for="edit_name" class="block text-sm font-semibold text-gray-700 mb-2">Plan Name</label>
                     <input type="text" name="name" id="edit_name" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all">
-                                @error('edit_name')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+                    @error('edit_name')
+                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
                 </div>
                 <div>
                     <label for="edit_details" class="block text-sm font-semibold text-gray-700 mb-2">Details</label>
                     <input type="text" name="details" id="edit_details" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all">
-                          
                 </div>
                 <div>
                     <label for="edit_price" class="block text-sm font-semibold text-gray-700 mb-2">Price (₱)</label>
                     <input type="number" name="price" id="edit_price" step="0.01" min="0" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all">
-                                @error('edit_price')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+                    @error('edit_price')
+                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
                 </div>
                 <div>
-                    <label for="edit_duration" class="block text-sm font-semibold text-gray-700 mb-2">Duration
-                        (Days)</label>
+                    <label for="edit_duration" class="block text-sm font-semibold text-gray-700 mb-2">Duration (Days)</label>
                     <input type="number" name="duration_days" id="edit_duration" min="1" 
                         class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-all">
-                                @error('edit_duration')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+                    @error('edit_duration')
+                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
                 </div>
                 <div class="flex gap-3 pt-4">
                     <button type="button" onclick="closeModal('editPlanModal')"
@@ -351,7 +351,6 @@
             clearAllErrors(form);
             
             const name = form.querySelector('[name="name"]');
-     
             const price = form.querySelector('[name="price"]');
             const duration = form.querySelector('[name="duration_days"]');
             
@@ -366,7 +365,6 @@
                 showError(name, 'Plan name must not exceed 100 characters');
                 valid = false;
             }
-            
             
             // Validate Price
             if (!price.value || price.value === '') {
@@ -404,7 +402,6 @@
 
         function setupLiveValidation(form) {
             const name = form.querySelector('[name="name"]');
- 
             const price = form.querySelector('[name="price"]');
             const duration = form.querySelector('[name="duration_days"]');
             
@@ -417,14 +414,6 @@
             
             name.addEventListener('input', function() {
                 if (this.value.trim() && this.value.trim().length >= 3) {
-                    clearError(this);
-                }
-            });
-            
-            
-            
-            details.addEventListener('input', function() {
-                if (this.value.trim() && this.value.trim().length >= 10) {
                     clearError(this);
                 }
             });

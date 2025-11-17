@@ -3,20 +3,26 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailVerificationController;
 
 use App\Http\Controllers\MemberProfileController;
 use App\Http\Controllers\MembershipPlanController;
+use App\Http\Controllers\POSController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SalesController;
 use App\Http\Controllers\SnapshotsController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TwoFactorAuthController;
 use App\Http\Controllers\UserManagementController;
 
+use App\Models\SalesItem;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MapsController;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\ProductController;
 
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('home');
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('loginForm');
@@ -93,7 +99,54 @@ Route::prefix('admin/user_crud')->name('admin.')->group(function () {
     Route::delete('/destroy/{id}', [UserManagementController::class, 'destroy'])->name('users-destroy');
 });
 
+Route::prefix('products')->name('products.')->group(function () {
+    Route::get('/', [ProductController::class, 'index'])->name('index');
+    Route::post('/', [ProductController::class, 'store'])->name('store');
+    Route::get('/{id}', [ProductController::class, 'show'])->name('show');
+    Route::get('/{id}/edit', [ProductController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [ProductController::class, 'update'])->name('update');
+    Route::delete('/{id}', [ProductController::class, 'destroy'])->name('destroy');
+});
+
+Route::middleware(['auth'])->group(function() {
+    // POS Main Page
+    Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+    
+    // Cart Operations
+    Route::post('/pos/add-to-cart', [POSController::class, 'addToCart'])->name('pos.addToCart');
+    Route::get('/pos/get-cart', [POSController::class, 'getCart'])->name('pos.getCart');
+    Route::post('/pos/update-cart-item', [POSController::class, 'updateCartItem'])->name('pos.updateCartItem');
+    Route::post('/pos/remove-cart-item', [POSController::class, 'removeCartItem'])->name('pos.removeCartItem');
+    
+    // Checkout
+    Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
+});
+
+Route::prefix('categories')->name('categories.')->group(function () {
+    Route::get('/', [CategoriesController::class, 'index'])->name('index');
+ Route::post('/', [CategoriesController::class, 'store'])->name('store');
+Route::get('/{id}', [CategoriesController::class, 'show'])->name('show');
+Route::get('/{id}/edit', [CategoriesController::class, 'edit'])->name('edit');
+Route::put('/{id}', [CategoriesController::class, 'update'])->name('update');
+Route::delete('/{id}', [CategoriesController::class, 'destroy'])->name('destroy');
+});
+
+
+Route::prefix('sales')->name('sales.')->group(function () {
+   Route::get('/', [SalesController::class, 'index'])->name('index');
+Route::get('/{id}', [SalesController::class, 'show'])->name('show');
+
+});
+
+Route::prefix('transactions')->name('transactions.')->group(function () {
+  Route::get('/', [TransactionController::class, 'index'])->name('index');
+Route::get('/{id}', [TransactionController::class, 'show'])->name('show');
+
+});
+
+
 Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
+
 
 
 

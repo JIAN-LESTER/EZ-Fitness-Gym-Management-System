@@ -18,13 +18,14 @@ class Product extends Model
         'description',
         'price',
         'status',
+        'image',
 
 
     ];
 
     public function inventory()
     {
-        return $this->hasOne(Inventory::class, 'inventory_id', 'inventory_id');
+        return $this->hasOne(Inventory::class, 'product_id', 'product_id');
     }
 
     public function category()
@@ -42,4 +43,15 @@ class Product extends Model
     {
         return $this->hasMany(StockOut::class, 'stock_out_id', 'stock_out_id');
     }
+
+    public function cartItems() {
+    return $this->hasMany(CartItem::class, 'product_id', 'product_id');
+}
+
+public function orderItems() {
+    return $this->hasMany(OrderItem::class, 'product_id', 'product_id');
+}
+
+
+
 }

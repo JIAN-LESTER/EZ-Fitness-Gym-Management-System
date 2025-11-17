@@ -6,31 +6,31 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
-class Sales extends Model
+class Orders extends Model
 {
-    use HasFactory, Notifiable;
+ use HasFactory, Notifiable;
 
 
-    protected $primaryKey = 'sales_id';
+    protected $primaryKey = 'order_id';
     protected $fillable = [
         'user_id',
         'total_amount',
         'payment_method',
         'status',
-    ];
 
-    public function items()
-    {
-        return $this->hasMany(SalesItem::class, 'sales_id', 'sales_id');
-    }
+
+    ];
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
-    public function transaction()
+    public function orderItem()
     {
-        return $this->hasOne(Transactions::class, 'transaction_id', 'transaction_id');
+        return $this->hasMany(OrderItem::class, 'order_id', 'order_id');
     }
+
+
+
 }

@@ -9,10 +9,11 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-      public function up(): void
+    public function up(): void
     {
-        Schema::table('membership_plans', function (Blueprint $table) {
-            $table->longText('details')->nullable()->after('name');
+        Schema::table('sales', function (Blueprint $table) {
+            $table->decimal('tax', 8, 2)->default(0)->after('total_amount');
+            $table->decimal('discount', 8, 2)->default(0)->after('tax');
         });
     }
 
@@ -21,7 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('membership_plans', function (Blueprint $table) {
+        Schema::table('sales', function (Blueprint $table) {
             //
         });
     }
