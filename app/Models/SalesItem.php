@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @mixin IdeHelperSalesItem
+ */
 class SalesItem extends Model
 {
     use HasFactory, Notifiable;

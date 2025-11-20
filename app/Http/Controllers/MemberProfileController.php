@@ -13,11 +13,11 @@ use App\Models\User;
 use App\Models\MemberProfile;
 use App\Models\MembershipPlan;
 use App\Models\Logs;
-use Auth;
-use Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Mail;
+use Illuminate\Support\Facades\Mail;
 
 class MemberProfileController extends Controller
 {
@@ -53,7 +53,7 @@ class MemberProfileController extends Controller
             'height' => 'required|numeric|min:0',
             'weight' => 'required|numeric|min:0',
             'mobile_number' => 'required|string|max:15',
-        ],[
+        ], [
             'sex.required' => 'Please select you sex',
             'mobile_number.required' => 'Mobile number is required',
             'weight.required' => 'Weight is required',
@@ -108,11 +108,11 @@ class MemberProfileController extends Controller
             $memberProfile->save();
 
             $qrUrl = asset("storage/{$qrRelativePath}");
-            
+
             // Send email with QR code
             Mail::to($member->email)->send(new MemberQRCodeMail($memberProfile, storage_path("app/public/{$qrRelativePath}")));
 
-         
+
             Logs::create([
                 'user_id' => $member->user_id,
                 'action' => "Completed membership profile setup for user: {$member->first_name} {$member->last_name}",
@@ -128,7 +128,7 @@ class MemberProfileController extends Controller
                 ]);
         }
 
-      
+
         Logs::create([
             'user_id' => $member->user_id,
             'action' => "Updated membership profile for user: {$member->first_name} {$member->last_name}",

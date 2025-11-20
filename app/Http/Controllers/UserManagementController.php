@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Logs;
 use App\Models\MemberProfile;
 use App\Models\User;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 class UserManagementController extends Controller
@@ -18,12 +18,12 @@ class UserManagementController extends Controller
         $statuses = $request->get('user_status', []);
 
         $users = User::query()
-            ->with('member.plan') 
+            ->with('member.plan')
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
                     $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere('username', 'like', "%{$search}%");
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%");
                 });
             })
             ->when(!empty($roles), function ($query) use ($roles) {
@@ -35,7 +35,7 @@ class UserManagementController extends Controller
             ->paginate(12)
             ->appends($request->query());
 
-      
+
         $plans = \App\Models\MembershipPlan::all();
 
         return view('admin.user-management', compact(
@@ -61,7 +61,7 @@ class UserManagementController extends Controller
             'email' => 'required|email|unique:users',
             'password' => 'required|min:6|confirmed',
             'role' => 'nullable|in:member,admin,staff',
-         
+
             'plan_id' => 'nullable|exists:membership_plans,plan_id',
             'sex' => 'nullable|in:male,female',
             'birthday' => 'nullable|date',
@@ -83,7 +83,7 @@ class UserManagementController extends Controller
         ]);
 
         $authUser = Auth::user();
-        
+
 
         $user = User::create([
             'first_name' => $validated['first_name'],
@@ -95,7 +95,7 @@ class UserManagementController extends Controller
             'status' => 'active',
         ]);
 
-      
+
         if ($user->role === 'member' && ($request->has('plan_id') || $request->has('sex'))) {
             MemberProfile::create([
                 'user_id' => $user->user_id,
@@ -105,7 +105,7 @@ class UserManagementController extends Controller
                 'height' => $validated['height'] ?? null,
                 'weight' => $validated['weight'] ?? null,
                 'mobile_number' => $validated['mobile_number'] ?? null,
-                'status' => 'inactive', 
+                'status' => 'inactive',
             ]);
         }
 
@@ -121,38 +121,38 @@ class UserManagementController extends Controller
     public function show(string $id)
     {
         $user = User::with(['member.plan', 'logs'])->findOrFail($id);
-        
+
         return response()->json($user);
     }
 
-   public function edit($id)
-{
-    $user = User::with('member')->findOrFail($id);
+    public function edit($id)
+    {
+        $user = User::with('member')->findOrFail($id);
 
-    $response = [
-        'user_id' => $user->user_id,
-        'first_name' => $user->first_name,
-        'last_name' => $user->last_name,
-        'username' => $user->username,
-        'email' => $user->email,
-        'role' => $user->role,
-        'status' => $user->status,
-    ];
-
-    // Add member data if exists
-    if ($user->member) {
-        $response['member'] = [
-            'plan_id' => $user->member->plan_id,
-            'sex' => $user->member->sex,
-            'birthday' => $user->member->birthday,
-            'height' => $user->member->height,
-            'weight' => $user->member->weight,
-            'mobile_number' => $user->member->mobile_number,
+        $response = [
+            'user_id' => $user->user_id,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'role' => $user->role,
+            'status' => $user->status,
         ];
-    }
 
-    return response()->json($response);
-}
+        // Add member data if exists
+        if ($user->member) {
+            $response['member'] = [
+                'plan_id' => $user->member->plan_id,
+                'sex' => $user->member->sex,
+                'birthday' => $user->member->birthday,
+                'height' => $user->member->height,
+                'weight' => $user->member->weight,
+                'mobile_number' => $user->member->mobile_number,
+            ];
+        }
+
+        return response()->json($response);
+    }
 
     public function update(Request $request, string $id)
     {
@@ -173,7 +173,7 @@ class UserManagementController extends Controller
             'height' => 'nullable|numeric',
             'weight' => 'nullable|numeric',
             'mobile_number' => 'nullable|string|max:20',
-        ],[
+        ], [
             'first_name.required' => 'First name is required',
             'last_name.required' => 'Last name is required',
             'username.required' => 'Username is required',
@@ -197,7 +197,7 @@ class UserManagementController extends Controller
 
         $user->save();
 
-       
+
         if ($user->role === 'member') {
             $memberData = [
                 'plan_id' => $validated['plan_id'] ?? null,
@@ -208,19 +208,19 @@ class UserManagementController extends Controller
                 'mobile_number' => $validated['mobile_number'] ?? null,
             ];
 
-          
+
             if ($user->member) {
-             
+
                 $user->member->update($memberData);
             } else if ($request->has('plan_id') || $request->has('sex')) {
-               
+
                 MemberProfile::create(array_merge($memberData, [
                     'user_id' => $user->user_id,
                     'status' => 'inactive',
                 ]));
             }
         } else {
-         
+
             if ($user->member) {
                 $user->member->delete();
             }
@@ -260,7 +260,7 @@ class UserManagementController extends Controller
 
         $userToDelete->delete();
 
-  
+
 
         return redirect()->route('admin.user_management')
             ->with('success', 'User deleted successfully');
