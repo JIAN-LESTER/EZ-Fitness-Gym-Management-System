@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Categories;
 use App\Models\Inventory;
+use App\Models\Product;
 use App\Models\SalesItem;
 use App\Models\Sales;
 use App\Models\Transactions;
@@ -228,9 +229,11 @@ class POSController extends Controller
     public function checkout(Request $request)
     {
         $userId = Auth::id();
+        $paymentMethod = $request->payment_method;
+        $discountPercentage = $request->discount_percentage ?? 0;
 
         try {
-            DB::transaction(function () use ($userId) {
+            DB::transaction(function () use ($paymentMethod, $discountPercentage, $userId) {
 
                 $cart = Cart::where('user_id', $userId)
                     ->where('status', 'active')
@@ -244,15 +247,23 @@ class POSController extends Controller
                 }
 
 
-                $total = $cartItems->sum('sub_total');
+                // Calculate totals with discount
+                $subtotal = $cartItems->sum('sub_total');
+                $discountAmount = ($subtotal * $discountPercentage) / 100;
+                $totalAfterDiscount = $subtotal - $discountAmount;
 
+                // Calculate VAT (12% on discounted amount)
+                $vatAmount = $totalAfterDiscount * 0.12;
+                $finalTotal = $totalAfterDiscount + $vatAmount;
 
                 $sale = Sales::create([
                     'user_id' => $userId,
-                    'total_amount' => $total,
-                    'payment_method' => 'cash',
+                    'total_amount' => $finalTotal,
+                    'tax' => $vatAmount, // Store VAT amount
+                    'discount' => $discountAmount, // Store discount amount
+                    'payment_method' => $paymentMethod,
                     'status' => 'paid',
-                    'date' => now(),
+                    'date' => now()
                 ]);
 
                 foreach ($cartItems as $item) {
@@ -266,6 +277,13 @@ class POSController extends Controller
 
                     // Deduct inventory
                     $inventory->decrement('quantity', $item->quantity);
+
+                    // Check if quantity of the product reached 0 after checkout
+                    if ($inventory->fresh()->quantity == 0) {
+                        // Update product status to unavailable
+                    Product::where('product_id', $item->product_id)
+                        ->update(['status' => 'unavailable']);
+                    }
 
 
                     SalesItem::create([
