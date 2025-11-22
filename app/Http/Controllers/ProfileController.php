@@ -5,13 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Logs;
 use App\Models\MemberProfile;
 use App\Models\User;
-use Auth;
-use Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
-   public function profile(string $memberId)
+    public function profile(string $memberId)
     {
         $member = User::findOrFail($memberId);
         $memberProfile = MemberProfile::where('user_id', $member->user_id)->first();
@@ -19,7 +19,7 @@ class ProfileController extends Controller
         return view('profile.profile', compact('member', 'memberProfile'));
     }
 
-        public function updateProfile(Request $request)
+    public function updateProfile(Request $request)
     {
         $user = Auth::user();
 
@@ -30,7 +30,7 @@ class ProfileController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->user_id . ',user_id',
             'old_password' => 'required_with:new_password',
             'new_password' => 'nullable|min:6|confirmed',
-        ],[
+        ], [
             'first_name.required' => 'First name is required',
             'last_name.required' => 'Last name is required',
             'username.required' => 'Username is required',
@@ -61,7 +61,7 @@ class ProfileController extends Controller
         // Update member profile if user is a member
         if ($user->role === 'member') {
             $memberProfile = MemberProfile::where('user_id', $user->user_id)->first();
-            
+
             if ($memberProfile) {
                 $memberValidated = $request->validate([
                     'plan_id' => 'nullable|exists:membership_plans,plan_id',
@@ -106,5 +106,4 @@ class ProfileController extends Controller
 
         return redirect()->back()->with('success', 'Profile updated successfully!');
     }
-
 }

@@ -17,11 +17,11 @@ class SalesController extends Controller
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
                     $q->where('sales_id', 'like', "%{$search}%")
-                      ->orWhereHas('user', function ($q2) use ($search) {
-                          $q2->where('first_name', 'like', "%{$search}%")
-                             ->orWhere('last_name', 'like', "%{$search}%")
-                             ->orWhere('username', 'like', "%{$search}%");
-                      });
+                        ->orWhereHas('user', function ($q2) use ($search) {
+                            $q2->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('username', 'like', "%{$search}%");
+                        });
                 });
             })
             ->when(!empty($statuses), function ($query) use ($statuses) {
@@ -39,9 +39,9 @@ class SalesController extends Controller
     }
 
     public function show($id)
-{
-    $sale = Sales::with(['user', 'items.product'])->findOrFail($id);
-    
-    return response()->json($sale);
-}
+    {
+        $sale = Sales::with(['user', 'items.product'])->findOrFail($id);
+
+        return response()->json($sale);
+    }
 }

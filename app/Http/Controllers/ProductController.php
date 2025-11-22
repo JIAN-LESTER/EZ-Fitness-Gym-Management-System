@@ -6,7 +6,7 @@ use App\Models\Inventory;
 use App\Models\Logs;
 use App\Models\Product;
 use App\Models\Categories;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -118,7 +118,6 @@ class ProductController extends Controller
                 ->firstOrFail();
 
             return response()->json($product);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Product not found',
