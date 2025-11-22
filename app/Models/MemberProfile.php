@@ -16,8 +16,7 @@ class MemberProfile extends Model
     public $timestamps = false;
     protected $table = 'member_profiles';
 
-
-         protected $primaryKey = 'member_id'; 
+    protected $primaryKey = 'member_id'; 
 
     protected $fillable = [
         'user_id',
@@ -34,17 +33,15 @@ class MemberProfile extends Model
     ];
 
     public function user() {
-    return $this->belongsTo(User::class, 'user_id', 'user_id');
-}
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
 
+    public function plan() {
+        return $this->belongsTo(MembershipPlan::class, 'plan_id', 'plan_id');
+    }
 
-public function plan() {
-    return $this->belongsTo(MembershipPlan::class, 'plan_id', 'plan_id');
-}
-
-
-public function attendance() {
-    return $this->hasMany(Attendance::class, 'attendance_id', 'attendance_id');
-}
-
+    // Fixed relationship
+    public function attendances() {
+        return $this->hasMany(Attendance::class, 'member_id', 'member_id');
+    }
 }

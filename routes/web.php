@@ -24,6 +24,9 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\ProductController;
 
+use App\Http\Controllers\AttendanceController;
+
+
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('home');
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('loginForm');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
@@ -192,3 +195,25 @@ Route::get('/check-username', [AuthController::class, 'checkUsername'])->name('c
 Route::get('/check-email', [AuthController::class, 'checkEmail'])->name('check.email');
 
 
+// Attendance Routes (add after your existing routes)
+Route::middleware(['auth'])->group(function () {
+    
+    // QR Scanner (Admin/Staff only)
+    Route::get('/attendance/scanner', [AttendanceController::class, 'scanner'])
+        ->middleware('admin')
+        ->name('attendance.scanner');
+    
+    // Process QR Scan
+    Route::post('/attendance/scan', [AttendanceController::class, 'scan'])
+        ->middleware('admin')
+        ->name('attendance.scan');
+    
+    // Admin - View all attendance logs
+    Route::get('/admin/attendance', [AttendanceController::class, 'adminLogs'])
+        ->middleware('admin')
+        ->name('attendance.admin.logs');
+    
+    // Member - View own attendance logs
+    Route::get('/member/attendance', [AttendanceController::class, 'memberLogs'])
+        ->name('attendance.member.logs');
+});
