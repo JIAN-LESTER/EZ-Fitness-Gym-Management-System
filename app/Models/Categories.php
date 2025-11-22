@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @mixin IdeHelperCategories
+ */
 class Categories extends Model
 {
     use HasFactory, Notifiable;
