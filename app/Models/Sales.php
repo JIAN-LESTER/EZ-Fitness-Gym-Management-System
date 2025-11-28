@@ -22,6 +22,7 @@ class Sales extends Model
         'discount',
         'payment_method',
         'status',
+        'type',
     ];
 
     public function items()

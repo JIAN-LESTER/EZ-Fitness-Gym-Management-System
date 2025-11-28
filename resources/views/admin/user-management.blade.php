@@ -199,101 +199,197 @@
             </thead>
 
             <tbody class="divide-y divide-gray-100">
-                @forelse($users as $user)
-                    <tr class="hover:bg-gray-50 transition-colors group">
-              
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
-                                    {{ strtoupper(substr($user->first_name ?? 'U', 0, 1)) }}{{ strtoupper(substr($user->last_name ?? 'N', 0, 1)) }}
-                                </div>
-                                <div>
-                                    <button onclick="showUser('{{ $user->user_id }}')" class="hover:text-gray-900 transition-colors text-left w-full">
-                                        <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
-                                        <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
-                                    </button>
-                                </div>
-                            </div>
-                        </td>
+           @forelse($users as $user)
+    @php
+        $pendingApproval = $user->member && $user->member->isApproved == false && $user->member->isDisabled == false;
+        $isDenied = $user->member && $user->member->isDisabled == true && $user->member->isApproved == false;
+    @endphp
 
-                        <td class="px-6 py-4 text-gray-700 font-medium">{{ $user->username }}</td>
+    <tr class="hover:bg-gray-50 transition-colors group">
 
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                {{ $user->role === 'admin' ? 'bg-red-100 text-red-700' : 
-                                   ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700') }}">
-                                {{ ucfirst($user->role) }}
-                            </span>
-                        </td>
+        @if($pendingApproval)
+            {{-- Show LIMITED row for unapproved members (Pending Approval) --}}
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-yellow-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
+                        {{ strtoupper(substr($user->first_name, 0, 1)) }}{{ strtoupper(substr($user->last_name, 0, 1)) }}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
+                        <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
+                    </div>
+                </div>
+            </td>
 
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
-                                {{ ucfirst($user->status) }}
-                            </span>
-                        </td>
+            <td colspan="4" class="px-6 py-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-yellow-600 font-medium">Awaiting approval</span>
+                </div>
+            </td>
 
-                        <td class="px-6 py-4 text-gray-700">
-                            @if($user->member)
-                                <div class="text-sm">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                        {{ $user->member->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700' }}">
-                                        {{ $user->member->plan->name ?? 'No Plan' }}
-                                    </span>
-                                    @if($user->member->end_date)
-                                        <p class="text-xs text-gray-500 mt-1">
-                                            Expires: {{ \Carbon\Carbon::parse($user->member->end_date)->format('M d, Y') }}
-                                        </p>
-                                    @endif
-                                </div>
-                            @else
-                                <span class="text-gray-400 text-xs">Not a member</span>
-                            @endif
-                        </td>
+            <td class="px-6 py-4 text-center">
+                <div class="flex items-center justify-center gap-3">
+                    <button onclick="approveMember('{{ $user->member->member_id }}')" 
+                            class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold text-sm transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Approve
+                    </button>
 
-                        <td class="px-6 py-4 text-center">
-                            <div class="flex items-center justify-center gap-3">
-                                <button onclick="showUser('{{ $user->user_id }}')" class="text-gray-500 hover:text-gray-700" title="View">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </button>
+                    <button onclick="denyMember('{{ $user->member->member_id }}')" 
+                            class="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold text-sm transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Deny
+                    </button>
+                </div>
+            </td>
 
-                                <button onclick="editUser('{{ $user->user_id }}')" class="text-blue-500 hover:text-blue-700" title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
-                                    </svg>
-                                </button>
+@elseif($isDenied)
+    {{-- Show LIMITED row for denied members (Disabled) --}}
+    <td class="px-6 py-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-red-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
+                {{ strtoupper(substr($user->first_name, 0, 1)) }}{{ strtoupper(substr($user->last_name, 0, 1)) }}
+            </div>
+            <div>
+                <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
+                <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
+            </div>
+        </div>
+    </td>
 
-                                <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')" class="text-red-500 hover:text-red-700" title="Delete">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-                            <div class="flex flex-col items-center justify-center">
-                                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                                <p class="text-lg font-medium">No users found</p>
-                                <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
+    <td colspan="4" class="px-6 py-4 text-center">
+        <div class="flex items-center justify-center gap-2">
+            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+            </svg>
+            <span class="text-red-600 font-medium">Membership Disabled</span>
+        </div>
+    </td>
+
+    <td class="px-6 py-4 text-center">
+        <div class="flex items-center justify-center gap-3">
+            <button onclick="approveMember('{{ $user->member->member_id }}')" 
+                    class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold text-sm transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Enable
+            </button>
+
+            <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')" 
+                    class="text-red-500 hover:text-red-700" title="Delete">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                </svg>
+            </button>
+        </div>
+    </td>
+
+
+        @else
+            {{-- Show FULL row for active/approved members --}}
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
+                        {{ strtoupper(substr($user->first_name ?? 'U', 0, 1)) }}{{ strtoupper(substr($user->last_name ?? 'N', 0, 1)) }}
+                    </div>
+                    <div>
+                        <button onclick="showUser('{{ $user->user_id }}')" class="hover:text-gray-900 transition-colors text-left w-full">
+                            <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
+                            <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
+                        </button>
+                    </div>
+                </div>
+            </td>
+
+            <td class="px-6 py-4 text-gray-700 font-medium">{{ $user->username }}</td>
+
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                    {{ $user->role === 'admin' ? 'bg-red-100 text-red-700' : 
+                       ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700') }}">
+                    {{ ucfirst($user->role) }}
+                </span>
+            </td>
+
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                    {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
+                    {{ ucfirst($user->status) }}
+                </span>
+            </td>
+
+            <td class="px-6 py-4 text-gray-700">
+                @if($user->member)
+                    <div class="text-sm">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                            {{ $user->member->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700' }}">
+                            {{ $user->member->plan->name ?? 'No Plan' }}
+                        </span>
+                        @if($user->member->end_date)
+                            <p class="text-xs text-gray-500 mt-1">
+                                Expires: {{ \Carbon\Carbon::parse($user->member->end_date)->format('M d, Y') }}
+                            </p>
+                        @endif
+                    </div>
+                @else
+                    <span class="text-gray-400 text-xs">Not a member</span>
+                @endif
+            </td>
+
+            <td class="px-6 py-4 text-center">
+                <div class="flex items-center justify-center gap-3">
+                    <button onclick="showUser('{{ $user->user_id }}')" class="text-gray-500 hover:text-gray-700" title="View">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+
+                    <button onclick="editUser('{{ $user->user_id }}')" class="text-blue-500 hover:text-blue-700" title="Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                        </svg>
+                    </button>
+
+                    <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')" class="text-red-500 hover:text-red-700" title="Delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        @endif
+    </tr>
+@empty
+    <tr>
+        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+            <div class="flex flex-col items-center justify-center">
+                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <p class="text-lg font-medium">No users found</p>
+                <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
+            </div>
+        </td>
+    </tr>
+@endforelse
             </tbody>
         </table>
     </div>
@@ -1521,6 +1617,67 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+
+function approveMember(memberId) {
+    Swal.fire({
+        title: 'Approve Member?',
+        text: "This member will be able to complete their profile.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, approve!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+
+  
+            Swal.fire({
+                title: 'Select Payment Method',
+                input: 'select',
+                inputOptions: {
+                    'cash': 'Cash',
+                    'credit_card': 'Card',
+                    'gcash': 'Gcash'
+                },
+                inputPlaceholder: 'Choose a payment method',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+            }).then((paymentResult) => {
+                if (paymentResult.isConfirmed) {
+                    const paymentMethod = paymentResult.value;
+
+          
+                    window.location.href = `/admin/user_crud/approve/${memberId}?payment=${paymentMethod}`;
+                }
+            });
+
+        }
+    });
+}
+
+
+function denyMember(memberId) {
+    Swal.fire({
+        title: 'Deny Member?',
+        text: "This member will not be able to access the system.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, deny',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `/admin/user_crud/deny/${memberId}`;
+        }
+    });
+}
+
     </script>
+
+   
 
 @endsection

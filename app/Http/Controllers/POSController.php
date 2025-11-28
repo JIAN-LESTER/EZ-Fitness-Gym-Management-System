@@ -259,8 +259,8 @@ class POSController extends Controller
                 $sale = Sales::create([
                     'user_id' => $userId,
                     'total_amount' => $finalTotal,
-                    'tax' => $vatAmount, // Store VAT amount
-                    'discount' => $discountAmount, // Store discount amount
+                    'tax' => $vatAmount,
+                    'discount' => $discountAmount,
                     'payment_method' => $paymentMethod,
                     'status' => 'paid',
                     'date' => now()

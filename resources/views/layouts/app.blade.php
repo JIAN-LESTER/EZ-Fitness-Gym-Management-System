@@ -16,19 +16,39 @@
         [x-cloak] {
             display: none !important;
         }
-    </style>
+
+         @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+    
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;    }
+
+
+</style>
 </head>
 
 <body x-data="{ sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false' }"
     x-init="$watch('sidebarOpen', val => localStorage.setItem('sidebarOpen', val))"
     class="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
-    <?php $user = Auth::user();
-
+  <?php 
+$user = Auth::user();
 $member = $user->member;
 
-
-    ?>
+// Count pending member approvals (only for admins)
+$pendingApprovalsCount = 0;
+if ($user->role === 'admin') {
+    $pendingApprovalsCount = \App\Models\MemberProfile::where('isApproved', false)
+        ->where('isDisabled', false)
+        ->count();
+}
+?>
 
     <!-- Sidebar -->
     <aside
@@ -53,16 +73,32 @@ $member = $user->member;
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Dashboard</span>
                             </a>
 
-                            <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                                </svg>
-                                <span x-show="sidebarOpen" x-cloak class="transition-opacity">Users</span>
-                            </a>
+                       <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  
+   class="flex items-center justify-between space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
+    <div class="flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        </svg>
+        <span x-show="sidebarOpen" x-cloak class="transition-opacity">Users</span>
+    </div>
+    
+    <!-- Notification Badge -->
+    @if($pendingApprovalsCount > 0)
+        <span x-show="sidebarOpen" x-cloak 
+              class="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
+            {{ $pendingApprovalsCount }}
+        </span>
+        <!-- Dot indicator when sidebar is collapsed -->
+        <span x-show="!sidebarOpen" x-cloak 
+              class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800">
+        </span>
+    @endif
+</a>
 
-                            <a href="{{ route('attendance.scanner') }}" @click="profileOpen = false"  class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
+
+                            <a href="{{ route('attendance.scanner') }}" @click="profileOpen = false"  class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('attendance.scanner') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -218,18 +254,18 @@ $member = $user->member;
                     </div>
 
                     <div class="py-1">
-                        @if($user->role === 'member' && $member && $member->status === 'inactive')
-                            <button
-                                onclick="opencompleteMembershipModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
-                                class="flex items-center w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                </svg>
-                                Complete Profile
-                            </button>
-                        @endif
+                     @if($user->role === 'member' && $member && $member->status === 'inactive' && $member->isApproved == true)
+    <button
+        onclick="opencompleteMembershipModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
+        class="flex items-center w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+        Complete Profile
+    </button>
+@endif
 
                         <button
                             onclick="openProfileModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
@@ -279,117 +315,104 @@ $member = $user->member;
     </div>
 
 
-    @if($user->role === 'member' && $member && $member->status === 'inactive')
+@if($user->role === 'member' && $member)
+   
+    @if($member->status === 'inactive')
+       
         <div id="completeMembershipModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="relative bg-white text-gray-800 dark:bg-white dark:text-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
-
                 <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
                     <div class="flex items-center space-x-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
                         <h2 class="text-xl font-semibold">Complete Your Membership Profile</h2>
                     </div>
                     <p class="text-gray-100 text-sm mt-1">Please complete your membership information to continue.</p>
                 </div>
 
-                <form id="completeProfileForm" action="{{ route('profile.complete-member-profile') }}" method="POST"
-                    class="p-6 md:p-8 space-y-6 relative z-10">
+                <form id="completeProfileForm" action="{{ route('profile.complete-member-profile') }}" method="POST" class="p-6 md:p-8 space-y-6 relative z-10">
                     @csrf
                     @method('PUT')
 
-     <div x-data="{ open: false, selected: '', selectedId: '' }" class="relative">
-    <label for="plan_id" class="block text-sm font-medium text-gray-800">
-        Membership Plan <span class="text-red-500">*</span>
-    </label>
+                    <div x-data="{ open: false, selected: '', selectedId: '' }" class="relative">
+                        <label for="plan_id" class="block text-sm font-medium text-gray-800">
+                            Membership Plan <span class="text-red-500">*</span>
+                        </label>
 
-    <!-- Hidden input that actually submits the value -->
-    <input type="hidden" name="plan_id" x-model="selectedId">
+                        <input type="hidden" name="plan_id" x-model="selectedId">
 
-    <button type="button" @click="open = !open"
-        class="mt-2 w-full flex justify-between items-center rounded-xl border border-gray-800 bg-gray-200 px-4 py-3">
-        <span x-text="selected || 'Select a plan'"></span>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M19 9l-7 7-7-7" />
-        </svg>
-    </button>
+                        <button type="button" @click="open = !open"
+                            class="mt-2 w-full flex justify-between items-center rounded-xl border border-gray-800 bg-gray-200 px-4 py-3">
+                            <span x-text="selected || 'Select a plan'"></span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
 
-    <div x-show="open" @click.away="open = false"
-         class="absolute mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-md z-50">
-        @foreach($plans as $plan)
-            <div @click="
-                    selected = '{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }}';
-                    selectedId = '{{ $plan->plan_id }}';
-                    open = false
-                "
-                class="flex justify-between px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                <span>{{ $plan->name }}</span>
-                <span>₱{{ number_format($plan->price, 2) }}</span>
-            </div>
-        @endforeach
-    </div>
+                        <div x-show="open" @click.away="open = false"
+                             class="absolute mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-md z-50">
+                            @foreach($plans as $plan)
+                                <div @click="
+                                        selected = '{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }}';
+                                        selectedId = '{{ $plan->plan_id }}';
+                                        open = false
+                                    "
+                                    class="flex justify-between px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                                    <span>{{ $plan->name }}</span>
+                                    <span>₱{{ number_format($plan->price, 2) }}</span>
+                                </div>
+                            @endforeach
+                        </div>
 
-    @error('plan_id')
-        <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
-    @enderror
-</div>
+                        @error('plan_id')
+                            <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
 
+                    <div class="mb-4">
+                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">
+                            Sex <span class="text-red-500">*</span>
+                        </span>
 
+                        <div class="flex items-center space-x-6">
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="sex" value="male" {{ old('sex')=='male' ? 'checked' : '' }} class="peer sr-only">
+                                <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800
+                                            flex items-center justify-center transition duration-200 bg-gray-100 hover:bg-gray-200">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/921/921106.png"
+                                         alt="Male avatar" class="w-10 h-10 object-contain opacity-90">
+                                </div>
+                                <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Male</span>
+                            </label>
 
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="sex" value="female" {{ old('sex')=='female' ? 'checked' : '' }} class="peer sr-only">
+                                <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800
+                                            flex items-center justify-center transition duration-200 bg-gray-100 hover:bg-gray-200">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/921/921124.png"
+                                         alt="Female avatar" class="w-10 h-10 object-contain opacity-90">
+                                </div>
+                                <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Female</span>
+                            </label>
+                        </div>
 
-
-<div class="mb-4">
-  <span class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">
-    Sex <span class="text-red-500">*</span>
-  </span>
-
-  <!-- Flex container for avatars -->
-  <div class="flex items-center space-x-6">
-    <!-- Male -->
-    <label class="relative cursor-pointer">
-      <input type="radio" name="sex" value="male" {{ old('sex')=='male' ? 'checked' : '' }} class="peer sr-only">
-      <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800
-                  flex items-center justify-center transition duration-200 bg-gray-100 hover:bg-gray-200">
-        <img src="https://cdn-icons-png.flaticon.com/512/921/921106.png"
-             alt="Male avatar" class="w-10 h-10 object-contain opacity-90">
-      </div>
-      <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Male</span>
-    </label>
-
-    <!-- Female -->
-    <label class="relative cursor-pointer">
-      <input type="radio" name="sex" value="female" {{ old('sex')=='female' ? 'checked' : '' }} class="peer sr-only">
-      <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800
-                  flex items-center justify-center transition duration-200 bg-gray-100 hover:bg-gray-200">
-        <img src="https://cdn-icons-png.flaticon.com/512/921/921124.png"
-             alt="Female avatar" class="w-10 h-10 object-contain opacity-90">
-      </div>
-      <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Female</span>
-    </label>
-  </div>
-
-  <!-- ✅ Error message outside the flex container -->
-  <div class="mt-1">
-    @error('sex')
-      <span class="text-red-500 text-xs block">{{ $message }}</span>
-    @enderror
-  </div>
-</div>
-
+                        <div class="mt-1">
+                            @error('sex')
+                                <span class="text-red-500 text-xs block">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
 
                     <div>
                         <label for="birthday" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
                             Birthday <span class="text-red-500">*</span>
                         </label>
                         <input type="date" name="birthday" id="birthday"
-                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600
-                                 px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
-                                         @error('birthday')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
+                        @error('birthday')
+                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                        @enderror
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -398,22 +421,20 @@ $member = $user->member;
                                 Height (cm)
                             </label>
                             <input type="number" step="0.1" name="height" id="height"
-                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600
-                                       px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
-                                               @error('height')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
+                            @error('height')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            @enderror
                         </div>
                         <div>
                             <label for="weight" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
                                 Weight (kg)
                             </label>
                             <input type="number" step="0.1" name="weight" id="weight"
-                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600
-                                       px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
-                                               @error('weight')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
+                            @error('weight')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            @enderror
                         </div>
                     </div>
 
@@ -423,11 +444,10 @@ $member = $user->member;
                         </label>
                         <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789"
                             pattern="[0-9]{11}"
-                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600
-                                   px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
-                                           @error('mobile_number')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
+                        @error('mobile_number')
+                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                        @enderror
                     </div>
 
                     <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -439,7 +459,78 @@ $member = $user->member;
                 </form>
             </div>
         </div>
+         @elseif($member->isApproved == false && $member->isDisabled == false)
+        {{-- Waiting for Approval Modal - Shows when profile is complete but not approved --}}
+        <div id="waitingApprovalModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <div class="bg-yellow-500 text-white p-5 rounded-t-2xl">
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold">Pending Approval</h2>
+                    </div>
+                </div>
+
+                <div class="p-8 text-center">
+                    <div class="mb-6">
+                        <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Account Under Review</h3>
+                        <p class="text-gray-600 text-lg mb-4">Your profile has been submitted and is awaiting admin approval.</p>
+                        <p class="text-gray-500 text-sm">You'll receive an email with your QR code once approved.</p>
+                    </div>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="w-full px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    @elseif($member->isDisabled == true)
+        {{-- Account Rejected Modal - Shows when membership is disabled --}}
+        <div id="accountRejectedModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <div class="bg-red-500 text-white p-5 rounded-t-2xl">
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold">Account Not Approved</h2>
+                    </div>
+                </div>
+
+                <div class="p-8 text-center">
+                    <div class="mb-6">
+                        <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Access Denied</h3>
+                        <p class="text-gray-600 text-lg mb-4">Your account was not approved.</p>
+                        <p class="text-gray-500 text-sm">Please contact the administrator for more information.</p>
+                    </div>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="w-full px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     @endif
+@endif
 
 
 
@@ -510,7 +601,7 @@ $member = $user->member;
 
                 {{-- MEMBER PROFILE DETAILS - Only show if user is a member --}}
                 @if($user->role === 'member')
-                    @if($memberProfile)
+                    @if($member)
                         <div class="space-y-4">
                             <h3
                                 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
@@ -525,27 +616,27 @@ $member = $user->member;
                                 class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/20 rounded-xl border border-gray-200 dark:border-gray-800">
                                 <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Current Plan</p>
                                 <p class="text-lg font-bold text-gray-900 dark:text-gray-800">
-                                    {{ $memberProfile->plan->name ?? 'N/A' }}</p>
+                                    {{ $member->plan->name ?? 'N/A' }}</p>
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
-                                @if($memberProfile->sex)
+                                @if($member->sex)
                                     <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sex</p>
                                         <p class="text-base font-semibold text-gray-900 dark:text-white capitalize">
-                                            {{ $memberProfile->sex }}</p>
+                                            {{ $member->sex }}</p>
                                     </div>
                                 @endif
-                                @if($memberProfile->birthday)
+                                @if($member->birthday)
                                     <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Birthday</p>
                                         <p class="text-base font-semibold text-gray-900 dark:text-white">
-                                            {{ \Carbon\Carbon::parse($memberProfile->birthday)->format('M d, Y') }}</p>
+                                            {{ \Carbon\Carbon::parse($member->birthday)->format('M d, Y') }}</p>
                                     </div>
                                 @endif
                             </div>
 
-                            @if($memberProfile->height || $memberProfile->weight || $memberProfile->mobile_number)
+                            @if($member->height || $member->weight || $member->mobile_number)
                                 <div class="space-y-4">
                                     <h4
                                         class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
@@ -557,27 +648,27 @@ $member = $user->member;
                                     </h4>
 
                                     <div class="grid grid-cols-2 gap-4">
-                                        @if($memberProfile->height)
+                                        @if($member->height)
                                             <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                                                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Height</p>
                                                 <p class="text-base font-semibold text-gray-900 dark:text-white">
-                                                    {{ $memberProfile->height }} <span class="text-sm font-normal">cm</span></p>
+                                                    {{ $member->height }} <span class="text-sm font-normal">cm</span></p>
                                             </div>
                                         @endif
-                                        @if($memberProfile->weight)
+                                        @if($member->weight)
                                             <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                                                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Weight</p>
                                                 <p class="text-base font-semibold text-gray-900 dark:text-white">
-                                                    {{ $memberProfile->weight }} <span class="text-sm font-normal">kg</span></p>
+                                                    {{ $member->weight }} <span class="text-sm font-normal">kg</span></p>
                                             </div>
                                         @endif
                                     </div>
 
-                                    @if($memberProfile->mobile_number)
+                                    @if($member->mobile_number)
                                         <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
                                             <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Mobile Number</p>
                                             <p class="text-base font-semibold text-gray-900 dark:text-white">
-                                                {{ $memberProfile->mobile_number }}</p>
+                                                {{ $member->mobile_number }}</p>
                                         </div>
                                     @endif
                                 </div>
@@ -686,7 +777,7 @@ $member = $user->member;
                     </div>
 
                     {{-- Membership Information Section - Only for members --}}
-                    @if($user->role === 'member' && $memberProfile)
+                    @if($user->role === 'member' && $member)
                         <div class="space-y-4">
                             <h3
                                 class="text-sm font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
@@ -705,7 +796,7 @@ $member = $user->member;
                                     class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                     <option value="">Keep current plan</option>
                                     @foreach($plans as $plan)
-                                        <option value="{{ $plan->plan_id }}" {{ $memberProfile->plan_id == $plan->plan_id ? 'selected' : '' }}>
+                                        <option value="{{ $plan->plan_id }}" {{ $member->plan_id == $plan->plan_id ? 'selected' : '' }}>
                                             {{ $plan->name }}
                                         </option>
                                     @endforeach
@@ -718,16 +809,16 @@ $member = $user->member;
                                         class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Sex</label>
                                     <select name="sex" id="sex"
                                         class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
-                                        <option value="male" {{ $memberProfile->sex == 'male' ? 'selected' : '' }}>Male
+                                        <option value="male" {{ $member->sex == 'male' ? 'selected' : '' }}>Male
                                         </option>
-                                        <option value="female" {{ $memberProfile->sex == 'female' ? 'selected' : '' }}>Female
+                                        <option value="female" {{ $member->sex == 'female' ? 'selected' : '' }}>Female
                                         </option>
                                     </select>
                                 </div>
                                 <div>
                                     <label for="birthday"
                                         class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Birthday</label>
-                                    <input type="date" name="birthday" id="birthday" value="{{ $memberProfile->birthday }}"
+                                    <input type="date" name="birthday" id="birthday" value="{{ $member->birthday }}"
                                         class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                 </div>
                             </div>
@@ -738,7 +829,7 @@ $member = $user->member;
                                         class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Height
                                         (cm)</label>
                                     <input type="number" step="0.1" name="height" id="height"
-                                        value="{{ $memberProfile->height }}"
+                                        value="{{ $member->height }}"
                                         class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                 </div>
                                 <div>
@@ -746,7 +837,7 @@ $member = $user->member;
                                         class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Weight
                                         (kg)</label>
                                     <input type="number" step="0.1" name="weight" id="weight"
-                                        value="{{ $memberProfile->weight }}"
+                                        value="{{ $member->weight }}"
                                         class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                 </div>
                             </div>
@@ -756,7 +847,7 @@ $member = $user->member;
                                     class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">Mobile
                                     Number</label>
                                 <input type="tel" name="mobile_number" id="mobile_number"
-                                    value="{{ $memberProfile->mobile_number }}"
+                                    value="{{ $member->mobile_number }}"
                                     class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                             </div>
                         </div>
@@ -1277,6 +1368,74 @@ document.addEventListener('DOMContentLoaded', function () {
         </script>
     @endif
 
+
+@if(session('membership_expired') && $user->role === 'member' && $member)
+<div id="renewalModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+        <div class="bg-orange-500 text-white p-5">
+            <div class="flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="text-xl font-semibold">Membership Expired</h2>
+            </div>
+        </div>
+
+        <div class="p-8">
+            <p class="text-gray-700 text-lg mb-6">
+                Your membership plan <strong>{{ $member->plan->name }}</strong> has expired. 
+                Would you like to renew your membership?
+            </p>
+
+            <form action="{{ route('member.request-renewal') }}" method="POST" class="space-y-6">
+                @csrf
+
+                <div x-data="{ open: false, selected: '{{ $member->plan->name }} — ₱{{ number_format($member->plan->price, 2) }}', selectedId: '{{ $member->plan_id }}' }">
+                    <label class="block text-sm font-medium text-gray-800 mb-2">
+                        Select Membership Plan <span class="text-red-500">*</span>
+                    </label>
+
+                    <input type="hidden" name="plan_id" x-model="selectedId">
+
+                    <button type="button" @click="open = !open"
+                        class="w-full flex justify-between items-center rounded-xl border-2 border-gray-300 bg-gray-50 px-4 py-3">
+                        <span x-text="selected"></span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div x-show="open" @click.away="open = false"
+                         class="absolute mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-md z-50 max-h-60 overflow-y-auto">
+                        @foreach($plans as $plan)
+                            <div @click="
+                                    selected = '{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }}';
+                                    selectedId = '{{ $plan->plan_id }}';
+                                    open = false
+                                "
+                                class="flex justify-between px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                                <span>{{ $plan->name }}</span>
+                                <span>₱{{ number_format($plan->price, 2) }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" name="action" value="renew"
+                        class="flex-1 px-6 py-3 rounded-xl bg-orange-500 text-white hover:bg-orange-600 font-medium transition-colors">
+                        Request Renewal
+                    </button>
+                    <button type="submit" name="action" value="skip"
+                        class="flex-1 px-6 py-3 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 font-medium transition-colors">
+                        Skip for Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 </body>
 
