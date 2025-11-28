@@ -230,10 +230,17 @@ class POSController extends Controller
     {
         $userId = Auth::id();
         $paymentMethod = $request->payment_method;
-        $discountPercentage = $request->discount_percentage ?? 0;
-
+        $referenceCode = $request->reference_code;
         try {
-            DB::transaction(function () use ($paymentMethod, $discountPercentage, $userId) {
+            // Validate reference code for GCash payments
+            if ($paymentMethod === 'qr' && empty($referenceCode)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'GCash reference code is required'
+                ], 400);
+            }
+
+            DB::transaction(function () use ($paymentMethod, $referenceCode, $userId) {
 
                 $cart = Cart::where('user_id', $userId)
                     ->where('status', 'active')
@@ -246,17 +253,10 @@ class POSController extends Controller
                     throw new \Exception('Cart is empty.');
                 }
 
-
                 // Calculate totals with discount
-                $subtotal = $cartItems->sum('sub_total');
-                $discountAmount = ($subtotal * $discountPercentage) / 100;
-                $totalAfterDiscount = $subtotal - $discountAmount;
+                $finalTotal = $cartItems->sum('sub_total');
 
-                // Calculate VAT (12% on discounted amount)
-                $vatAmount = $totalAfterDiscount * 0.12;
-                $finalTotal = $totalAfterDiscount + $vatAmount;
-
-                $sale = Sales::create([
+                $saleData = [
                     'user_id' => $userId,
                     'total_amount' => $finalTotal,
                     'tax' => $vatAmount,
@@ -264,7 +264,14 @@ class POSController extends Controller
                     'payment_method' => $paymentMethod,
                     'status' => 'paid',
                     'date' => now()
-                ]);
+                ];
+
+                // Add reference code only for GCash payments
+                if ($paymentMethod === 'qr' && $referenceCode) {
+                    $saleData['reference_code'] = $referenceCode;
+                }
+
+                $sale = Sales::create($saleData);
 
                 foreach ($cartItems as $item) {
                     $inventory = Inventory::where('product_id', $item->product_id)
@@ -281,8 +288,8 @@ class POSController extends Controller
                     // Check if quantity of the product reached 0 after checkout
                     if ($inventory->fresh()->quantity == 0) {
                         // Update product status to unavailable
-                    Product::where('product_id', $item->product_id)
-                        ->update(['status' => 'unavailable']);
+                        Product::where('product_id', $item->product_id)
+                            ->update(['status' => 'unavailable']);
                     }
 
 
