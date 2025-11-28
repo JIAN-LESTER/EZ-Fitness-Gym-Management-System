@@ -16,6 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
     })
+  ->withSchedule(function ($schedule): void {
+    $schedule->command('member:check-expiration')
+        ->hourly()
+        ->timezone('Asia/Manila')
+        ->name('check-member-expiration-hourly');
+})
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

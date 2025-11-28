@@ -22,7 +22,7 @@ class Sales extends Model
         'discount',
         'payment_method',
         'status',
-        'reference_code',
+        'type',
     ];
 
     public function items()

@@ -259,6 +259,8 @@ class POSController extends Controller
                 $saleData = [
                     'user_id' => $userId,
                     'total_amount' => $finalTotal,
+                    'tax' => $vatAmount,
+                    'discount' => $discountAmount,
                     'payment_method' => $paymentMethod,
                     'status' => 'paid',
                     'date' => now()

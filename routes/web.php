@@ -100,6 +100,10 @@ Route::prefix('admin/user_crud')->name('admin.')->group(function () {
     Route::get('/edit/{id}', [UserManagementController::class, 'edit'])->name('users-edit');
     Route::put('/update/{id}', [UserManagementController::class, 'update'])->name('update');
     Route::delete('/destroy/{id}', [UserManagementController::class, 'destroy'])->name('users-destroy');
+     Route::get('/approve/{member}', [UserManagementController::class, 'approve'])
+        ->name('admin.members.approve');
+    Route::get('/deny/{member}', [UserManagementController::class, 'deny'])
+        ->name('admin.members.deny');
 });
 
 Route::prefix('products')->name('products.')->group(function () {
@@ -147,7 +151,7 @@ Route::get('/{id}', [TransactionController::class, 'show'])->name('show');
 
 });
 
-
+Route::post('/member/request-renewal', [MemberProfileController::class, 'requestRenewal'])->name('member.request-renewal');
 Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
 
 

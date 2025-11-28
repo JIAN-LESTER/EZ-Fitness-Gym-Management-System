@@ -246,7 +246,7 @@
             </div>
 
         </div>
-
+xamxa
     </div>
 
     <!-- Chart.js Script -->
