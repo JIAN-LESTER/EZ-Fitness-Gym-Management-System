@@ -493,10 +493,23 @@ function renderTransactionDetails(transaction) {
         if (transaction.sale.payment_method === 'cash') paymentClass = 'bg-green-100 text-green-800';
         if (transaction.sale.payment_method === 'credit_card') paymentClass = 'bg-blue-100 text-blue-800';
         if (transaction.sale.payment_method === 'qr') paymentClass = 'bg-purple-100 text-purple-800';
-        
+
         let paymentLabel = transaction.sale.payment_method === 'credit_card' ? 'Credit Card' : 
-                          transaction.sale.payment_method.charAt(0).toUpperCase() + transaction.sale.payment_method.slice(1);
-        html += '<span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ' + paymentClass + '">' + paymentLabel + '</span></div>';
+        transaction.sale.payment_method.charAt(0).toUpperCase() + transaction.sale.payment_method.slice(1);
+
+        // Use flex container to place reference code beside payment method
+        html += '<div class="flex items-center gap-3">';
+        html += '<span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ' + paymentClass + '">' + paymentLabel + '</span>';
+
+        // Display reference code on the right side for GCash
+        if (transaction.sale.payment_method === 'qr' && transaction.sale.reference_code) {
+            html += '<div class="flex items-center gap-2">';
+            html += '<span class="text-sm text-gray-600 dark:text-gray-400">Ref:</span>';
+            html += '<span class="text-lg font-semibold text-purple-600 dark:text-purple-400">' + transaction.sale.reference_code + '</span>';
+            html += '</div>';
+        }
+        html += '</div></div>';
+
         
         // Sale Date
         html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Sale Date</p>';
@@ -541,9 +554,6 @@ function renderTransactionDetails(transaction) {
         html += '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">';
         html += '<p class="text-yellow-800">No associated sale found for this transaction.</p></div>';
     }
-
-    
-
     content.innerHTML = html;
 }
 
