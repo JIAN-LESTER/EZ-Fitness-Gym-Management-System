@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @mixin IdeHelperProduct
+ */
 class Product extends Model
 {
     use HasFactory, Notifiable;
@@ -46,10 +49,6 @@ class Product extends Model
 
     public function cartItems() {
     return $this->hasMany(CartItem::class, 'product_id', 'product_id');
-}
-
-public function orderItems() {
-    return $this->hasMany(OrderItem::class, 'product_id', 'product_id');
 }
 
 

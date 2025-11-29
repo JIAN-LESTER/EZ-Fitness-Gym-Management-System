@@ -18,18 +18,18 @@ class TransactionController extends Controller
         $statuses = $request->get('status', []);
 
         $transactions = Transactions::query()
-            ->with(['sale.user', 'sale.items.product']) 
+            ->with(['sale.user', 'sale.items.product'])
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
                     $q->where('transaction_id', 'like', "%{$search}%")
-                      ->orWhere('type', 'like', "%{$search}%")
-                      ->orWhereHas('sale', function ($q2) use ($search) {
-                          $q2->whereHas('user', function ($q3) use ($search) {
-                              $q3->where('first_name', 'like', "%{$search}%")
-                                 ->orWhere('last_name', 'like', "%{$search}%")
-                                 ->orWhere('username', 'like', "%{$search}%");
-                          });
-                      });
+                        ->orWhere('type', 'like', "%{$search}%")
+                        ->orWhereHas('sale', function ($q2) use ($search) {
+                            $q2->whereHas('user', function ($q3) use ($search) {
+                                $q3->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                    ->orWhere('username', 'like', "%{$search}%");
+                            });
+                        });
                 });
             })
             ->when(!empty($statuses), function ($query) use ($statuses) {
@@ -43,26 +43,25 @@ class TransactionController extends Controller
     }
 
     public function show($id)
-{
-    try {
-        // Use where() instead of find() - same as Sales controller
-        $transaction = Transactions::where('transaction_id', $id)
-            ->with(['sale.user', 'sale.items.product'])
-            ->first();
+    {
+        try {
+            // Use where() instead of find() - same as Sales controller
+            $transaction = Transactions::where('transaction_id', $id)
+                ->with(['sale.user', 'sale.items.product'])
+                ->first();
 
-        if (!$transaction) {
+            if (!$transaction) {
+                return response()->json([
+                    'error' => 'Transaction not found'
+                ], 404);
+            }
+
+            return response()->json($transaction);
+        } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Transaction not found'
-            ], 404);
+                'error' => 'Server error',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json($transaction);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => 'Server error',
-            'message' => $e->getMessage()
-        ], 500);
     }
-}
 }

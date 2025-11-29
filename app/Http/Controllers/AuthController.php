@@ -7,8 +7,8 @@ use App\Models\Member_Profile;
 use App\Models\member;
 use App\Models\MemberProfile;
 use App\Models\User;
-use Auth;
-use Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Str;
@@ -131,6 +131,10 @@ class AuthController extends Controller
             return redirect()->route('admin.dashboard')->with('success', 'Logged in successfully');
         }
 
+        if ($user->role === 'staff') {
+            return redirect()->route('staff.dashboard')->with('success', 'Logged in successfully');
+        }
+
         if ($user->role === 'member') {
 
             $profile = MemberProfile::where('user_id', $user->user_id)->first();
@@ -248,5 +252,5 @@ class AuthController extends Controller
 
 
 
-   
+
 }

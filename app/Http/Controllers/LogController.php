@@ -8,10 +8,10 @@ use App\Models\Log;
 
 class LogController extends Controller
 {
-public function viewLogs(Request $request)
+    public function viewLogs(Request $request)
     {
 
-       $search = $request->get('search');
+        $search = $request->get('search');
         $filter = $request->get('filter', 'action');
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
@@ -25,7 +25,7 @@ public function viewLogs(Request $request)
                 });
             } elseif ($filter === 'action') {
                 $logs->where('action', 'like', "%{$search}%");
-            } else { 
+            } else {
                 $logs->where(function ($query) use ($search) {
                     $query->whereHas('user', function ($q) use ($search) {
                         $q->where('first_name', 'like', "%{$search}%");
@@ -47,6 +47,5 @@ public function viewLogs(Request $request)
         $logs = $logs->orderBy('created_at', 'desc')->paginate(12)->appends($request->query());
 
         return view('admin.logs', compact('logs', 'search', 'filter'));
-    
     }
 }

@@ -9,15 +9,14 @@ return new class extends Migration {
      * Run the migrations.
      */
 
- 
+
 
     public function up(): void
     {
         Schema::create('member_profiles', function (Blueprint $table) {
             $table->id('member_id');
             $table->foreignId('user_id')->references('user_id')->on('users')->onDelete('cascade');
-          $table->foreignId('plan_id')->nullable(); 
-$table->foreign('plan_id')->references('plan_id')->on('membership_plans')->onDelete('cascade');
+            $table->foreignId('plan_id')->nullable()->references('plan_id')->on('membership_plans')->onDelete('cascade');
             $table->enum('sex', ['male', 'female'])->nullable();
             $table->date('birthday')->nullable();
             $table->float('height')->nullable();
@@ -25,7 +24,9 @@ $table->foreign('plan_id')->references('plan_id')->on('membership_plans')->onDel
             $table->string('mobile_number')->nullable();
             $table->string('qr_code')->unique()->nullable();
             $table->enum('status', ['active', 'expired', 'suspended', 'inactive'])->default('inactive');
-
+            $table->boolean('isApproved')->default(false);
+            $table->boolean('isDisabled')->default(false);
+            $table->timestamp('approved_at')->nullable();
             $table->timestamp('start_date')->nullable();
             $table->timestamp('end_date')->nullable();
 

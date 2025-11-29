@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @mixin IdeHelperSales
+ */
 class Sales extends Model
 {
     use HasFactory, Notifiable;
@@ -15,8 +18,12 @@ class Sales extends Model
     protected $fillable = [
         'user_id',
         'total_amount',
+        'tax',
+        'discount',
         'payment_method',
+        'reference_code',
         'status',
+        'type',
     ];
 
     public function items()

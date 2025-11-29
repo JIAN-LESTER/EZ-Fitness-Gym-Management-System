@@ -2,22 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sales;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
-use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
-
 use App\Mail\MemberQRCodeMail;
 use App\Models\User;
 use App\Models\MemberProfile;
 use App\Models\MembershipPlan;
 use App\Models\Logs;
-use Auth;
-use Hash;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Mail;
+use Illuminate\Support\Facades\Mail;
 
 class MemberProfileController extends Controller
 {
@@ -27,46 +24,39 @@ class MemberProfileController extends Controller
         $plans = MembershipPlan::all();
         $memberProfile = MemberProfile::where('user_id', $member->user_id)->first();
 
-        return view('member.dashboard', compact('member', 'plans', 'memberProfile'));
+        // Check if membership is expired or suspended
+        if ($memberProfile && $memberProfile->status === 'expired') {
+            $daysRemaining = 0;
+        } elseif ($memberProfile && $memberProfile->end_date) {
+            $daysRemaining = max(0, now()->diffInDays($memberProfile->end_date, false));
+            
+            // Auto-expire if end date has passed
+            if ($daysRemaining <= 0 && $memberProfile->status === 'active') {
+                $memberProfile->update(['status' => 'expired']);
+                $daysRemaining = 0;
+            }
+        } else {
+            $daysRemaining = null;
+        }
+
+        return view('member.dashboard', compact('member', 'plans', 'memberProfile', 'daysRemaining'));
     }
 
-    public function editProfile(string $memberId)
-    {
-        $member = User::findOrFail($memberId);
-        $memberProfile = MemberProfile::where('user_id', $member->user_id)->first();
-
-        return view('profile.edit_profile', compact('member', 'memberProfile'));
-    }
-
-    /**
-     * Complete member profile for the FIRST TIME (inactive -> active)
-     * This generates QR code and sends email
-     */
     public function completeMemberProfile(Request $request)
     {
-        $member = Auth::user();
+        $user = Auth::user();
 
         $validated = $request->validate([
             'plan_id' => 'required|exists:membership_plans,plan_id',
             'sex' => 'required|in:male,female',
             'birthday' => 'required|date',
-            'height' => 'required|numeric|min:0',
-            'weight' => 'required|numeric|min:0',
+            'height' => 'nullable|numeric|min:0',
+            'weight' => 'nullable|numeric|min:0',
             'mobile_number' => 'required|string|max:15',
-        ],[
-            'sex.required' => 'Please select you sex',
-            'mobile_number.required' => 'Mobile number is required',
-            'weight.required' => 'Weight is required',
-            'height.required' => 'Height is required',
-            'birthday.required' => 'Birthday is required',
-            'plan_id.required' => 'Membership plan is required',
         ]);
 
-        $memberProfile = MemberProfile::firstOrNew(['user_id' => $member->user_id]);
+        $memberProfile = MemberProfile::firstOrNew(['user_id' => $user->user_id]);
         $plan = MembershipPlan::find($validated['plan_id']);
-
-        // Check if this is first-time completion
-        $isFirstTime = !$memberProfile->exists || $memberProfile->status === 'inactive';
 
         $memberProfile->fill([
             'plan_id' => $plan->plan_id,
@@ -75,81 +65,113 @@ class MemberProfileController extends Controller
             'height' => $validated['height'] ?? null,
             'weight' => $validated['weight'] ?? null,
             'mobile_number' => $validated['mobile_number'],
-            'status' => 'active', // Set to active
-            'start_date' => $memberProfile->start_date ?? now(),
+            'status' => 'inactive',
+            'isApproved' => false,
+            'isDisabled' => false,
+            'start_date' => null,
+            'end_date' => null,
+            'renewal_pending' => false,
         ]);
 
         $memberProfile->save();
+        $user->load('member');
 
-        // Only generate QR and send email if first-time completion
-        if ($isFirstTime) {
-            $qrData = [
-                'name' => "{$member->first_name} {$member->last_name}",
-                'email' => $member->email,
-                'plan' => $plan->name,
-                'price' => $plan->price,
-            ];
-
-            $qrText = json_encode($qrData);
-            $qrRelativePath = "qr/member_{$member->user_id}.png";
-            Storage::disk('public')->makeDirectory('qr');
-
-            $result = Builder::create()
-                ->writer(new PngWriter())
-                ->data($qrText)
-                ->encoding(new Encoding('UTF-8'))
-                ->size(300)
-                ->margin(10)
-                ->build();
-
-            $result->saveToFile(storage_path("app/public/{$qrRelativePath}"));
-
-            $memberProfile->qr_code = $qrRelativePath;
-            $memberProfile->save();
-
-            $qrUrl = asset("storage/{$qrRelativePath}");
-            
-            // Send email with QR code
-            Mail::to($member->email)->send(new MemberQRCodeMail($memberProfile, storage_path("app/public/{$qrRelativePath}")));
-
-         
-            Logs::create([
-                'user_id' => $member->user_id,
-                'action' => "Completed membership profile setup for user: {$member->first_name} {$member->last_name}",
-                'timestamp' => now(),
-            ]);
-
-            return redirect()
-                ->route('member.dashboard', $member->user_id)
-                ->with([
-                    'success' => 'Membership profile completed successfully! Your QR code has been emailed.',
-                    'show_qr_popup' => true,
-                    'qr_path' => $qrUrl,
-                ]);
-        }
-
-      
         Logs::create([
-            'user_id' => $member->user_id,
-            'action' => "Updated membership profile for user: {$member->first_name} {$member->last_name}",
+            'user_id' => $user->user_id,
+            'action' => "Completed membership profile - Awaiting approval: {$user->first_name} {$user->last_name} - Plan: {$plan->name}",
             'timestamp' => now(),
         ]);
 
         return redirect()
-            ->back()
-            ->with('success', 'Membership profile updated successfully!');
+            ->route('member.dashboard')
+            ->with('success', 'Profile submitted successfully! Awaiting admin approval.');
     }
 
-
-    public function checkProfileCompletion(string $memberId)
+    public function requestRenewal(Request $request)
     {
-        $member = User::findOrFail($memberId);
-        $memberProfile = MemberProfile::where('user_id', $member->user_id)->first();
+        $user = Auth::user();
+        $member = $user->member;
 
-        if (!$memberProfile) {
-            return redirect()->back()->with('showProfileModal', true);
+        if (!$member) {
+            return redirect()->back()->with('error', 'No membership profile found.');
         }
 
-        return null;
+        if ($request->action === 'logout') {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->with('info', 'You have been logged out.');
+        }
+
+        $validated = $request->validate([
+            'plan_id' => 'required|exists:membership_plans,plan_id',
+        ]);
+
+        $plan = MembershipPlan::find($validated['plan_id']);
+
+        $member->update([
+            'plan_id' => $validated['plan_id'],
+            'isApproved' => false,
+            'isDisabled' => false,
+            'renewal_pending' => true,
+            'status' => 'expired', // Keep expired until approved
+        ]);
+
+        Logs::create([
+            'user_id' => $user->user_id,
+            'action' => "Requested membership renewal - Plan: {$plan->name}",
+            'timestamp' => now(),
+        ]);
+
+        return redirect()->route('member.dashboard')
+            ->with('success', 'Renewal request submitted! Awaiting admin approval.');
+    }
+
+    public function checkApprovalStatus()
+    {
+        $user = Auth::user();
+        $member = $user->member;
+
+        if (!$member) {
+            return response()->json([
+                'status' => 'no_profile',
+                'message' => 'No member profile found'
+            ]);
+        }
+
+        if ($member->isDisabled) {
+            return response()->json([
+                'status' => 'rejected',
+                'message' => 'Your membership application was not approved.'
+            ]);
+        }
+
+        if ($member->isApproved && $member->status === 'active') {
+            $member->refresh();
+            
+            $qrCodeUrl = null;
+            if ($member->qr_code) {
+                $fullPath = storage_path("app/public/{$member->qr_code}");
+                if (file_exists($fullPath)) {
+                    $qrCodeUrl = asset("storage/{$member->qr_code}");
+                }
+            }
+
+            return response()->json([
+                'status' => 'approved',
+                'message' => 'Your membership has been approved!',
+                'qr_code_url' => $qrCodeUrl,
+                'member_data' => [
+                    'plan' => $member->plan->name ?? 'N/A',
+                    'start_date' => $member->start_date,
+                    'end_date' => $member->end_date,
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'pending',
+            'message' => 'Your application is still pending approval'
+        ]);
     }
 }

@@ -8,6 +8,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Log;
 
+/**
+ * @mixin IdeHelperUser
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -75,9 +78,9 @@ class User extends Authenticatable
     return $this->hasMany(Cart::class, 'user_id', 'user_id');
 }
 
-public function orders() {
-    return $this->hasMany(Orders::class, 'user_id', 'user_id');
-}
+// public function orders() {
+//     return $this->hasMany(Orders::class, 'user_id', 'user_id');
+// }
 
 
 }

@@ -154,11 +154,11 @@
             <table class="min-w-full">
                 <thead>
                     <tr class="bg-gray-100 border-b border-gray-200">
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Transaction Type</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Sale ID</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Cashier</th>
-                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Transaction Type</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Sale ID</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Cashier</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
@@ -167,7 +167,7 @@
                     @forelse($transactions as $transaction)
                         <tr class="hover:bg-gray-50 transition-colors group">
                      
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 text-center">
                                 <span class="px-3 py-1 rounded-full text-xs font-semibold
                                     {{ $transaction->type === 'sales' ? 'bg-green-100 text-green-800' : '' }}
                                     {{ $transaction->type === 'stock_in' ? 'bg-blue-100 text-blue-800' : '' }}
@@ -175,14 +175,14 @@
                                     {{ $transaction->type === 'stock_in' ? 'Stock In' : ($transaction->type === 'stock_out' ? 'Stock Out' : ucfirst($transaction->type)) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 text-center">
                                 @if($transaction->sale)
                                     <p class="font-medium text-gray-900">#{{ $transaction->sale->sales_id }}</p>
                                 @else
                                     <p class="text-gray-400">N/A</p>
                                 @endif
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 text-center">
                                 @if($transaction->sale && $transaction->sale->user)
                                     <p class="font-medium text-gray-900">{{ $transaction->sale->user->first_name }} {{ $transaction->sale->user->last_name }}</p>
                                     <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $transaction->sale->user->username }}</p>
@@ -190,14 +190,14 @@
                                     <p class="text-gray-400">N/A</p>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-right">
+                            <td class="px-6 py-4 text-center">
                                 @if($transaction->sale)
                                     <p class="font-semibold text-gray-900">₱{{ number_format($transaction->sale->total_amount, 2) }}</p>
                                 @else
                                     <p class="text-gray-400">N/A</p>
                                 @endif
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 text-center">
                                 <p class="text-gray-900">{{ \Carbon\Carbon::parse($transaction->created_at)->format('M d, Y') }}</p>
                                 <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($transaction->created_at)->format('h:i A') }}</p>
                             </td>
@@ -483,7 +483,7 @@ function renderTransactionDetails(transaction) {
         html += '</span></div>';
         
         // Customer
-        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Customer</p>';
+        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Cashier</p>';
         html += '<p class="text-lg font-semibold text-gray-800 dark:text-gray-200">' + transaction.sale.user.first_name + ' ' + transaction.sale.user.last_name + '</p>';
         html += '<p class="text-sm text-gray-500">@' + transaction.sale.user.username + '</p></div>';
         
@@ -492,11 +492,24 @@ function renderTransactionDetails(transaction) {
         let paymentClass = '';
         if (transaction.sale.payment_method === 'cash') paymentClass = 'bg-green-100 text-green-800';
         if (transaction.sale.payment_method === 'credit_card') paymentClass = 'bg-blue-100 text-blue-800';
-        if (transaction.sale.payment_method === 'qr') paymentClass = 'bg-purple-100 text-purple-800';
-        
+        if (transaction.sale.payment_method === 'gcash') paymentClass = 'bg-purple-100 text-purple-800';
+
         let paymentLabel = transaction.sale.payment_method === 'credit_card' ? 'Credit Card' : 
-                          transaction.sale.payment_method.charAt(0).toUpperCase() + transaction.sale.payment_method.slice(1);
-        html += '<span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ' + paymentClass + '">' + paymentLabel + '</span></div>';
+        transaction.sale.payment_method.charAt(0).toUpperCase() + transaction.sale.payment_method.slice(1);
+
+        // Use flex container to place reference code beside payment method
+        html += '<div class="flex items-center gap-3">';
+        html += '<span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ' + paymentClass + '">' + paymentLabel + '</span>';
+
+        // Display reference code on the right side for GCash
+        if (transaction.sale.payment_method === 'gcash' && transaction.sale.reference_code) {
+            html += '<div class="flex items-center gap-2">';
+            html += '<span class="text-sm text-gray-600 dark:text-gray-400">Ref:</span>';
+            html += '<span class="text-lg font-semibold text-purple-600 dark:text-purple-400">' + transaction.sale.reference_code + '</span>';
+            html += '</div>';
+        }
+        html += '</div></div>';
+
         
         // Sale Date
         html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Sale Date</p>';
@@ -518,7 +531,7 @@ function renderTransactionDetails(transaction) {
             html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>';
             html += '<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantity</th>';
             html += '<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price</th>';
-            html += '<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Subtotal</th>';
+            html += '<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>';
             html += '</tr></thead><tbody class="divide-y divide-gray-200 dark:divide-gray-700">';
 
             transaction.sale.items.forEach(function(item) {
@@ -541,9 +554,6 @@ function renderTransactionDetails(transaction) {
         html += '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">';
         html += '<p class="text-yellow-800">No associated sale found for this transaction.</p></div>';
     }
-
-    
-
     content.innerHTML = html;
 }
 

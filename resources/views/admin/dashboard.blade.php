@@ -4,25 +4,460 @@
 
 @section('content')
 
-<body class="bg-green-50 min-h-screen">
-    <div class="grid grid-cols-2 gap-4 h-screen p-6">
+<body class="bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 min-h-screen">
+    <div class="w-full px-4 py-6">
+        
+        <!-- Top Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            
+            <!-- Active Members Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-all hover:scale-105 duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Active Members</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2">{{ $totalActiveMembers }}</h3>
+                        <p class="text-green-600 text-sm mt-2">
+                            <span class="font-semibold">+{{ $newMembersThisMonth }}</span> new this month
+                        </p>
+                        @if($expiringMemberships > 0)
+                        <p class="text-orange-500 text-xs mt-1">
+                            <span class="font-semibold">{{ $expiringMemberships }}</span> expiring soon
+                        </p>
+                        @endif
+                    </div>
+                    <div class="bg-green-100 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
 
-        <div class="flex flex-col gap-4">
-            <div class="bg-red-700 p-6 flex-1">Membership Overview</div>
-            <div class="bg-red-600 p-6 flex-1">Inventory Overview</div>
-            <div class="bg-red-500 p-6 flex-1">Gym Membership Trend</div>
-            <div class="bg-red-400 p-6 flex-1">Transaction Chart</div>
+            <!-- Gym Occupancy Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-all hover:scale-105 duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Current Occupancy</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2">{{ $currentOccupancy }}</h3>
+                        <p class="text-blue-600 text-sm mt-2">Members in gym</p>
+                    </div>
+                    <div class="bg-blue-100 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today's Revenue Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-all hover:scale-105 duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Today's Revenue</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2">₱{{ number_format($todayRevenue, 2) }}</h3>
+                        <p class="text-purple-600 text-sm mt-2">{{ $todaySales }} sales today</p>
+                    </div>
+                    <div class="bg-purple-100 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Status Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500 hover:shadow-xl transition-all hover:scale-105 duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Total Stock</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2">{{ $totalItemsInStock }}</h3>
+                        <p class="text-orange-600 text-sm mt-2">
+                            <span class="font-semibold">{{ $lowStockItems }}</span> low stock items
+                        </p>
+                    </div>
+                    <div class="bg-orange-100 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Left Column - Charts (2 columns) -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Revenue & Sales Trend Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">Sales Trend (Monthly)</h3>
+                        <div class="flex gap-4">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                                <span class="text-sm text-gray-600">Revenue</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                <span class="text-sm text-gray-600">Sales Count</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="h-72">
+                        <canvas id="salesTrendChart"></canvas>
+                    </div>
+                </div>
 
-        <div class="grid grid-rows-4 gap-4">
-            <div class="bg-blue-700 p-6">Gym Occupancy</div>
-            <div class="bg-blue-600 p-6">Stock in Stock out</div>
-            <div class="bg-blue-500 p-6">Sales</div>
-            <div class="bg-blue-400 p-6">Low and High Selling Product</div>
+                <!-- Revenue Breakdown & Sales Breakdown -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Revenue Breakdown -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Monthly Revenue Breakdown</h3>
+                        <div class="space-y-3">
+                            <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600 mb-1">Product Sales</p>
+                                <p class="text-2xl font-bold text-blue-600">₱{{ number_format($revenueBreakdown['products'], 2) }}</p>
+                            </div>
+                            <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600 mb-1">Membership Sales</p>
+                                <p class="text-2xl font-bold text-green-600">₱{{ number_format($revenueBreakdown['memberships'], 2) }}</p>
+                            </div>
+                            <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border-2 border-purple-300">
+                                <p class="text-sm text-gray-600 mb-1">Total Revenue</p>
+                                <p class="text-2xl font-bold text-purple-600">₱{{ number_format($revenueBreakdown['total'], 2) }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sales Count Breakdown -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Sales Breakdown</h3>
+                        <div class="h-56">
+                            <canvas id="salesBreakdownChart"></canvas>
+                        </div>
+                        <div class="mt-4 grid grid-cols-2 gap-3">
+                            <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                <p class="text-sm text-gray-600">Product Sales</p>
+                                <p class="text-xl font-bold text-blue-600">{{ $productSalesCount }}</p>
+                            </div>
+                            <div class="text-center p-3 bg-green-50 rounded-lg">
+                                <p class="text-sm text-gray-600">Memberships</p>
+                                <p class="text-xl font-bold text-green-600">{{ $membershipSalesCount }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product & Membership Performance -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Performance Overview</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Highest Selling Product -->
+                        <div class="border-2 border-green-200 rounded-lg p-4 bg-gradient-to-br from-green-50 to-emerald-50">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                <h4 class="font-semibold text-green-800">Top Product</h4>
+                            </div>
+                            @if($highestSellingProduct && $highestSellingProduct->product)
+                                <p class="text-lg font-bold text-gray-800">{{ $highestSellingProduct->product->name }}</p>
+                                <p class="text-sm text-gray-600">{{ $highestSellingProduct->total_sold }} units sold</p>
+                            @else
+                                <p class="text-gray-500">No data available</p>
+                            @endif
+                        </div>
+
+                        <!-- Lowest Selling Product -->
+                        <div class="border-2 border-red-200 rounded-lg p-4 bg-gradient-to-br from-red-50 to-orange-50">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                                </svg>
+                                <h4 class="font-semibold text-red-800">Needs Attention</h4>
+                            </div>
+                            @if($lowestSellingProduct && $lowestSellingProduct->product)
+                                <p class="text-lg font-bold text-red-600">{{ $lowestSellingProduct->product->name }}</p>
+                                <p class="text-sm text-gray-600">{{ $lowestSellingProduct->total_sold }} units sold</p>
+                            @else
+                                <p class="text-gray-500">No data available</p>
+                            @endif
+                        </div>
+
+                        <!-- Most Popular Plan -->
+                        <div class="border-2 border-purple-200 rounded-lg p-4 bg-gradient-to-br from-purple-50 to-pink-50">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-6 h-6 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                </svg>
+                                <h4 class="font-semibold text-purple-800">Top Plan</h4>
+                            </div>
+                            @if($mostPopularPlan && $mostPopularPlan->plan)
+                                <p class="text-lg font-bold text-gray-800">{{ $mostPopularPlan->plan->name }}</p>
+                                <p class="text-sm text-gray-600">{{ $mostPopularPlan->total_sales }} memberships sold</p>
+                            @else
+                                <p class="text-gray-500">No data available</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Membership Growth Trend -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Membership Growth Trend</h3>
+                    <div class="h-64">
+                        <canvas id="membershipTrendChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column - Stats & Activity (1 column) -->
+            <div class="space-y-6">
+                
+                <!-- Transaction Overview -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Monthly Overview</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                            <div class="flex items-center">
+                                <div class="bg-green-500 p-2 rounded-full mr-3">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </div>
+                                <span class="text-gray-700 font-medium">Stock In</span>
+                            </div>
+                            <span class="text-xl font-bold text-green-600">{{ $stockInCount }}</span>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border border-red-200">
+                            <div class="flex items-center">
+                                <div class="bg-red-500 p-2 rounded-full mr-3">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                    </svg>
+                                </div>
+                                <span class="text-gray-700 font-medium">Stock Out</span>
+                            </div>
+                            <span class="text-xl font-bold text-red-600">{{ $stockOutCount }}</span>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center">
+                                <div class="bg-blue-500 p-2 rounded-full mr-3">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                </div>
+                                <span class="text-gray-700 font-medium">Total Sales</span>
+                            </div>
+                            <span class="text-xl font-bold text-blue-600">{{ $todaySales }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Members by Plan -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Members by Plan</h3>
+                    <div class="space-y-3 max-h-72 overflow-y-auto">
+                        @forelse($membersByPlan as $planData)
+                        <div class="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg hover:shadow-md transition-shadow">
+                            <div>
+                                <p class="font-medium text-gray-800">{{ $planData['plan_name'] }}</p>
+                                <p class="text-sm text-gray-600">Active Members</p>
+                            </div>
+                            <div class="bg-white rounded-full px-4 py-2 shadow-sm">
+                                <span class="font-bold text-green-600">{{ $planData['count'] }}</span>
+                            </div>
+                        </div>
+                        @empty
+                        <p class="text-gray-500 text-center py-4">No active members</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                <!-- Recent Sales Activity -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Recent Sales</h3>
+                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                        @forelse($recentSales as $sale)
+                        <div class="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all hover:shadow-md">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <p class="font-medium text-gray-800">Sale #{{ $sale->sales_id }}</p>
+                                    <p class="text-xs text-gray-500">{{ $sale->created_at->diffForHumans() }}</p>
+                                </div>
+                                <span class="font-bold text-green-600">₱{{ number_format($sale->total_amount, 2) }}</span>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                @foreach($sale->items as $item)
+                                    @if($item->product)
+                                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">{{ $item->product->name }}</span>
+                                    @elseif($item->plan)
+                                        <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">{{ $item->plan->name }}</span>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                        @empty
+                        <p class="text-gray-500 text-center py-4">No recent sales</p>
+                        @endforelse
+                    </div>
+                </div>
+
+            </div>
+
         </div>
 
     </div>
+
+    <!-- Chart.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Sales Trend Chart (Revenue + Count)
+        const salesCtx = document.getElementById('salesTrendChart').getContext('2d');
+        const salesData = @json($salesTrend);
+        
+        new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: salesData.map(item => item.month),
+                datasets: [{
+                    label: 'Revenue (₱)',
+                    data: salesData.map(item => item.total_revenue),
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y',
+                }, {
+                    label: 'Sales Count',
+                    data: salesData.map(item => item.total_sales),
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y1',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Revenue (₱)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                        title: {
+                            display: true,
+                            text: 'Sales Count'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Membership Trend Chart
+        const membershipCtx = document.getElementById('membershipTrendChart').getContext('2d');
+        const membershipData = @json($membershipTrend);
+        
+        new Chart(membershipCtx, {
+            type: 'line',
+            data: {
+                labels: membershipData.map(item => item.month),
+                datasets: [{
+                    label: 'New Members',
+                    data: membershipData.map(item => item.count),
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: 'rgb(34, 197, 94)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+
+        // Sales Breakdown Pie Chart
+        const breakdownCtx = document.getElementById('salesBreakdownChart').getContext('2d');
+        
+        new Chart(breakdownCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Product Sales', 'Membership Sales'],
+                datasets: [{
+                    data: [{{ $productSalesCount }}, {{ $membershipSalesCount }}],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(34, 197, 94, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(59, 130, 246)',
+                        'rgb(34, 197, 94)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 
 @endsection
