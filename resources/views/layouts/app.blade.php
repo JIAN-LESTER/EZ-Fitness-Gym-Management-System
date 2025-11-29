@@ -28,7 +28,7 @@
     x-init="$watch('sidebarOpen', val => localStorage.setItem('sidebarOpen', val))"
     class="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
-  <?php 
+<?php 
 $user = Auth::user();
 $member = $user->member;
 
@@ -89,12 +89,12 @@ if ($user->role === 'admin') {
     <!-- Notification Badge -->
     @if($pendingApprovalsCount > 0)
         <span x-show="sidebarOpen" x-cloak 
-              class="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
+            class="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
             {{ $pendingApprovalsCount }}
         </span>
         <!-- Dot indicator when sidebar is collapsed -->
         <span x-show="!sidebarOpen" x-cloak 
-              class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800">
+            class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800">
         </span>
     @endif
 </a>
@@ -256,7 +256,7 @@ if ($user->role === 'admin') {
                     </div>
 
                     <div class="py-1">
-                     @if($user->role === 'member' && $member && $member->status === 'inactive' && $member->isApproved == true)
+                    @if($user->role === 'member' && $member && $member->status === 'inactive' && $member->isApproved == true)
     <button
         onclick="opencompleteMembershipModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
         class="flex items-center w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600">
@@ -914,7 +914,7 @@ if ($user->role === 'admin') {
 
     <script src="//unpkg.com/alpinejs" defer></script>
 
-   <script>
+<script>
 function openProfileModal() {
     const modal = document.getElementById('profileModal');
     if (modal) {
@@ -995,7 +995,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const planContainer = this.querySelector('[x-data]');
             const planButton = planContainer?.querySelector('button');
             const hiddenPlanInput = this.querySelector('input[name="plan_id"]');
-
+            
             // Plan validation
             if (!hiddenPlanInput || !hiddenPlanInput.value) {
                 if (planButton) {

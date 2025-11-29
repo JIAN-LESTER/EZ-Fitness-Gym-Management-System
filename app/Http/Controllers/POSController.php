@@ -233,7 +233,7 @@ class POSController extends Controller
         $referenceCode = $request->reference_code;
         try {
             // Validate reference code for GCash payments
-            if ($paymentMethod === 'qr' && empty($referenceCode)) {
+            if ($paymentMethod === 'gcash' && empty($referenceCode)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'GCash reference code is required'
@@ -259,15 +259,15 @@ class POSController extends Controller
                 $saleData = [
                     'user_id' => $userId,
                     'total_amount' => $finalTotal,
-                    'tax' => $vatAmount,
-                    'discount' => $discountAmount,
+                    'tax' => 0,
+                    'discount' => 0,
                     'payment_method' => $paymentMethod,
                     'status' => 'paid',
                     'date' => now()
                 ];
 
                 // Add reference code only for GCash payments
-                if ($paymentMethod === 'qr' && $referenceCode) {
+                if ($paymentMethod === 'gcash' && !empty($referenceCode)) {
                     $saleData['reference_code'] = $referenceCode;
                 }
 
