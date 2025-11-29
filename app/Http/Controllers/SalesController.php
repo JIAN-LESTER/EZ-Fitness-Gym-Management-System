@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Sales;
+use Illuminate\Routing\Controller;
 
 class SalesController extends Controller
 {
@@ -44,7 +45,6 @@ class SalesController extends Controller
             ->paginate(12)
             ->appends($request->query());
 
-
         // Create removeFilter function for the view
         $removeFilter = function ($key, $value = null) {
             $query = request()->query();
@@ -74,7 +74,12 @@ class SalesController extends Controller
 
     public function show($id)
     {
-        $sale = Sales::with(['user', 'items.product'])->findOrFail($id);
+        // Load sales with user, items, and both product and plan relationships
+        $sale = Sales::with([
+            'user', 
+            'items.product',
+            'items.plan'
+        ])->findOrFail($id);
 
         return response()->json($sale);
     }

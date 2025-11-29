@@ -7,6 +7,7 @@ use App\Models\Member_Profile;
 use App\Models\member;
 use App\Models\MemberProfile;
 use App\Models\User;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Verified;
@@ -127,7 +128,7 @@ class AuthController extends Controller
 
 
         // Role-based dashboard redirection
-        if ($user->role === 'admin') {
+        if ($user->role === 'admin' || $user->role === 'staff') {
             return redirect()->route('admin.dashboard')->with('success', 'Logged in successfully');
         }
 

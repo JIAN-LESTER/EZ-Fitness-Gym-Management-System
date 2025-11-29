@@ -560,109 +560,154 @@
             });
     }
 
-    function renderSaleDetails(sale) {
-        const content = document.getElementById('saleShowContent');
-        
-        let html = `
-            <div class="space-y-6">
-                <!-- Sale Header -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Sale #${sale.sales_id}</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${new Date(sale.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="px-4 py-2 rounded-full text-sm font-semibold
-                                ${sale.status === 'paid' ? 'bg-green-100 text-green-800' : ''}
-                                ${sale.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ''}
-                                ${sale.status === 'cancelled' ? 'bg-red-100 text-red-800' : ''}">
-                                ${sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}
-                            </span>
-                        </div>
+   function renderSaleDetails(sale) {
+    const content = document.getElementById('saleShowContent');
+    
+    let html = `
+        <div class="space-y-6">
+            <!-- Sale Header -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Sale #${sale.sales_id}</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${new Date(sale.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
-
-                    <!-- Customer & Payment Info -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Cashier</p>
-                            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${sale.user.first_name} ${sale.user.last_name}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">@${sale.user.username}</p>
-                        </div>
-                        <div class="space-y-3">
-                            <div>
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Payment Method</p>
-                                <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold
-                                    ${sale.payment_method === 'cash' ? 'bg-green-100 text-green-800' : ''}
-                                    ${sale.payment_method === 'credit_card' ? 'bg-blue-100 text-blue-800' : ''}
-                                    ${sale.payment_method === 'gcash' ? 'bg-purple-100 text-purple-800' : ''}">
-                                    ${sale.payment_method === 'credit_card' ? 'Credit Card' : sale.payment_method.charAt(0).toUpperCase() + sale.payment_method.slice(1)}
-                                </span>
-                            </div>
-                            ${sale.payment_method === 'gcash' && sale.reference_code ? `
-                            <div>
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">GCash Reference Code</p>
-                                <div class="flex items-center gap-2">
-                                    <span class="font-mono text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-lg border border-blue-200">
-                                        ${sale.reference_code}
-                                    </span>
-                                </div>
-                            </div>
-                            ` : ''}
-                        </div>
+                    <div class="text-right">
+                        <span class="px-4 py-2 rounded-full text-sm font-semibold
+                            ${sale.status === 'paid' ? 'bg-green-100 text-green-800' : ''}
+                            ${sale.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ''}
+                            ${sale.status === 'cancelled' ? 'bg-red-100 text-red-800' : ''}">
+                            ${sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}
+                        </span>
                     </div>
                 </div>
 
-                <!-- Sale Items -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Items Purchased</h4>
+                <!-- Customer & Payment Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Cashier</p>
+                        <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${sale.user.first_name} ${sale.user.last_name}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">@${sale.user.username}</p>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full">
-                            <thead class="bg-gray-50 dark:bg-gray-900">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-        `;
-
-        if (sale.items && sale.items.length > 0) {
-            sale.items.forEach(item => {
-                html += `
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-900">
-                        <td class="px-6 py-4">
-                            <p class="font-medium text-gray-900 dark:text-gray-200">${item.product.name}</p>
-                            ${item.product.description ? `<p class="text-sm text-gray-500">${item.product.description}</p>` : ''}
-                        </td>
-                        <td class="px-6 py-4 text-center text-gray-900 dark:text-gray-200">${item.quantity}</td>
-                        <td class="px-6 py-4 text-right text-gray-900 dark:text-gray-200">₱${parseFloat(item.price).toFixed(2)}</td>
-                        <td class="px-6 py-4 text-right font-semibold text-gray-900 dark:text-gray-200">₱${parseFloat(item.sub_total).toFixed(2)}</td>
-                    </tr>
-                `;
-            });
-        } else {
-            html += `
-                <tr>
-                    <td colspan="4" class="px-6 py-8 text-center text-gray-500">No items found</td>
-                </tr>
-            `;
-        }
-
-        html += `
-                            </tbody>
-                        </table>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Payment Method</p>
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold
+                                ${sale.payment_method === 'cash' ? 'bg-green-100 text-green-800' : ''}
+                                ${sale.payment_method === 'credit_card' ? 'bg-blue-100 text-blue-800' : ''}
+                                ${sale.payment_method === 'gcash' ? 'bg-purple-100 text-purple-800' : ''}">
+                                ${sale.payment_method === 'credit_card' ? 'Credit Card' : sale.payment_method.charAt(0).toUpperCase() + sale.payment_method.slice(1)}
+                            </span>
+                        </div>
+                        ${sale.payment_method === 'gcash' && sale.reference_code ? `
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">GCash Reference Code</p>
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-lg border border-blue-200">
+                                    ${sale.reference_code}
+                                </span>
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
-        `;
 
-        content.innerHTML = html;
+            <!-- Sale Items -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Items Purchased</h4>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50 dark:bg-gray-900">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+    `;
+
+    if (sale.items && sale.items.length > 0) {
+        sale.items.forEach(item => {
+            // Determine if it's a product or membership plan
+            const isProduct = item.product !== null;
+            const isPlan = item.plan !== null;
+            
+            let itemName = '';
+            let itemDescription = '';
+            let itemType = '';
+            let itemTypeBadge = '';
+            
+            if (isProduct) {
+                itemName = item.product.name;
+                itemDescription = item.product.description || '';
+                itemType = 'Product';
+                itemTypeBadge = 'bg-blue-100 text-blue-800';
+            } else if (isPlan) {
+                itemName = item.plan.name;
+                itemDescription = item.plan.details || '';
+                if (item.plan.duration_days) {
+                    itemDescription += ` (${item.plan.duration_days} days)`;
+                }
+                itemType = 'Membership Plan';
+                itemTypeBadge = 'bg-purple-100 text-purple-800';
+            } else {
+                itemName = 'Unknown Item';
+                itemDescription = '';
+                itemType = 'Unknown';
+                itemTypeBadge = 'bg-gray-100 text-gray-800';
+            }
+            
+            html += `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-900">
+                    <td class="px-6 py-4">
+                        <p class="font-medium text-gray-900 dark:text-gray-200">${itemName}</p>
+                        ${itemDescription ? `<p class="text-sm text-gray-500">${itemDescription}</p>` : ''}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold ${itemTypeBadge}">
+                            ${itemType}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center text-gray-900 dark:text-gray-200">${item.quantity}</td>
+                    <td class="px-6 py-4 text-right text-gray-900 dark:text-gray-200">₱${parseFloat(item.price).toFixed(2)}</td>
+                    <td class="px-6 py-4 text-right font-semibold text-gray-900 dark:text-gray-200">₱${parseFloat(item.sub_total).toFixed(2)}</td>
+                </tr>
+            `;
+        });
+    } else {
+        html += `
+            <tr>
+                <td colspan="5" class="px-6 py-8 text-center text-gray-500">No items found</td>
+            </tr>
+        `;
     }
+
+    html += `
+                        </tbody>
+                        <tfoot class="bg-gray-50 dark:bg-gray-900">
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-right font-semibold text-gray-800 dark:text-gray-200">
+                                    Total Amount:
+                                </td>
+                                <td class="px-6 py-4 text-right font-bold text-xl text-gray-900 dark:text-gray-200">
+                                    ₱${parseFloat(sale.total_amount).toFixed(2)}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+
+    content.innerHTML = html;
+}
 
     // Initialize on DOM Ready
     document.addEventListener('DOMContentLoaded', function() {

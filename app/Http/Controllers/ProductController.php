@@ -6,6 +6,8 @@ use App\Models\Inventory;
 use App\Models\Logs;
 use App\Models\Product;
 use App\Models\Categories;
+use App\Models\Transactions;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -97,6 +99,13 @@ class ProductController extends Controller
 
         $currentUser = Auth::user();
 
+                 Transactions::create([
+                    'product_id' => $product->product_id,
+                    'type' => 'stock_in',
+                    'timestamp' => now(),
+                ]);
+
+
         Logs::create([
             'user_id' => $currentUser->user_id,
             'action' => "{$currentUser->last_name} added a new product: {$product->name}.",
@@ -141,56 +150,95 @@ class ProductController extends Controller
      * Update a product
      */
     public function update(Request $request, string $id)
-    {
-        $product = Product::findOrFail($id);
-        $inventory = Inventory::where('product_id', $id)->firstOrFail();
+{
+    $product = Product::findOrFail($id);
+    $inventory = Inventory::where('product_id', $id)->firstOrFail();
 
-        $validated = $request->validate([
-            'category_id' => 'sometimes|integer|exists:categories,category_id',
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'sometimes|numeric|min:0',
-            'status' => 'sometimes|in:available,unavailable',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+    $validated = $request->validate([
+        'category_id' => 'sometimes|integer|exists:categories,category_id',
+        'name' => 'sometimes|string|max:255',
+        'description' => 'nullable|string',
+        'price' => 'sometimes|numeric|min:0',
+        'status' => 'sometimes|in:available,unavailable',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    ]);
 
-        $inventoryValidated = $request->validate([
-            'quantity' => 'sometimes|numeric|min:0',
-        ]);
+    $inventoryValidated = $request->validate([
+        'quantity' => 'sometimes|numeric|min:0',
+    ]);
 
-        // Handle image upload - FIXED
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($product->image && Storage::disk('public')->exists($product->image)) {
-                Storage::disk('public')->delete($product->image);
-            }
-
-            $file = $request->file('image');
-            $fileName = 'product_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-
-            // Store in storage/app/public/products
-            $path = $file->storeAs('products', $fileName, 'public');
-
-            // Save only the relative path
-            $validated['image'] = $path;
+    // Handle image upload
+    if ($request->hasFile('image')) {
+        // Delete old image if exists
+        if ($product->image && Storage::disk('public')->exists($product->image)) {
+            Storage::disk('public')->delete($product->image);
         }
 
-        // Update records
-        $product->update($validated);
-        $inventory->update($inventoryValidated);
+        $file = $request->file('image');
+        $fileName = 'product_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
 
-        $currentUser = Auth::user();
+        // Store in storage/app/public/products
+        $path = $file->storeAs('products', $fileName, 'public');
 
-        Logs::create([
-            'user_id' => $currentUser->user_id,
-            'action' => "{$currentUser->last_name} updated a product: {$product->name}.",
-            'timestamp' => now(),
-        ]);
-
-        return redirect()->route('products.index')
-            ->with('success', 'Product updated successfully!');
+        // Save only the relative path
+        $validated['image'] = $path;
     }
 
+    // Check if quantity is being updated and increased
+    $oldQuantity = $inventory->quantity;
+    $quantityChanged = false;
+    $quantityIncreased = false;
+    $quantityDifference = 0;
+
+    if (isset($inventoryValidated['quantity'])) {
+        $newQuantity = $inventoryValidated['quantity'];
+        
+        if ($newQuantity != $oldQuantity) {
+            $quantityChanged = true;
+            $quantityDifference = $newQuantity - $oldQuantity;
+            
+            if ($newQuantity > $oldQuantity) {
+                $quantityIncreased = true;
+            }
+        }
+    }
+
+    // Update records
+    $product->update($validated);
+    $inventory->update($inventoryValidated);
+
+    // Create transaction only if quantity was increased
+    if ($quantityChanged && $quantityIncreased) {
+        Transactions::create([
+            'product_id' => $product->product_id,
+            'type' => 'stock_in',
+            'quantity' => $quantityDifference, // Store the amount added
+            'timestamp' => now(),
+        ]);
+    }
+
+    $currentUser = Auth::user();
+
+    // Enhanced logging with quantity change details
+    $logAction = "{$currentUser->last_name} updated product: {$product->name}";
+    
+    if ($quantityChanged) {
+        if ($quantityIncreased) {
+            $logAction .= " (Stock increased by {$quantityDifference} units)";
+        } else {
+            $logAction .= " (Stock decreased by " . abs($quantityDifference) . " units)";
+        }
+    }
+
+    Logs::create([
+        'user_id' => $currentUser->user_id,
+        'action' => $logAction,
+        'timestamp' => now(),
+    ]);
+
+    return redirect()->route('products.index')
+        ->with('success', 'Product updated successfully!');
+}
     /**
      * Delete a product
      */
