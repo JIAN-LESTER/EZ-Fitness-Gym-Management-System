@@ -17,7 +17,7 @@ class MemberProfile extends Model
     public $timestamps = false;
     protected $table = 'member_profiles';
 
-    protected $primaryKey = 'member_id'; 
+    protected $primaryKey = 'member_id';
 
     protected $fillable = [
         'user_id',
@@ -37,16 +37,19 @@ class MemberProfile extends Model
         'renewal_pending'
     ];
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
-    public function plan() {
+    public function plan()
+    {
         return $this->belongsTo(MembershipPlan::class, 'plan_id', 'plan_id');
     }
 
     // Fixed relationship
-    public function attendances() {
+    public function attendances()
+    {
         return $this->hasMany(Attendance::class, 'member_id', 'member_id');
     }
 
@@ -56,7 +59,7 @@ class MemberProfile extends Model
         if (!$this->end_date) {
             return false;
         }
-        
+
         return Carbon::parse($this->end_date)->isPast();
     }
 
@@ -65,14 +68,15 @@ class MemberProfile extends Model
      */
     public function isExpiringSoon(int $days = 7): bool
     {
-        if (!$this->end_date) {
+        if (!$this->end_date || $this->isExpired()) {
             return false;
         }
-        
-        $endDate = Carbon::parse($this->end_date);
-        return $endDate->isFuture() && $endDate->diffInDays(now()) <= $days;
-    }
 
+        $endDate = Carbon::parse($this->end_date)->startOfDay();
+        $today = Carbon::today();
+
+        return $today->diffInDays($endDate) <= $days;
+    }
     /**
      * Get days remaining (negative if expired)
      */
@@ -81,8 +85,8 @@ class MemberProfile extends Model
         if (!$this->end_date) {
             return 0;
         }
-        
-        return Carbon::parse($this->end_date)->diffInDays(now(), false);
+
+        return now()->diffInDays(Carbon::parse($this->end_date), false);
     }
 
     /**
@@ -104,9 +108,9 @@ class MemberProfile extends Model
     public function scopeExpired($query)
     {
         return $query->where('end_date', '<=', Carbon::now())
-                     ->where('status', 'active')
-                     ->where('isApproved', true)
-                     ->where('isDisabled', false);
+            ->where('status', 'active')
+            ->where('isApproved', true)
+            ->where('isDisabled', false);
     }
 
     /**
@@ -115,12 +119,11 @@ class MemberProfile extends Model
     public function scopeExpiringSoon($query, int $days = 7)
     {
         return $query->whereBetween('end_date', [
-                         Carbon::now(),
-                         Carbon::now()->addDays($days)
-                     ])
-                     ->where('status', 'active')
-                     ->where('isApproved', true)
-                     ->where('isDisabled', false);
+            Carbon::now(),
+            Carbon::now()->addDays($days)
+        ])
+            ->where('status', 'active')
+            ->where('isApproved', true)
+            ->where('isDisabled', false);
     }
-
 }
