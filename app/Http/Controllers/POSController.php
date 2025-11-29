@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\SalesItem;
 use App\Models\Sales;
 use App\Models\Transactions;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;

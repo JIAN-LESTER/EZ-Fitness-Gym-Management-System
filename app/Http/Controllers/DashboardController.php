@@ -13,12 +13,17 @@ use App\Models\SalesItem;
 use App\Models\Transactions;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        // Get separate period filters for each chart
+        $salesPeriod = $request->input('sales_period', 'month');
+        $membershipPeriod = $request->input('membership_period', 'month');
+
         // Membership Overview
         $totalActiveMembers = MemberProfile::where('status', 'active')->count();
         $newMembersThisMonth = MemberProfile::whereMonth('start_date', Carbon::now()->month)
@@ -44,13 +49,13 @@ class DashboardController extends Controller
             ->where('status', 'checked_in')
             ->count();
 
-        // Sales Overview (Today) - Including both product and membership sales
+        // Sales Overview (Today)
         $todaySales = Sales::whereDate('created_at', Carbon::today())->count();
         $todayRevenue = Sales::whereDate('created_at', Carbon::today())
             ->where('status', 'paid')
             ->sum('total_amount');
 
-        // Monthly Sales Statistics - Total from all sales
+        // Monthly Sales Statistics
         $monthlySales = Sales::whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->where('status', 'paid')
@@ -75,7 +80,7 @@ class DashboardController extends Controller
             ->whereYear('created_at', Carbon::now()->year)
             ->count();
 
-        // Product Performance (Excluding Memberships)
+        // Product Performance
         $highestSellingProduct = SalesItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
             ->whereNotNull('product_id')
             ->whereNull('plan_id')
@@ -112,28 +117,11 @@ class DashboardController extends Controller
             $mostPopularPlan->load('plan');
         }
 
-        // Sales Trend Chart Data (Last 6 months) - Combined
-        $salesTrend = Sales::select(
-                DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
-                DB::raw('SUM(total_amount) as total_revenue'),
-                DB::raw('COUNT(*) as total_sales')
-            )
-            ->where('created_at', '>=', Carbon::now()->subMonths(1))
-            ->where('status', 'paid')
-            ->groupBy('month')
-            ->orderBy('month', 'asc')
-            ->get();
-
-        // Membership Trend Chart Data (Last 6 months)
-        $membershipTrend = MemberProfile::select(
-                DB::raw('DATE_FORMAT(start_date, "%Y-%m") as month'),
-                DB::raw('COUNT(*) as count')
-            )
-            ->where('start_date', '>=', Carbon::now()->subMonths(1))
-            ->whereNotNull('start_date')
-            ->groupBy('month')
-            ->orderBy('month', 'asc')
-            ->get();
+        // Sales Trend Chart Data - Based on its own period
+        $salesTrend = $this->getSalesTrend($salesPeriod);
+        
+        // Membership Trend Chart Data - Based on its own period
+        $membershipTrend = $this->getMembershipTrend($membershipPeriod);
 
         // Revenue Breakdown (This Month)
         $revenueBreakdown = [
@@ -142,7 +130,7 @@ class DashboardController extends Controller
             'total' => $monthlySales
         ];
 
-        // Recent Activities - Combined Sales
+        // Recent Activities
         $recentSales = Sales::with(['user', 'items.product', 'items.plan'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
@@ -206,7 +194,120 @@ class DashboardController extends Controller
             'membersByPlan',
             'expiringMemberships',
             'productSalesCount',
-            'membershipSalesCount'
+            'membershipSalesCount',
+            'salesPeriod',
+            'membershipPeriod'
         ));
+    }
+
+    private function getSalesTrend($period)
+    {
+        switch ($period) {
+            case 'today':
+                return Sales::select(
+                        DB::raw('HOUR(created_at) as hour'),
+                        DB::raw('SUM(total_amount) as total_revenue'),
+                        DB::raw('COUNT(*) as total_sales')
+                    )
+                    ->whereDate('created_at', Carbon::today())
+                    ->where('status', 'paid')
+                    ->groupBy('hour')
+                    ->orderBy('hour', 'asc')
+                    ->get()
+                    ->map(function($item) {
+                        $item->label = Carbon::today()->setHour($item->hour)->format('h A');
+                        return $item;
+                    });
+
+            case 'week':
+                return Sales::select(
+                        DB::raw('DATE(created_at) as date'),
+                        DB::raw('SUM(total_amount) as total_revenue'),
+                        DB::raw('COUNT(*) as total_sales')
+                    )
+                    ->where('created_at', '>=', Carbon::now()->subDays(7))
+                    ->where('status', 'paid')
+                    ->groupBy('date')
+                    ->orderBy('date', 'asc')
+                    ->get()
+                    ->map(function($item) {
+                        $item->label = Carbon::parse($item->date)->format('D, M d');
+                        return $item;
+                    });
+
+            case 'month':
+            default:
+                return Sales::select(
+                        DB::raw('YEARWEEK(created_at, 1) as week'),
+                        DB::raw('DATE(MIN(created_at)) as week_start'),
+                        DB::raw('SUM(total_amount) as total_revenue'),
+                        DB::raw('COUNT(*) as total_sales')
+                    )
+                    ->where('created_at', '>=', Carbon::now()->subWeeks(4))
+                    ->where('status', 'paid')
+                    ->groupBy('week')
+                    ->orderBy('week', 'asc')
+                    ->get()
+                    ->map(function($item) {
+                        $weekStart = Carbon::parse($item->week_start);
+                        $weekEnd = $weekStart->copy()->addDays(6);
+                        $item->label = $weekStart->format('M d') . ' - ' . $weekEnd->format('M d');
+                        return $item;
+                    });
+        }
+    }
+
+    private function getMembershipTrend($period)
+    {
+        switch ($period) {
+            case 'today':
+                return MemberProfile::select(
+                        DB::raw('HOUR(start_date) as hour'),
+                        DB::raw('COUNT(*) as count')
+                    )
+                    ->whereDate('start_date', Carbon::today())
+                    ->whereNotNull('start_date')
+                    ->groupBy('hour')
+                    ->orderBy('hour', 'asc')
+                    ->get()
+                    ->map(function($item) {
+                        $item->label = Carbon::today()->setHour($item->hour)->format('h A');
+                        return $item;
+                    });
+
+            case 'week':
+                return MemberProfile::select(
+                        DB::raw('DATE(start_date) as date'),
+                        DB::raw('COUNT(*) as count')
+                    )
+                    ->where('start_date', '>=', Carbon::now()->subDays(7))
+                    ->whereNotNull('start_date')
+                    ->groupBy('date')
+                    ->orderBy('date', 'asc')
+                    ->get()
+                    ->map(function($item) {
+                        $item->label = Carbon::parse($item->date)->format('D, M d');
+                        return $item;
+                    });
+
+            case 'month':
+            default:
+                return MemberProfile::select(
+                        DB::raw('YEARWEEK(start_date, 1) as week'),
+                        DB::raw('DATE(MIN(start_date)) as week_start'),
+                        DB::raw('COUNT(*) as count')
+                    )
+                    ->where('start_date', '>=', Carbon::now()->subWeeks(4))
+                    ->whereNotNull('start_date')
+                    ->groupBy('week')
+                    ->orderBy('week', 'asc')
+                    ->get()
+                    ->map(function($item) {
+                        $weekStart = Carbon::parse($item->week_start);
+                        $weekEnd = $weekStart->copy()->addDays(6);
+                        $item->label = $weekStart->format('M d') . ' - ' . $weekEnd->format('M d');
+                        return $item;
+                    });
+        }
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Inventory;
 use App\Models\Logs;
 use App\Models\Product;
 use App\Models\Categories;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;

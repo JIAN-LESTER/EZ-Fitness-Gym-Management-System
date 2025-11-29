@@ -42,23 +42,19 @@
 </style>
 
 @section('content')
-@php
-    $isStaff = auth()->user()->role === 'staff';
-@endphp
-
     <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
 
      <!-- Header / Add Button -->
     <div class="flex justify-between items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
         <h2 class="text-2xl font-bold text-gray-800">User Management</h2>
-      <button onclick="openModal('addUserModal')"
-    class="flex items-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-        class="w-5 h-5">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-    </svg>
-    Add {{ $isStaff ? 'Member' : 'User' }}
-</button>
+        <button onclick="openModal('addUserModal')"
+            class="flex items-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Add User
+        </button>
     </div>
 
     <!-- Search & Filters -->
@@ -206,35 +202,30 @@
                 </tr>
             </thead>
 <tbody class="divide-y divide-gray-100">
-   @forelse($users as $user)
-    {{-- Skip non-members if user is staff --}}
-    @if($isStaff && $user->role !== 'member')
-        @continue
-    @endif
+    @forelse($users as $user)
+        @php
+            $pendingApproval = $user->member 
+                && $user->member->isApproved == false 
+                && $user->member->isDisabled == false
+                && $user->member->plan_id !== null;
+            
+            $isDenied = $user->member 
+                && $user->member->isDisabled == true 
+                && $user->member->isApproved == false;
+            
+            $incompleteProfile = $user->member 
+                && ($user->member->plan_id === null 
+                    || $user->member->sex === null 
+                    || $user->member->birthday === null 
+                    || $user->member->mobile_number === null);
 
-    @php
-        $pendingApproval = $user->member 
-            && $user->member->isApproved == false 
-            && $user->member->isDisabled == false
-            && $user->member->plan_id !== null;
-        
-        $isDenied = $user->member 
-            && $user->member->isDisabled == true 
-            && $user->member->isApproved == false;
-        
-        $incompleteProfile = $user->member 
-            && ($user->member->plan_id === null 
-                || $user->member->sex === null 
-                || $user->member->birthday === null 
-                || $user->member->mobile_number === null);
+            $isSuspended = $user->member && $user->member->status === 'expired';
+            $isRenewalPending = $user->member && $user->member->renewal_pending;
+        @endphp
 
-        $isSuspended = $user->member && $user->member->status === 'expired';
-        $isRenewalPending = $user->member && $user->member->renewal_pending;
-    @endphp
-
-    @if($incompleteProfile)
-        @continue
-    @endif
+        @if($incompleteProfile)
+            @continue
+        @endif
 
         <tr class="clickable-row hover:bg-gray-50 transition-colors group" onclick="showUser('{{ $user->user_id }}')">
 
@@ -461,19 +452,19 @@
                 @endif
             @endif
         </tr>
-   @empty
-    <tr>
-        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-            <div class="flex flex-col items-center justify-center">
-                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                <p class="text-lg font-medium">No {{ $isStaff ? 'members' : 'users' }} found</p>
-                <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
-            </div>
-        </td>
-    </tr>
-@endforelse
+    @empty
+        <tr>
+            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                <div class="flex flex-col items-center justify-center">
+                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <p class="text-lg font-medium">No users found</p>
+                    <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                </div>
+            </td>
+        </tr>
+    @endforelse
 </tbody>
         </table>
     </div>
@@ -514,17 +505,12 @@
 
     <div class="relative bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
         <header class="bg-gray-600 text-white p-5 rounded-t-2xl flex-shrink-0">
-            <h2 class="text-xl font-semibold">Add New {{ $isStaff ? 'Member' : 'User' }}</h2>
+            <h2 class="text-xl font-semibold">Add New User</h2>
         </header>
 
         <div class="overflow-y-auto flex-1 modal-scrollbar">
             <form action="{{ route('admin.users-store') }}" method="POST" class="p-6 md:p-8 space-y-6">
                 @csrf
-
-                {{-- Hidden role field for staff --}}
-                @if($isStaff)
-                    <input type="hidden" name="role" value="member">
-                @endif
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -579,8 +565,6 @@
                     </div>
                 </div>
 
-                {{-- Only show role selector for non-staff --}}
-                @if(!$isStaff)
                 <div>
                     <label for="role" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
                     <select name="role" id="role" onchange="toggleMemberFields('add')"
@@ -590,17 +574,15 @@
                         <option value="admin">Admin</option>
                     </select>
                 </div>
-                @endif
 
-                {{-- Member fields - always visible for staff --}}
-                <div id="addMemberFields" class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-4" style="{{ $isStaff ? 'display: block;' : '' }}">
-                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Member Profile {{ $isStaff ? '(Required)' : '(Optional)' }}</h3>
+                <div id="addMemberFields" class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-4">
+                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Member Profile (Optional)</h3>
                     
                     <div>
-                        <label for="plan_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Membership Plan {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
-                        <select name="plan_id" id="plan_id" {{ $isStaff ? 'required' : '' }}
+                        <label for="plan_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Membership Plan</label>
+                        <select name="plan_id" id="plan_id"
                             class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
-                            <option value="">Select a plan{{ $isStaff ? '' : ' (optional)' }}</option>
+                            <option value="">Select a plan (optional)</option>
                             @foreach($plans ?? [] as $plan)
                                 <option value="{{ $plan->plan_id }}">{{ $plan->name }} - ₱{{ number_format($plan->price, 2) }}</option>
                             @endforeach
@@ -609,8 +591,8 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="sex" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sex {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
-                            <select name="sex" id="sex" {{ $isStaff ? 'required' : '' }}
+                            <label for="sex" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sex</label>
+                            <select name="sex" id="sex"
                                 class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
                                 <option value="">Select...</option>
                                 <option value="male">Male</option>
@@ -618,8 +600,8 @@
                             </select>
                         </div>
                         <div>
-                            <label for="birthday" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Birthday {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
-                            <input type="date" name="birthday" id="birthday" {{ $isStaff ? 'required' : '' }}
+                            <label for="birthday" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Birthday</label>
+                            <input type="date" name="birthday" id="birthday"
                                 class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
                         </div>
                     </div>
@@ -638,8 +620,8 @@
                     </div>
 
                     <div>
-                        <label for="mobile_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mobile Number {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
-                        <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789" {{ $isStaff ? 'required' : '' }}
+                        <label for="mobile_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mobile Number</label>
+                        <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789"
                             class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
                     </div>
                 </div>
@@ -648,20 +630,20 @@
                     <button type="button" onclick="closeModal('addUserModal')"
                         class="px-6 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
                     <button type="submit"
-                        class="px-6 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto">Add {{ $isStaff ? 'Member' : 'User' }}</button>
+                        class="px-6 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto">Add User</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-{{-- Modified Edit User Modal - Similar changes --}}
+<!-- Edit User Modal -->
 <div id="editUserModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
     <div class="absolute inset-0" onclick="closeModal('editUserModal')"></div>
 
     <div class="relative bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
         <header class="bg-gray-600 text-white p-5 rounded-t-2xl flex-shrink-0">
-            <h2 class="text-xl font-semibold">Edit {{ $isStaff ? 'Member' : 'User' }}</h2>
+            <h2 class="text-xl font-semibold">Edit User</h2>
         </header>
 
         <div class="overflow-y-auto flex-1 modal-scrollbar">
@@ -670,27 +652,16 @@
                 @method('PUT')
                 <input type="hidden" id="editUserId">
 
-                {{-- Hidden role field for staff --}}
-                @if($isStaff)
-                    <input type="hidden" name="role" value="member">
-                @endif
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="edit_first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
                         <input type="text" name="first_name" id="edit_first_name" 
                             class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
-                        @error('first_name')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
                     </div>
                     <div>
                         <label for="edit_last_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
                         <input type="text" name="last_name" id="edit_last_name" 
                             class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
-                        @error('last_name')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
                     </div>
                 </div>
 
@@ -698,18 +669,12 @@
                     <label for="edit_username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
                     <input type="text" name="username" id="edit_username" 
                         class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
-                    @error('username')
-                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
                 </div>
 
                 <div>
                     <label for="edit_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
                     <input type="email" name="email" id="edit_email" 
                         class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
-                    @error('email')
-                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -717,26 +682,16 @@
                         <label for="edit_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Password (Optional)</label>
                         <input type="password" name="password" id="edit_password"
                             class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
-                        @error('password')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
                     </div>
                     <div>
-                        <label for="edit_password_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</label>
-                        <input type="password" name="password_confirmation" id="edit_password_confirmation" 
+                        <label for="edit_role" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                        <select name="role" id="edit_role" onchange="toggleMemberFields('edit')"
                             class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                            <option value="member">Member</option>
+                            <option value="staff">Staff</option>
+                            <option value="admin">Admin</option>
+                        </select>
                     </div>
-                </div>
-
-                @if(!$isStaff)
-                <div>
-                    <label for="edit_role" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
-                    <select name="role" id="edit_role" onchange="toggleMemberFields('edit')"
-                        class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
-                        <option value="member">Member</option>
-                        <option value="staff">Staff</option>
-                        <option value="admin">Admin</option>
-                    </select>
                 </div>
 
                 <div>
@@ -747,11 +702,9 @@
                         <option value="inactive">Inactive</option>
                     </select>
                 </div>
-                @endif
 
-                {{-- Member fields - always visible for staff --}}
-                <div id="editMemberFields" class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-4" style="{{ $isStaff ? 'display: block;' : '' }}">
-                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Member Profile {{ $isStaff ? '(Required)' : '(Optional)' }}</h3>
+                <div id="editMemberFields" class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-4">
+                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Member Profile (Optional)</h3>
                     
                     <div>
                         <label for="edit_plan_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Membership Plan</label>
@@ -805,7 +758,7 @@
                     <button type="button" onclick="closeModal('editUserModal')"
                         class="px-6 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
                     <button type="submit"
-                        class="px-6 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto">Update {{ $isStaff ? 'Member' : 'User' }}</button>
+                        class="px-6 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto">Update User</button>
                 </div>
             </form>
         </div>
@@ -836,7 +789,10 @@
 
     <script>
     
-const isStaff = {{ $isStaff ? 'true' : 'false' }};
+// Validation Utility Functions
+// ===========================
+// VALIDATION UTILITY FUNCTIONS
+// ===========================
 
 const showError = (element, message) => {
     if (!element) return;
@@ -934,16 +890,6 @@ function closeModal(modalId) {
 // ===========================
 
 function toggleMemberFields(mode) {
-    // If staff, always show member fields
-    if (isStaff) {
-        const memberFields = document.getElementById(mode === 'add' ? 'addMemberFields' : 'editMemberFields');
-        if (memberFields) {
-            memberFields.style.display = 'block';
-        }
-        return;
-    }
-    
-    // Original logic for non-staff
     const roleSelect = document.getElementById(mode === 'add' ? 'role' : 'edit_role');
     const memberFields = document.getElementById(mode === 'add' ? 'addMemberFields' : 'editMemberFields');
     
@@ -1071,10 +1017,6 @@ function removeFilter(name, value) {
 // ===========================
 // ACTIONS MENU
 // ===========================
-// ===========================
-// ACTIONS MENU - AUTO CLOSE AFTER SELECTION
-// ===========================
-
 function toggleActionsMenu(event, userId) {
     event?.stopPropagation();
     
@@ -1109,30 +1051,6 @@ function toggleActionsMenu(event, userId) {
                 menu.insertBefore(closeBtn, menu.firstChild);
             }
             
-            // Add click handlers to all menu items to close after selection
-            const menuItems = menu.querySelectorAll('button');
-            menuItems.forEach(item => {
-                // Remove existing auto-close listeners to avoid duplicates
-                if (!item.hasAttribute('data-close-handler')) {
-                    item.setAttribute('data-close-handler', 'true');
-                    
-                    // Store original onclick
-                    const originalOnClick = item.onclick;
-                    
-                    item.onclick = function(e) {
-                        // Call original function
-                        if (originalOnClick) {
-                            originalOnClick.call(this, e);
-                        }
-                        
-                        // Close menu after a short delay
-                        setTimeout(() => {
-                            menu.classList.add('hidden');
-                        }, 100);
-                    };
-                }
-            });
-            
             // Position menu relative to button
             const rect = button.getBoundingClientRect();
             menu.style.position = 'fixed';
@@ -1146,23 +1064,6 @@ function toggleActionsMenu(event, userId) {
     }
 }
 
-// Helper function to close specific menu
-function closeActionsMenu(userId) {
-    const menu = document.getElementById(`actionsMenu-${userId}`);
-    if (menu) {
-        menu.classList.add('hidden');
-    }
-}
-
-// Helper function to close all menus
-function closeAllActionsMenus() {
-    document.querySelectorAll('[id^="actionsMenu-"]').forEach(menu => {
-        menu.classList.add('hidden');
-    });
-}
-
-
-
 // ===========================
 // EDIT USER
 // ===========================
@@ -1174,16 +1075,6 @@ function editUser(userId) {
             return res.json();
         })
         .then(user => {
-            // Check if staff is trying to edit non-member
-            if (isStaff && user.role !== 'member') {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('You can only edit members');
-                } else {
-                    alert('You can only edit members');
-                }
-                return;
-            }
-            
             populateEditForm(user);
             openModal('editUserModal');
         })
@@ -1257,17 +1148,6 @@ function showUser(userId) {
             return res.json();
         })
         .then(user => {
-            // Check if staff is trying to view non-member
-            if (isStaff && user.role !== 'member') {
-                closeModal('userShowModal');
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('You can only view member details');
-                } else {
-                    alert('You can only view member details');
-                }
-                return;
-            }
-            
             renderUserDetails(user);
         })
         .catch(error => {
@@ -1446,7 +1326,7 @@ function setupFormValidation() {
                 scrollToFirstError(this);
             }
         });
-
+        setupLiveValidation(addUserForm, 'add');
     }
     
     const editUserForm = document.querySelector('#editUserForm');
@@ -1458,7 +1338,7 @@ function setupFormValidation() {
                 scrollToFirstError(this);
             }
         });
-  
+        setupLiveValidation(editUserForm, 'edit');
     }
 }
 
@@ -1699,7 +1579,7 @@ function scrollToFirstError(form) {
 function approveMember(memberId) {
     if (typeof Swal === 'undefined') {
         if (confirm('Approve this member?')) {
-            const payment = prompt('Enter payment method (cash/gcash):');
+            const payment = prompt('Enter payment method (cash/credit_card/gcash):');
             if (payment) {
                 window.location.href = `/admin/user_crud/approve/${memberId}?payment=${payment}`;
             }
@@ -1723,6 +1603,7 @@ function approveMember(memberId) {
                 input: 'select',
                 inputOptions: {
                     'cash': 'Cash',
+                    'credit_card': 'Card',
                     'gcash': 'Gcash'
                 },
                 inputPlaceholder: 'Choose a payment method',
@@ -1901,7 +1782,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateFilterCount();
     
     // Close dropdown when clicking outside
-   document.addEventListener('click', function(event) {
+    document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('filterDropdown');
         const button = event.target.closest('button[onclick*="toggleFilterDropdown"]');
         
@@ -1913,24 +1794,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Close action menus when clicking outside
         const actionsMenus = document.querySelectorAll('[id^="actionsMenu-"]');
-        const isClickInsideMenu = event.target.closest('[id^="actionsMenu-"]');
-        const isClickOnToggleButton = event.target.closest('[onclick*="toggleActionsMenu"]');
-        
-        if (!isClickInsideMenu && !isClickOnToggleButton) {
-            actionsMenus.forEach(menu => {
+        actionsMenus.forEach(menu => {
+            if (!menu.contains(event.target) && !event.target.closest('[onclick*="toggleActionsMenu"]')) {
                 menu.classList.add('hidden');
-            });
-        }
+            }
+        });
     });
     
     // Handle Escape key to close modals
-
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            // Close all action menus
-            closeAllActionsMenus();
-            
-            // Close modals
             const openModals = document.querySelectorAll('.backdrop-blur-sm:not(.hidden)');
             openModals.forEach(modal => {
                 if (modal.id) closeModal(modal.id);

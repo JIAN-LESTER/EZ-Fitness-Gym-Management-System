@@ -10,36 +10,89 @@ use App\Mail\MemberQRCodeMail;
 use App\Models\User;
 use App\Models\MemberProfile;
 use App\Models\MembershipPlan;
+use App\Models\Attendance;
 use App\Models\Logs;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
 
 class MemberProfileController extends Controller
 {
     public function dashboard()
     {
-        $member = Auth::user();
+        $user = Auth::user();
         $plans = MembershipPlan::all();
-        $memberProfile = MemberProfile::where('user_id', $member->user_id)->first();
+        
+        // Get user's member profile
+        $memberProfile = MemberProfile::with('plan', 'user')
+            ->where('user_id', $user->user_id)
+            ->first();
 
-        // Check if membership is expired or suspended
-        if ($memberProfile && $memberProfile->status === 'expired') {
-            $daysRemaining = 0;
-        } elseif ($memberProfile && $memberProfile->end_date) {
-            $daysRemaining = max(0, now()->diffInDays($memberProfile->end_date, false));
+        // Get current gym occupancy
+        $currentOccupancy = Attendance::whereDate('check_in_time', Carbon::today())
+            ->where('status', 'checked_in')
+            ->count();
+
+        // Calculate days left on membership (if exists)
+        $daysLeft = null;
+        $membershipStatus = null;
+        $isExpiringSoon = false;
+        
+        if ($memberProfile) {
+            $daysLeft = $memberProfile->daysRemaining();
             
-            // Auto-expire if end date has passed
-            if ($daysRemaining <= 0 && $memberProfile->status === 'active') {
-                $memberProfile->update(['status' => 'expired']);
-                $daysRemaining = 0;
+            if ($memberProfile->isExpired()) {
+                $membershipStatus = 'expired';
+                // Auto-update status if needed
+                if ($memberProfile->status === 'active') {
+                    $memberProfile->update(['status' => 'expired']);
+                }
+            } elseif ($memberProfile->isExpiringSoon(7)) {
+                $membershipStatus = 'expiring_soon';
+                $isExpiringSoon = true;
+            } else {
+                $membershipStatus = 'active';
             }
-        } else {
-            $daysRemaining = null;
         }
 
-        return view('member.dashboard', compact('member', 'plans', 'memberProfile', 'daysRemaining'));
+        // Get all available membership plans (introductory plans list)
+        $membershipPlans = MembershipPlan::orderBy('price', 'asc')->get();
+
+        // Get user's attendance history (last 10 check-ins)
+        $recentAttendance = Attendance::where('member_id', $memberProfile?->member_id)
+            ->orderBy('check_in_time', 'desc')
+            ->limit(10)
+            ->get();
+
+        // Calculate attendance statistics
+        $totalCheckIns = Attendance::where('member_id', $memberProfile?->member_id)->count();
+        $thisMonthCheckIns = Attendance::where('member_id', $memberProfile?->member_id)
+            ->whereMonth('check_in_time', Carbon::now()->month)
+            ->whereYear('check_in_time', Carbon::now()->year)
+            ->count();
+
+        // Legacy variables for backward compatibility
+        $member = $user;
+        $daysRemaining = $daysLeft;
+
+        return view('member.dashboard', compact(
+            'member',
+            'user',
+            'plans',
+            'memberProfile',
+            'daysRemaining',
+            'daysLeft',
+            'currentOccupancy',
+            'membershipStatus',
+            'isExpiringSoon',
+            'membershipPlans',
+            'recentAttendance',
+            'totalCheckIns',
+            'thisMonthCheckIns'
+        ));
     }
 
     public function completeMemberProfile(Request $request)

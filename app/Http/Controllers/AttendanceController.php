@@ -7,6 +7,7 @@ use App\Models\MemberProfile;
 use App\Models\Logs;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
