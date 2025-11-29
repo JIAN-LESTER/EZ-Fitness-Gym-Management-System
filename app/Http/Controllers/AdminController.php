@@ -6,6 +6,7 @@ use App\Models\MemberProfile;
 use App\Models\MembershipPlan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class AdminController extends Controller
 {

@@ -129,14 +129,14 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
-    // Toast notifications - Only show errors, skip success messages
-    @if(session('error'))
+    // Toast notifications - Only show success, skip error messages
+    @if(session('success'))
       Toastify({
-        text: "{{ session('error') }}",
+        text: "{{ session('success') }}",
         duration: 3000,
         gravity: "top",
         position: "right",
-        backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
+        backgroundColor: "linear-gradient(to right, #008000 , #008080)",
         stopOnFocus: true,
       }).showToast();
     @endif

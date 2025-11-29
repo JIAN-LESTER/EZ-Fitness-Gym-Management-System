@@ -27,7 +27,7 @@ class AttendanceController extends Controller
 
         // Get today's check-ins for display
         $todayAttendances = Attendance::with(['member.user', 'member.plan'])
-            ->whereDate('check_in_time', Carbon::today())
+            ->whereDate('check_in_time', Carbon::today('Asia/Manila'))
             ->orderBy('check_in_time', 'desc')
             ->get();
 
@@ -87,7 +87,7 @@ class AttendanceController extends Controller
             }
 
             // Check if already checked in today
-            $today = Carbon::today();
+            $today = Carbon::today('Asia/Manila');
             $existingAttendance = Attendance::where('member_id', $memberProfile->member_id)
                 ->whereDate('check_in_time', $today)
                 ->first();
@@ -107,7 +107,7 @@ class AttendanceController extends Controller
                 }
 
                 // Process check-out
-                $checkOutTime = now();
+                $checkOutTime = Carbon::now('Asia/Manila');
                 $checkInTime = Carbon::parse($existingAttendance->check_in_time);
                 $duration = $checkInTime->diffInMinutes($checkOutTime);
 
@@ -121,7 +121,7 @@ class AttendanceController extends Controller
                 Logs::create([
                     'user_id' => $user->user_id,
                     'action' => "Member checked out: {$user->first_name} {$user->last_name} (Scanned by: {$currentUser->role} - {$currentUser->first_name} {$currentUser->last_name})",
-                    'timestamp' => now(),
+                    'timestamp' => Carbon::now('Asia/Manila'),
                 ]);
 
                 return response()->json([
@@ -142,7 +142,7 @@ class AttendanceController extends Controller
             // Create new attendance record
             $attendance = Attendance::create([
                 'member_id' => $memberProfile->member_id,
-                'check_in_time' => now(),
+                'check_in_time' => Carbon::now('Asia/Manila'),
                 'status' => 'checked_in',
             ]);
 
@@ -150,7 +150,7 @@ class AttendanceController extends Controller
             Logs::create([
                 'user_id' => $user->user_id,
                 'action' => "Member checked in: {$user->first_name} {$user->last_name}",
-                'timestamp' => now(),
+                'timestamp' => Carbon::now('Asia/Manila'),
             ]);
 
             return response()->json([
@@ -182,7 +182,7 @@ class AttendanceController extends Controller
         }
 
         $attendances = Attendance::with(['member.user', 'member.plan'])
-            ->whereDate('check_in_time', Carbon::today())
+            ->whereDate('check_in_time', Carbon::today('Asia/Manila'))
             ->orderBy('check_in_time', 'desc')
             ->get()
             ->map(function ($attendance) {

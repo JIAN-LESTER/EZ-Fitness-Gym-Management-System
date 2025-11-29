@@ -199,12 +199,12 @@ class UserManagementController extends Controller
     public function show(string $id)
     {
         $user = User::with(['member.plan', 'logs'])->findOrFail($id);
-        
+
         // Authorization check for staff
         if (Auth::user()->role === 'staff' && $user->role !== 'member') {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
-        
+
         return response()->json($user);
     }
 
@@ -278,12 +278,12 @@ class UserManagementController extends Controller
 
         $user->role = $validated['role'];
         $user->status = $validated['status'];
-        
+
         // Ensure email_verified_at is set for updated accounts
         if (!$user->email_verified_at) {
             $user->email_verified_at = now();
         }
-        
+
         $user->save();
 
         if ($user->role === 'member') {
@@ -376,7 +376,14 @@ class UserManagementController extends Controller
             }
 
             $paymentMethod = request()->query('payment', 'cash');
+            $referenceCode = request()->query('reference', null);
             $isRenewal = $member->renewal_pending;
+
+            // Validate reference code for GCash payments
+            if ($paymentMethod === 'gcash' && empty($referenceCode)) {
+                return redirect()->back()
+                    ->with('error', 'GCash reference code is required for GCash payments.');
+            }
 
             $member->update([
                 'isApproved' => true,
@@ -400,6 +407,7 @@ class UserManagementController extends Controller
                 'tax' => 0,
                 'discount' => 0,
                 'payment_method' => $paymentMethod,
+                'reference_code' => $referenceCode, 
                 'status' => 'paid',
                 'type' => 'memberships',
             ]);
@@ -414,11 +422,11 @@ class UserManagementController extends Controller
 
             $actionType = $isRenewal ? 'Approved renewal' : 'Approved membership';
 
-               Transactions::create([
-                    'sales_id' => $sale->sales_id,
-                    'type' => 'sales',
-                    'timestamp' => now(),
-                ]);
+            Transactions::create([
+                'sales_id' => $sale->sales_id,
+                'type' => 'sales',
+                'timestamp' => now(),
+            ]);
 
             Logs::create([
                 'user_id' => $cashier->user_id,
@@ -426,13 +434,12 @@ class UserManagementController extends Controller
                 'timestamp' => now(),
             ]);
 
-            $message = $isRenewal 
-                ? "Renewal approved! QR code sent to {$user->email}." 
+            $message = $isRenewal
+                ? "Renewal approved! QR code sent to {$user->email}."
                 : "Member approved! QR code sent to {$user->email}.";
 
             return redirect()->back()
                 ->with('success', $message . " Sale recorded.");
-
         } catch (\Exception $e) {
             \Log::error("Error during approval", [
                 'member_id' => $memberId,
@@ -520,7 +527,6 @@ class UserManagementController extends Controller
             } catch (\Exception $e) {
                 \Log::error("Failed to send QR code email: " . $e->getMessage());
             }
-
         } catch (\Exception $e) {
             \Log::error("QR Code generation failed", [
                 'error' => $e->getMessage()
@@ -538,7 +544,7 @@ class UserManagementController extends Controller
             $member->update([
                 'status' => 'expired',
                 'suspended_at' => now(),
-                'days_remaining_before_suspend' => $member->end_date 
+                'days_remaining_before_suspend' => $member->end_date
                     ? max(0, now()->diffInDays($member->end_date, false))
                     : 0,
             ]);
@@ -551,7 +557,6 @@ class UserManagementController extends Controller
 
             return redirect()->back()
                 ->with('success', "Member {$user->first_name} {$user->last_name} has been suspended.");
-
         } catch (\Exception $e) {
             \Log::error("Error suspending member", [
                 'member_id' => $memberId,
@@ -590,7 +595,6 @@ class UserManagementController extends Controller
 
             return redirect()->back()
                 ->with('success', "Member {$user->first_name} {$user->last_name} has been reactivated.");
-
         } catch (\Exception $e) {
             \Log::error("Error reactivating member", [
                 'member_id' => $memberId,

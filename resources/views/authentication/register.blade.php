@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,28 +12,49 @@
     body {
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
+
     .logo-container {
       width: 120px;
       height: 120px;
       margin: 0 auto 1.5rem;
     }
+
     .logo-container img {
       width: 100%;
       height: 100%;
       object-fit: contain;
     }
+
     @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-      20%, 40%, 60%, 80% { transform: translateX(5px); }
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      10%,
+      30%,
+      50%,
+      70%,
+      90% {
+        transform: translateX(-5px);
+      }
+
+      20%,
+      40%,
+      60%,
+      80% {
+        transform: translateX(5px);
+      }
     }
   </style>
 </head>
+
 <body class="flex items-center justify-center min-h-screen py-8">
   <main class="w-full max-w-md bg-white shadow-2xl rounded-2xl p-8">
     <header class="mb-6 text-center">
       <div class="logo-container">
-       <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}" alt="EZ Fitness Logo" />
+        <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}" alt="EZ Fitness Logo" />
       </div>
       <h1 class="text-2xl font-bold text-gray-800">
         <span class="text-red-600">EZ</span> FITNESS GYM
@@ -78,10 +100,13 @@
       <section class="relative">
         <input type="password" id="password" name="password" placeholder="Password"
           class="w-full border border-gray-300 rounded-lg p-3 pr-10 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
-        <button type="button" id="togglePassword" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+        <button type="button" id="togglePassword"
+          class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
           <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
           </svg>
         </button>
         @error('password')
@@ -92,10 +117,13 @@
       <section class="relative">
         <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Confirm Password"
           class="w-full border border-gray-300 rounded-lg p-3 pr-10 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
-        <button type="button" id="toggleConfirmPassword" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+        <button type="button" id="toggleConfirmPassword"
+          class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
           <svg id="eyeIconConfirm" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
           </svg>
         </button>
         @error('password_confirmation')
@@ -122,14 +150,14 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
-    // Toast notifications - Only show errors, skip success messages
-    @if(session('error'))
+    // Toast notifications - Only show success, skip error messages
+    @if(session('success'))
       Toastify({
-        text: "{{ session('error') }}",
+        text: "{{ session('success') }}",
         duration: 3000,
         gravity: "top",
         position: "right",
-        backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
+        backgroundColor: "linear-gradient(to right, #008000 , #008080)",
         stopOnFocus: true,
       }).showToast();
     @endif
@@ -139,7 +167,7 @@
     const passwordInput = document.getElementById('password');
     const eyeIcon = document.getElementById('eyeIcon');
 
-    togglePassword.addEventListener('click', function() {
+    togglePassword.addEventListener('click', function () {
       const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
       passwordInput.setAttribute('type', type);
 
@@ -155,7 +183,7 @@
     const confirmPasswordInput = document.getElementById('password_confirmation');
     const eyeIconConfirm = document.getElementById('eyeIconConfirm');
 
-    toggleConfirmPassword.addEventListener('click', function() {
+    toggleConfirmPassword.addEventListener('click', function () {
       const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
       confirmPasswordInput.setAttribute('type', type);
 
@@ -295,4 +323,5 @@
     }
   </script>
 </body>
+
 </html>
