@@ -220,26 +220,7 @@
       }
     }
 
-    // Live validation
-    usernameInput.addEventListener('blur', function() {
-      if (!this.value.trim()) {
-        showError(this, 'Username is required');
-      } else if (this.value.length < 4) {
-        showError(this, 'Username must be at least 4 characters');
-      } else {
-        clearError(this);
-      }
-    });
-
-    passwordInput.addEventListener('blur', function() {
-      if (!this.value.trim()) {
-        showError(this, 'Password is required');
-      } else if (this.value.length < 6) {
-        showError(this, 'Password must be at least 6 characters');
-      } else {
-        clearError(this);
-      }
-    });
+    
   </script>
 </body>
 </html>

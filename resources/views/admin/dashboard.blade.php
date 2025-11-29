@@ -93,17 +93,39 @@
                 
                 <!-- Revenue & Sales Trend Chart -->
                 <div class="bg-white rounded-xl shadow-lg p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-800">Sales Trend (Monthly)</h3>
-                        <div class="flex gap-4">
-                            <div class="flex items-center">
-                                <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                                <span class="text-sm text-gray-600">Revenue</span>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                                <span class="text-sm text-gray-600">Sales Count</span>
-                            </div>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">Sales Trend</h3>
+                            <p class="text-sm text-gray-500">
+                                @if($salesPeriod === 'today') Hourly breakdown for today
+                                @elseif($salesPeriod === 'week') Daily breakdown for this week
+                                @else Weekly breakdown for this month
+                                @endif
+                            </p>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="{{ route('admin.dashboard', ['sales_period' => 'today', 'membership_period' => $membershipPeriod]) }}" 
+                               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $salesPeriod === 'today' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                Today
+                            </a>
+                            <a href="{{ route('admin.dashboard', ['sales_period' => 'week', 'membership_period' => $membershipPeriod]) }}" 
+                               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $salesPeriod === 'week' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                Week
+                            </a>
+                            <a href="{{ route('admin.dashboard', ['sales_period' => 'month', 'membership_period' => $membershipPeriod]) }}" 
+                               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $salesPeriod === 'month' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                Month
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 mb-4 justify-end">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                            <span class="text-sm text-gray-600">Revenue</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                            <span class="text-sm text-gray-600">Sales Count</span>
                         </div>
                     </div>
                     <div class="h-72">
@@ -207,7 +229,31 @@
 
                 <!-- Membership Growth Trend -->
                 <div class="bg-white rounded-xl shadow-lg p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Membership Growth Trend</h3>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">Membership Growth Trend</h3>
+                            <p class="text-sm text-gray-500">
+                                @if($membershipPeriod === 'today') Hourly breakdown for today
+                                @elseif($membershipPeriod === 'week') Daily breakdown for this week
+                                @else Weekly breakdown for this month
+                                @endif
+                            </p>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="{{ route('admin.dashboard', ['sales_period' => $salesPeriod, 'membership_period' => 'today']) }}" 
+                               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $membershipPeriod === 'today' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                Today
+                            </a>
+                            <a href="{{ route('admin.dashboard', ['sales_period' => $salesPeriod, 'membership_period' => 'week']) }}" 
+                               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $membershipPeriod === 'week' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                Week
+                            </a>
+                            <a href="{{ route('admin.dashboard', ['sales_period' => $salesPeriod, 'membership_period' => 'month']) }}" 
+                               class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $membershipPeriod === 'month' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                Month
+                            </a>
+                        </div>
+                    </div>
                     <div class="h-64">
                         <canvas id="membershipTrendChart"></canvas>
                     </div>
@@ -325,7 +371,7 @@
         new Chart(salesCtx, {
             type: 'line',
             data: {
-                labels: salesData.map(item => item.month),
+                labels: salesData.map(item => item.label),
                 datasets: [{
                     label: 'Revenue (₱)',
                     data: salesData.map(item => item.total_revenue),
@@ -392,7 +438,7 @@
         new Chart(membershipCtx, {
             type: 'line',
             data: {
-                labels: membershipData.map(item => item.month),
+                labels: membershipData.map(item => item.label),
                 datasets: [{
                     label: 'New Members',
                     data: membershipData.map(item => item.count),

@@ -6,6 +6,7 @@ use App\Models\Logs;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\MembershipPlan;
+use Illuminate\Routing\Controller;
 
 class MembershipPlanController extends Controller
 {

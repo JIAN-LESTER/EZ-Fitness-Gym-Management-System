@@ -7,6 +7,7 @@
         use App\Http\Controllers\DashboardController;
         use App\Http\Controllers\EmailVerificationController;
 
+        use App\Http\Controllers\LogController;
         use App\Http\Controllers\MemberProfileController;
         use App\Http\Controllers\MembershipPlanController;
         use App\Http\Controllers\POSController;
@@ -200,7 +201,7 @@
             // STAFF
             Route::middleware(['auth', 'staff'])->group(function () {
                 // Dashboard
-                Route::get('/staff/dashboard', [StaffController::class, 'dashboard'])->name('staff.dashboard');
+                Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
 
                 // API endpoints for dashboard
                 Route::get('/staff/quick-stats', [StaffController::class, 'getQuickStats'])->name('staff.quick-stats');
