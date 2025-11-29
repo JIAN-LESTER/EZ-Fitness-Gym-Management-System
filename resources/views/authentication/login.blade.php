@@ -37,7 +37,7 @@
          <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}" alt="EZ Fitness Logo" />
       </div>
       <h1 class="text-2xl font-bold text-gray-800">
-        <span class="text-red-600">EZ</span> FITNESS
+        <span class="text-red-600">EZ</span> FITNESS GYM
       </h1>
     </header>
 
