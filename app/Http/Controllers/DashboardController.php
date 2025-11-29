@@ -24,14 +24,14 @@ class DashboardController extends Controller
         $newMembersThisMonth = MemberProfile::whereMonth('start_date', Carbon::now()->month)
             ->whereYear('start_date', Carbon::now()->year)
             ->count();
-        
+
         // Calculate monthly revenue from memberships based on plan prices
         $monthlyMembershipRevenue = MemberProfile::with('plan')
             ->where('status', 'active')
             ->whereMonth('start_date', Carbon::now()->month)
             ->whereYear('start_date', Carbon::now()->year)
             ->get()
-            ->sum(function($member) {
+            ->sum(function ($member) {
                 return $member->plan ? $member->plan->price : 0;
             });
 
@@ -61,29 +61,37 @@ class DashboardController extends Controller
         $stockInCount = Transactions::whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->count();
-        
+
         $stockOutCount = Transactions::whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->count();
 
-        // Product Performance
+        // Product Performance - WITH NULL CHECKS
         $highestSellingProduct = SalesItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
             ->groupBy('product_id')
             ->orderBy('total_sold', 'desc')
-            ->with('product')
             ->first();
+
+        // Load product relationship if exists
+        if ($highestSellingProduct) {
+            $highestSellingProduct->load('product');
+        }
 
         $lowestSellingProduct = SalesItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
             ->groupBy('product_id')
             ->orderBy('total_sold', 'asc')
-            ->with('product')
             ->first();
+
+        // Load product relationship if exists
+        if ($lowestSellingProduct) {
+            $lowestSellingProduct->load('product');
+        }
 
         // Membership Trend Chart Data (Last 6 months) - using start_date
         $membershipTrend = MemberProfile::select(
-                DB::raw('DATE_FORMAT(start_date, "%Y-%m") as month'),
-                DB::raw('COUNT(*) as count')
-            )
+            DB::raw('DATE_FORMAT(start_date, "%Y-%m") as month'),
+            DB::raw('COUNT(*) as count')
+        )
             ->where('start_date', '>=', Carbon::now()->subMonths(6))
             ->whereNotNull('start_date')
             ->groupBy('month')
@@ -108,7 +116,7 @@ class DashboardController extends Controller
             ->where('status', 'active')
             ->get()
             ->groupBy('plan_id')
-            ->map(function($members) {
+            ->map(function ($members) {
                 return [
                     'count' => $members->count(),
                     'plan_name' => $members->first()->plan ? $members->first()->plan->name : 'No Plan'

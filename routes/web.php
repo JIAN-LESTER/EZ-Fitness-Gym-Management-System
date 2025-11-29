@@ -145,10 +145,10 @@
         });
 
         Route::prefix('admin')->middleware(['auth'])->group(function () {
-            Route::get('/plan-management', [App\Http\Controllers\MembershipPlanController::class, 'index'])->name('admin.plan_management');
-            Route::post('/plans', [App\Http\Controllers\MembershipPlanController::class, 'store'])->name('plans.store');
-            Route::put('/plans/{id}', [App\Http\Controllers\MembershipPlanController::class, 'update'])->name('plans.update');
-            Route::delete('/plans/{id}', [App\Http\Controllers\MembershipPlanController::class, 'destroy'])->name('plans.destroy');
+            Route::get('/plan-management', [MembershipPlanController::class, 'index'])->name('admin.plan_management');
+            Route::post('/plans', [MembershipPlanController::class, 'store'])->name('plans.store');
+            Route::put('/plans/{id}', [MembershipPlanController::class, 'update'])->name('plans.update');
+            Route::delete('/plans/{id}', [MembershipPlanController::class, 'destroy'])->name('plans.destroy');
         });
 
         // Verification link
