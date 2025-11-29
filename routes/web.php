@@ -104,6 +104,12 @@
             ->name('admin.members.approve');
         Route::get('/deny/{member}', [UserManagementController::class, 'deny'])
             ->name('admin.members.deny');
+
+              Route::get('/suspend/{member}', [UserManagementController::class, 'suspendMember'])
+        ->name('admin.users-suspend');
+    
+    Route::get('/reactivate/{member}', [UserManagementController::class, 'reactivateMember'])
+        ->name('admin.users-reactivate');
     });
 
     Route::prefix('products')->name('products.')->group(function () {
@@ -155,7 +161,12 @@
     Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
     Route::get('/member/check-approval', [MemberProfileController::class, 'checkApprovalStatus'])
             ->name('member.check-approval');
-
+ Route::post('/member/request-renewal', [MemberProfileController::class, 'requestRenewal'])
+        ->name('member.request-renewal');
+    
+    // Check approval status (AJAX)
+    Route::get('/member/check-approval', [MemberProfileController::class, 'checkApprovalStatus'])
+        ->name('member.check-approval');
 
 
     // Email verification routes

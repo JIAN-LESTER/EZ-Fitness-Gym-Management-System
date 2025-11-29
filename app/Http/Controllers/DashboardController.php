@@ -67,17 +67,25 @@ class DashboardController extends Controller
             ->count();
 
         // Product Performance
-        $highestSellingProduct = SalesItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
+ $highestSellingProduct = SalesItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
             ->groupBy('product_id')
             ->orderBy('total_sold', 'desc')
-            ->with('product')
             ->first();
+
+        // Load product relationship if exists
+        if ($highestSellingProduct) {
+            $highestSellingProduct->load('product');
+        }
 
         $lowestSellingProduct = SalesItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
             ->groupBy('product_id')
             ->orderBy('total_sold', 'asc')
-            ->with('product')
             ->first();
+
+        // Load product relationship if exists
+        if ($lowestSellingProduct) {
+            $lowestSellingProduct->load('product');
+        }
 
         // Membership Trend Chart Data (Last 6 months) - using start_date
         $membershipTrend = MemberProfile::select(

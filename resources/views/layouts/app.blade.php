@@ -992,72 +992,155 @@ if ($user->role === 'admin') {
         </div>
     </div>
 
-    @if(session('membership_expired') && $user->role === 'member' && $member)
-<div id="renewalModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
-        <div class="bg-orange-500 text-white p-5">
-            <div class="flex items-center space-x-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h2 class="text-xl font-semibold">Membership Expired</h2>
+@if($user->role === 'member' && $member && isset($daysRemaining) && $daysRemaining === 0 && $member->status === 'expired' && !$member->renewal_pending)
+    {{-- Membership Expired - Renewal Required Modal --}}
+    <div id="renewalRequiredModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+        <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+            <div class="bg-red-500 text-white p-5 rounded-t-2xl">
+                <div class="flex items-center space-x-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <h2 class="text-xl font-semibold">Membership Expired</h2>
+                </div>
             </div>
-        </div>
 
-        <div class="p-8">
-            <p class="text-gray-700 text-lg mb-6">
-                Your membership plan <strong>{{ $member->plan->name }}</strong> has expired. 
-                Would you like to renew your membership?
-            </p>
-
-            <form action="{{ route('member.request-renewal') }}" method="POST" class="space-y-6">
+            <form action="{{ route('member.request-renewal') }}" method="POST" class="p-8">
                 @csrf
 
-                <div x-data="{ open: false, selected: '{{ $member->plan->name }} — ₱{{ number_format($member->plan->price, 2) }}', selectedId: '{{ $member->plan_id }}' }">
-                    <label class="block text-sm font-medium text-gray-800 mb-2">
-                        Select Membership Plan <span class="text-red-500">*</span>
+                <div class="mb-6 text-center">
+                    <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Your Membership Has Expired</h3>
+                    <p class="text-gray-600 text-lg mb-4">
+                        @if($member->suspended_at)
+                            Your membership was suspended on {{ \Carbon\Carbon::parse($member->suspended_at)->format('M d, Y') }}.
+                        @else
+                            Your membership plan expired on {{ \Carbon\Carbon::parse($member->end_date)->format('M d, Y') }}.
+                        @endif
+                    </p>
+                    <p class="text-gray-500 text-sm">Please select a new plan to continue using our services.</p>
+                </div>
+
+                <div x-data="{ open: false, selected: '', selectedId: '' }" class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Choose Your New Membership Plan <span class="text-red-500">*</span>
                     </label>
 
-                    <input type="hidden" name="plan_id" x-model="selectedId">
+                    <input type="hidden" name="plan_id" x-model="selectedId" required>
 
                     <button type="button" @click="open = !open"
-                        class="w-full flex justify-between items-center rounded-xl border-2 border-gray-300 bg-gray-50 px-4 py-3">
-                        <span x-text="selected"></span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        class="w-full flex justify-between items-center rounded-xl border-2 border-gray-300 bg-gray-50 px-4 py-4 hover:border-gray-400 transition-colors">
+                        <span x-text="selected || 'Select a membership plan'" class="text-gray-700"></span>
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
 
                     <div x-show="open" @click.away="open = false"
-                         class="absolute mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-md z-50 max-h-60 overflow-y-auto">
+                         class="absolute mt-2 w-full max-w-xl bg-white border border-gray-300 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto">
                         @foreach($plans as $plan)
                             <div @click="
-                                    selected = '{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }}';
+                                    selected = '{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }} / {{ $plan->duration_days }} days';
                                     selectedId = '{{ $plan->plan_id }}';
                                     open = false
                                 "
-                                class="flex justify-between px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                                <span>{{ $plan->name }}</span>
-                                <span>₱{{ number_format($plan->price, 2) }}</span>
+                                class="flex justify-between items-center px-6 py-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors">
+                                <div>
+                                    <p class="font-semibold text-gray-800">{{ $plan->name }}</p>
+                                    <p class="text-sm text-gray-500">{{ $plan->duration_days }} days</p>
+                                </div>
+                                <p class="font-bold text-lg text-gray-800">₱{{ number_format($plan->price, 2) }}</p>
                             </div>
                         @endforeach
                     </div>
                 </div>
 
-                <div class="flex gap-3">
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div class="text-sm text-amber-800">
+                            <p class="font-semibold mb-1">Note:</p>
+                            <p>After selecting a plan, your renewal request will be sent to the admin for approval. You'll receive a confirmation email once approved.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
                     <button type="submit" name="action" value="renew"
-                        class="flex-1 px-6 py-3 rounded-xl bg-orange-500 text-white hover:bg-orange-600 font-medium transition-colors">
+                        class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 font-medium transition-all shadow-lg">
                         Request Renewal
                     </button>
-                    <button type="submit" name="action" value="skip"
+                    <button type="submit" name="action" value="logout"
                         class="flex-1 px-6 py-3 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 font-medium transition-colors">
-                        Skip for Now
+                        Logout
                     </button>
                 </div>
             </form>
         </div>
     </div>
-</div>
+@endif
+
+{{-- Renewal Pending Modal --}}
+@if($user->role === 'member' && $member && $member->renewal_pending && $member->status === 'expired')
+    <div id="renewalPendingModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+        <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div class="bg-yellow-500 text-white p-5 rounded-t-2xl">
+                <div class="flex items-center space-x-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h2 class="text-xl font-semibold">Renewal Pending</h2>
+                </div>
+            </div>
+
+            <div class="p-8 text-center">
+                <div class="mb-6">
+                    <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Renewal Request Submitted</h3>
+                    <p class="text-gray-600 text-lg mb-4">
+                        Your renewal request is awaiting admin approval.
+                    </p>
+                    <p class="text-gray-500 text-sm">You'll receive an email once your renewal is approved.</p>
+                    
+                    @if($member->plan)
+                        <div class="mt-4 p-3 bg-gray-100 rounded-lg">
+                            <p class="text-sm text-gray-600">Selected Plan:</p>
+                            <p class="font-bold text-gray-800">{{ $member->plan->name }}</p>
+                            <p class="text-sm text-gray-500">₱{{ number_format($member->plan->price, 2) }}</p>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="space-y-3">
+                    <button onclick="checkApprovalStatus()" 
+                        class="w-full px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 font-medium transition-colors flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Check Status
+                    </button>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" 
+                            class="w-full px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 @endif
 
 
@@ -1485,82 +1568,124 @@ function checkApprovalStatus() {
         </svg>
     `;
 
-    fetch('{{ route("member.check-approval") }}', {
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    
+    if (!csrfToken) {
+        console.error('CSRF token not found');
+        Toastify({
+            text: 'Security token not found. Please refresh the page.',
+            duration: 3000,
+            gravity: "top",
+            position: "right",
+            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
+        }).showToast();
+        button.disabled = false;
+        button.innerHTML = originalContent;
+        return;
+    }
+
+    fetch('/member/check-approval', {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        }
+            'X-CSRF-TOKEN': csrfToken.content,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return response.json();
+    })
     .then(data => {
+        console.log('Approval status data:', data);
+        
         if (data.status === 'approved') {
-            // Hide waiting modal
-            document.getElementById('waitingApprovalModal').classList.add('hidden');
+            // Hide waiting/pending modals
+            const waitingModal = document.getElementById('waitingApprovalModal');
+            const renewalPendingModal = document.getElementById('renewalPendingModal');
+            
+            if (waitingModal) waitingModal.classList.add('hidden');
+            if (renewalPendingModal) renewalPendingModal.classList.add('hidden');
             
             // Show approved modal
             const approvedModal = document.getElementById('qrApprovedModal');
-            approvedModal.classList.remove('hidden');
-            
-            // Show QR code if available
-            if (data.qr_code_url) {
-                const qrDisplay = document.getElementById('qrCodeDisplay');
-                const qrImage = document.getElementById('qrCodeImage');
+            if (approvedModal) {
+                approvedModal.classList.remove('hidden');
                 
-                // Add timestamp to prevent caching
-                qrImage.src = data.qr_code_url + '?t=' + new Date().getTime();
-                
-                // Show the QR code container
-                qrDisplay.classList.remove('hidden');
-                
-                // Handle image load errors
-                qrImage.onerror = function() {
-                    console.error('Failed to load QR code image:', data.qr_code_url);
-                    qrDisplay.innerHTML = `
-                        <div class="text-center py-4">
-                            <p class="text-sm text-gray-600">QR code will be sent to your email</p>
-                        </div>
-                    `;
-                };
-                
-                // Log successful load
-                qrImage.onload = function() {
-                    console.log('QR code loaded successfully');
-                };
-            } else {
-                // If no QR code URL, show message
-                const qrDisplay = document.getElementById('qrCodeDisplay');
-                qrDisplay.innerHTML = `
-                    <div class="text-center py-4">
-                        <p class="text-sm text-gray-600">QR code has been sent to your email</p>
-                    </div>
-                `;
-                qrDisplay.classList.remove('hidden');
+                // Show QR code if available
+                if (data.qr_code_url) {
+                    const qrDisplay = document.getElementById('qrCodeDisplay');
+                    const qrImage = document.getElementById('qrCodeImage');
+                    
+                    if (qrDisplay && qrImage) {
+                        // Add timestamp to prevent caching
+                        qrImage.src = data.qr_code_url + '?t=' + new Date().getTime();
+                        qrDisplay.classList.remove('hidden');
+                        
+                        // Handle image load errors
+                        qrImage.onerror = function() {
+                            console.error('Failed to load QR code image:', data.qr_code_url);
+                            qrDisplay.innerHTML = `
+                                <div class="text-center py-4">
+                                    <p class="text-sm text-gray-600">QR code has been sent to your email</p>
+                                </div>
+                            `;
+                        };
+                        
+                        qrImage.onload = function() {
+                            console.log('QR code loaded successfully');
+                        };
+                    }
+                } else {
+                    const qrDisplay = document.getElementById('qrCodeDisplay');
+                    if (qrDisplay) {
+                        qrDisplay.innerHTML = `
+                            <div class="text-center py-4">
+                                <p class="text-sm text-gray-600">QR code has been sent to your email</p>
+                            </div>
+                        `;
+                        qrDisplay.classList.remove('hidden');
+                    }
+                }
             }
             
             Toastify({
-                text: data.message,
+                text: data.message || 'Your membership has been approved!',
                 duration: 5000,
                 gravity: "top",
                 position: "right",
                 backgroundColor: "linear-gradient(to right, #10b981, #059669)",
                 stopOnFocus: true,
             }).showToast();
+            
         } else if (data.status === 'rejected') {
-            document.getElementById('approvalStatusMessage').innerHTML = 
-                '<span class="text-red-600 font-semibold">Your application was not approved. Please contact support for more information.</span>';
+            const statusMessage = document.getElementById('approvalStatusMessage');
+            if (statusMessage) {
+                statusMessage.innerHTML = 
+                    '<span class="text-red-600 font-semibold">Your application was not approved. Please contact support for more information.</span>';
+            }
             
             Toastify({
-                text: data.message,
+                text: data.message || 'Application was not approved',
                 duration: 5000,
                 gravity: "top",
                 position: "right",
                 backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
                 stopOnFocus: true,
             }).showToast();
+            
         } else {
+            // Still pending
             Toastify({
-                text: 'Still pending approval. Please check back later.',
+                text: data.message || 'Still pending approval. Please check back later.',
                 duration: 3000,
                 gravity: "top",
                 position: "right",
@@ -1571,9 +1696,10 @@ function checkApprovalStatus() {
     })
     .catch(error => {
         console.error('Error checking approval status:', error);
+        
         Toastify({
-            text: 'Error checking status. Please try again.',
-            duration: 3000,
+            text: 'Error checking status: ' + error.message,
+            duration: 5000,
             gravity: "top",
             position: "right",
             backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
@@ -1587,10 +1713,14 @@ function checkApprovalStatus() {
 }
 
 function closeQRApprovedModal() {
-    document.getElementById('qrApprovedModal').classList.add('hidden');
+    const modal = document.getElementById('qrApprovedModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
     // Reload to show updated dashboard
     window.location.reload();
 }
+
 </script>
 
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
