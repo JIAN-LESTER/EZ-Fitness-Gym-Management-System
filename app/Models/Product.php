@@ -47,6 +47,13 @@ class Product extends Model
         return $this->hasMany(StockOut::class, 'stock_out_id', 'stock_out_id');
     }
 
+
+       public function transaction()
+    {
+        return $this->hasMany(Transactions::class, 'product_id', 'product_id');
+    }
+
+
     public function cartItems() {
     return $this->hasMany(CartItem::class, 'product_id', 'product_id');
 }

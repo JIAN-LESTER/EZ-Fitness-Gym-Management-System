@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stock_in', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('transactions', function (Blueprint $table) {
+             $table->foreignId('product_id')->nullable()->references('product_id')->on('products')->onDelete('cascade');
+            
         });
     }
 
@@ -22,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('stock_in');
+        Schema::table('transactions', function (Blueprint $table) {
+            //
+        });
     }
 };

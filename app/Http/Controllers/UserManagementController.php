@@ -6,6 +6,7 @@ use App\Mail\MemberQRCodeMail;
 use App\Models\Logs;
 use App\Models\MemberProfile;
 use App\Models\Sales;
+use App\Models\Transactions;
 use App\Models\User;
 use Carbon\Traits\Timestamp;
 use Endroid\QrCode\Builder\Builder;
@@ -412,6 +413,13 @@ class UserManagementController extends Controller
             ]);
 
             $actionType = $isRenewal ? 'Approved renewal' : 'Approved membership';
+
+               Transactions::create([
+                    'sales_id' => $sale->sales_id,
+                    'type' => 'sales',
+                    'timestamp' => now(),
+                ]);
+
             Logs::create([
                 'user_id' => $cashier->user_id,
                 'action' => "{$actionType} for: {$user->first_name} {$user->last_name} - Plan: {$plan->name} - Payment: {$paymentMethod}",
