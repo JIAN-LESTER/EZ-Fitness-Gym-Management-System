@@ -49,22 +49,16 @@
             });
         });
 
+        Route::middleware(['auth'])->group(function () {
+            Route::get('/profile', [MemberProfileController::class, 'profile'])->name('profile.profile');
+            Route::get('/profile/edit/{userID}', [MemberProfileController::class, 'editProfile'])->name('profile.edit');
+            Route::put('/profile/update', [MemberProfileController::class, 'updateProfile'])->name('profile.update');
+        });
+
         Route::get('/member/dashboard', [MemberProfileController::class, 'dashboard'])->name('member.dashboard');
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-
-        Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {
-            Route::get('/dashboard', function () {
-                return view('admin.dashboard');
-            })->name('admin.dashboard');
-        });
-
-        Route::prefix('member')->name('member.')->group(function () {
-            Route::get('/dashboard', function () {
-                return view('member.dashboard');
-            })->name('member.dashboard');
-        });
-
         Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+
 
         Route::middleware(['auth'])->group(function () {
             Route::get('/profile', [ProfileController::class, 'profile'])->name('profile.profile');
@@ -126,16 +120,6 @@
             Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
         });
 
-        Route::prefix('categories')->name('categories.')->group(function () {
-            Route::get('/', [CategoriesController::class, 'index'])->name('index');
-            Route::post('/', [CategoriesController::class, 'store'])->name('store');
-            Route::get('/{id}', [CategoriesController::class, 'show'])->name('show');
-            Route::get('/{id}/edit', [CategoriesController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [CategoriesController::class, 'update'])->name('update');
-            Route::delete('/{id}', [CategoriesController::class, 'destroy'])->name('destroy');
-        });
-
-
         Route::prefix('sales')->name('sales.')->group(function () {
             Route::get('/', [SalesController::class, 'index'])->name('index');
             Route::get('/{id}', [SalesController::class, 'show'])->name('show');
@@ -151,15 +135,21 @@
         Route::get('/member/check-approval', [MemberProfileController::class, 'checkApprovalStatus'])
             ->name('member.check-approval');
 
+        Route::prefix('categories')->name('categories.')->group(function () {
+            Route::get('/', [CategoriesController::class, 'index'])->name('index');
+            Route::post('/', [CategoriesController::class, 'store'])->name('store');
+            Route::get('/{id}', [CategoriesController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [CategoriesController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [CategoriesController::class, 'update'])->name('update');
+            Route::delete('/{id}', [CategoriesController::class, 'destroy'])->name('destroy');
+        });
+
         Route::prefix('admin')->middleware(['auth'])->group(function () {
             Route::get('/plan-management', [App\Http\Controllers\MembershipPlanController::class, 'index'])->name('admin.plan_management');
             Route::post('/plans', [App\Http\Controllers\MembershipPlanController::class, 'store'])->name('plans.store');
             Route::put('/plans/{id}', [App\Http\Controllers\MembershipPlanController::class, 'update'])->name('plans.update');
             Route::delete('/plans/{id}', [App\Http\Controllers\MembershipPlanController::class, 'destroy'])->name('plans.destroy');
         });
-
-        // Email verification routes
-        Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
 
         // Verification link
         Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
@@ -174,8 +164,10 @@
 
         Route::get('/logs', [LogController::class, 'viewLogs'])->name('logs.show');
 
+
         Route::get('/check-username', [AuthController::class, 'checkUsername'])->name('check.username');
         Route::get('/check-email', [AuthController::class, 'checkEmail'])->name('check.email');
+
 
         // Attendance Routes (add after your existing routes)
         Route::middleware(['auth'])->group(function () {
