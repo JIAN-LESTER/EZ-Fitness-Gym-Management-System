@@ -130,7 +130,7 @@
                                 </svg>
                                 <h4 class="font-semibold text-green-800">Top Seller</h4>
                             </div>
-                          @if($highestSellingProduct && $highestSellingProduct->product)
+                            @if($highestSellingProduct && $highestSellingProduct->product)
                                 <p class="text-lg font-bold text-gray-800">{{ $highestSellingProduct->product->name }}</p>
                                 <p class="text-sm text-gray-600">{{ $highestSellingProduct->total_sold }} units sold</p>
                             @else
@@ -146,8 +146,8 @@
                                 </svg>
                                 <h4 class="font-semibold text-red-800">Needs Attention</h4>
                             </div>
-                            @if($lowestSellingProduct)
-                                <p class="text-lg font-bold text-gray-800">{{ $lowestSellingProduct->product->name }}</p>
+                            @if($lowestSellingProduct && $lowestSellingProduct->product)
+                                <p class="text-lg font-bold text-red-600">{{ $lowestSellingProduct->product->name }}</p>
                                 <p class="text-sm text-gray-600">{{ $lowestSellingProduct->total_sold }} units sold</p>
                             @else
                                 <p class="text-gray-500">No data available</p>
