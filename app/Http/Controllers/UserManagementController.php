@@ -309,6 +309,7 @@ class UserManagementController extends Controller
     {
         try {
             $member = MemberProfile::findOrFail($memberId);
+            $cashier = Auth::user();
             $user = $member->user;
             $plan = $member->plan;
 
@@ -345,7 +346,7 @@ class UserManagementController extends Controller
 
             // Create sales record
             $sale = Sales::create([
-                'user_id' => $member->user_id,
+                'user_id' => $cashier->user_id,
                 'total_amount' => $plan->price,
                 'tax' => 0,
                 'discount' => 0,
@@ -364,7 +365,7 @@ class UserManagementController extends Controller
 
             $actionType = $isRenewal ? 'Approved renewal' : 'Approved membership';
             Logs::create([
-                'user_id' => Auth::id(),
+                'user_id' => $cashier->user_id,
                 'action' => "{$actionType} for: {$user->first_name} {$user->last_name} - Plan: {$plan->name} - Payment: {$paymentMethod}",
                 'timestamp' => now(),
             ]);
