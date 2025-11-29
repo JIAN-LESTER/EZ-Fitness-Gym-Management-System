@@ -73,7 +73,8 @@
                     return view('member.dashboard');
                 })->name('member.dashboard');
             });
-        });
+   
+        
 
         Route::get('/member/dashboard', [MemberProfileController::class, 'dashboard'])->name('member.dashboard');
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
@@ -118,6 +119,12 @@
             ->name('admin.members.approve');
         Route::get('/deny/{member}', [UserManagementController::class, 'deny'])
             ->name('admin.members.deny');
+
+              Route::get('/suspend/{member}', [UserManagementController::class, 'suspendMember'])
+        ->name('admin.users-suspend');
+    
+    Route::get('/reactivate/{member}', [UserManagementController::class, 'reactivateMember'])
+        ->name('admin.users-reactivate');
     });
 
     Route::prefix('products')->name('products.')->group(function () {
@@ -141,6 +148,7 @@
         
         // Checkout
         Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
+        
     });
 
     Route::prefix('categories')->name('categories.')->group(function () {
@@ -169,10 +177,16 @@
     Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
     Route::get('/member/check-approval', [MemberProfileController::class, 'checkApprovalStatus'])
             ->name('member.check-approval');
+ Route::post('/member/request-renewal', [MemberProfileController::class, 'requestRenewal'])
+        ->name('member.request-renewal');
+    
+    // Check approval status (AJAX)
+    Route::get('/member/check-approval', [MemberProfileController::class, 'checkApprovalStatus'])
+        ->name('member.check-approval');
 
-            // Checkout
-            Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
-        });
+
+ 
+
 
         Route::prefix('categories')->name('categories.')->group(function () {
             Route::get('/', [CategoriesController::class, 'index'])->name('index');
@@ -231,8 +245,7 @@
 
     Route::get('/logs', [LogController::class, 'viewLogs'])->name('logs.show');
 
-        use App\Http\Controllers\LogController;
-
+      
         Route::get('/logs', [LogController::class, 'viewLogs'])->name('logs.show');
 
 
