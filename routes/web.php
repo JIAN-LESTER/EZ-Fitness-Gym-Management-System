@@ -47,7 +47,8 @@
                     return view('member.dashboard');
                 })->name('member.dashboard');
             });
-        });
+   
+        
 
         Route::middleware(['auth'])->group(function () {
             Route::get('/profile', [MemberProfileController::class, 'profile'])->name('profile.profile');
@@ -162,6 +163,9 @@
 
         use App\Http\Controllers\LogController;
 
+    Route::get('/logs', [LogController::class, 'viewLogs'])->name('logs.show');
+
+      
         Route::get('/logs', [LogController::class, 'viewLogs'])->name('logs.show');
 
 

@@ -305,95 +305,89 @@ class UserManagementController extends Controller
             ->with('success', 'User deleted successfully');
     }
 
-public function approve($memberId)
-{
-    $member = MemberProfile::findOrFail($memberId);
-    $user = $member->user;
-    $plan = $member->plan;
-
-    // Check if plan exists
-    if (!$plan) {
-        return redirect()->route('admin.user_management')
-            ->with('error', 'Cannot approve: Member has no membership plan assigned.');
-    }
-
-    // Get payment method from query
-    $paymentMethod = request()->query('payment', 'cash');
-
-    // Update member status FIRST
-    $member->update([
-        'isApproved' => true,
-        'isDisabled' => false,
-        'status' => 'active',
-        'approved_at' => now(),
-        'renewal_pending' => false,
-        'start_date' => now(),
-        'end_date' => now()->addDays($plan->duration_days),
-    ]);
-
-    // Refresh the member to ensure we have the latest data
-    $member->refresh();
-
-    // Generate and send QR code AFTER status update
-    try {
-        $this->generateAndSendQRCode($user, $member, $plan);
-        \Log::info("QR Code generation initiated for member: {$member->member_id}");
-    } catch (\Exception $e) {
-        \Log::error("QR Code generation failed during approval", [
-            'member_id' => $member->member_id,
-            'error' => $e->getMessage()
-        ]);
-        // Don't fail the approval, just log the error
-    }
-
-    // Create sales record for membership
-    $sale = Sales::create([
-        'user_id' => $member->user_id,
-        'total_amount' => $plan->price,
-        'tax' => 0,
-        'discount' => 0,
-        'payment_method' => $paymentMethod,
-        'status' => 'paid',
-        'type' => 'memberships',
-    ]);
-
-    // Create sales item for the membership plan
-    $sale->items()->create([
-        'plan_id' => $plan->plan_id,
-        'product_id' => null,
-        'quantity' => 1,
-        'price' => $plan->price,
-        'sub_total' => $plan->price,
-    ]);
-
-    // Log the approval action
-    Logs::create([
-        'user_id' => Auth::id(),
-        'action' => "Approved membership for: {$user->first_name} {$user->last_name} - Plan: {$plan->name} - Payment: {$paymentMethod}",
-        'timestamp' => now(),
-    ]);
-
-    return redirect()->route('admin.user_management')
-        ->with('success', "Member approved! QR code sent to {$user->email}. Sale recorded.");
-}
-    public function renewMembership($memberId)
+ public function approve($memberId)
     {
-        $member = MemberProfile::findOrFail($memberId);
-        $plan = $member->plan;
+        try {
+            $member = MemberProfile::findOrFail($memberId);
+            $user = $member->user;
+            $plan = $member->plan;
 
-        $member->update([
-            'isApproved' => true,
-            'isDisabled' => false,
-            'start_date' => now(),
-            'end_date' => $plan ? now()->addDays($plan->duration_days) : null,
-        ]);
+            if (!$plan) {
+                return redirect()->route('admin.user_management')
+                    ->with('error', 'Cannot approve: Member has no membership plan assigned.');
+            }
 
-        // ✅ Generate and send QR code on approval
-        $this->generateAndSendQRCode($member->user, $member, $plan);
+            $paymentMethod = request()->query('payment', 'cash');
+            $isRenewal = $member->renewal_pending;
 
-        return redirect()->route('admin.user_management')
-            ->with('success', 'Member approved successfully! QR code sent to email.');
+            // Update member status
+            $member->update([
+                'isApproved' => true,
+                'isDisabled' => false,
+                'status' => 'active',
+                'approved_at' => now(),
+                'renewal_pending' => false,
+                'start_date' => now(),
+                'end_date' => now()->addDays($plan->duration_days),
+                'suspended_at' => null,
+                'days_remaining_before_suspend' => null,
+            ]);
+
+            $member->refresh();
+
+            \Log::info("Member approved", [
+                'member_id' => $member->member_id,
+                'is_renewal' => $isRenewal
+            ]);
+
+            // Generate new QR code (for both new and renewal)
+            $this->generateAndSendQRCode($user, $member, $plan);
+
+            // Create sales record
+            $sale = Sales::create([
+                'user_id' => $member->user_id,
+                'total_amount' => $plan->price,
+                'tax' => 0,
+                'discount' => 0,
+                'payment_method' => $paymentMethod,
+                'status' => 'paid',
+                'type' => 'memberships',
+            ]);
+
+            $sale->items()->create([
+                'plan_id' => $plan->plan_id,
+                'product_id' => null,
+                'quantity' => 1,
+                'price' => $plan->price,
+                'sub_total' => $plan->price,
+            ]);
+
+            $actionType = $isRenewal ? 'Approved renewal' : 'Approved membership';
+            Logs::create([
+                'user_id' => Auth::id(),
+                'action' => "{$actionType} for: {$user->first_name} {$user->last_name} - Plan: {$plan->name} - Payment: {$paymentMethod}",
+                'timestamp' => now(),
+            ]);
+
+            $message = $isRenewal 
+                ? "Renewal approved! QR code sent to {$user->email}." 
+                : "Member approved! QR code sent to {$user->email}.";
+
+            return redirect()->route('admin.user_management')
+                ->with('success', $message . " Sale recorded.");
+
+        } catch (\Exception $e) {
+            \Log::error("Error during approval", [
+                'member_id' => $memberId,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('admin.user_management')
+                ->with('error', 'Error approving member: ' . $e->getMessage());
+        }
     }
+
+
 
     public function deny($memberId)
     {
@@ -408,96 +402,158 @@ public function approve($memberId)
             ->with('success', 'Member access denied.');
     }
 
-   private function generateAndSendQRCode($user, $memberProfile, $plan)
-{
-    if (!$plan) {
-        \Log::error("QR Code generation skipped: No plan provided");
-        return;
-    }
-
-    try {
-        $qrData = [
-            'member_id' => $memberProfile->member_id,
-            'name' => "{$user->first_name} {$user->last_name}",
-            'email' => $user->email,
-            'plan' => $plan->name,
-            'price' => $plan->price,
-            'start_date' => $memberProfile->start_date,
-            'end_date' => $memberProfile->end_date,
-        ];
-
-        $qrText = json_encode($qrData);
-        $qrRelativePath = "qr/member_{$user->user_id}.png";
-
-        // Ensure directory exists
-        if (!Storage::disk('public')->exists('qr')) {
-            Storage::disk('public')->makeDirectory('qr');
-            \Log::info("Created QR directory");
+    private function generateAndSendQRCode($user, $memberProfile, $plan)
+    {
+        if (!$plan) {
+            throw new \Exception("QR Code generation failed: No plan provided");
         }
 
-        // Delete old QR code if it exists
-        if ($memberProfile->qr_code && Storage::disk('public')->exists($memberProfile->qr_code)) {
-            Storage::disk('public')->delete($memberProfile->qr_code);
-            \Log::info("Deleted old QR code: {$memberProfile->qr_code}");
-        }
-
-        // Generate QR code
-        $result = Builder::create()
-            ->writer(new PngWriter())
-            ->data($qrText)
-            ->encoding(new Encoding('UTF-8'))
-            ->size(300)
-            ->margin(10)
-            ->build();
-
-        // Save to file
-        $fullPath = storage_path("app/public/{$qrRelativePath}");
-        
-        // Ensure parent directory exists
-        $directory = dirname($fullPath);
-        if (!file_exists($directory)) {
-            mkdir($directory, 0755, true);
-        }
-        
-        $result->saveToFile($fullPath);
-
-        // Verify file was created
-        if (!file_exists($fullPath)) {
-            throw new \Exception("QR code file was not created at: {$fullPath}");
-        }
-
-        // Update member profile with QR code path
-        $memberProfile->qr_code = $qrRelativePath;
-        $memberProfile->save();
-
-        \Log::info("QR Code generated successfully", [
-            'user_id' => $user->user_id,
-            'member_id' => $memberProfile->member_id,
-            'path' => $qrRelativePath,
-            'file_exists' => file_exists($fullPath),
-            'file_size' => filesize($fullPath)
-        ]);
-
-        // Send email with QR code
         try {
-            Mail::to($user->email)->send(new MemberQRCodeMail($memberProfile, $fullPath));
-            \Log::info("QR Code email sent successfully to: {$user->email}");
-        } catch (\Exception $e) {
-            \Log::error("Failed to send QR code email", [
-                'user_id' => $user->user_id,
+            $qrData = [
+                'member_id' => $memberProfile->member_id,
+                'name' => "{$user->first_name} {$user->last_name}",
                 'email' => $user->email,
+                'plan' => $plan->name,
+                'price' => $plan->price,
+                'start_date' => $memberProfile->start_date,
+                'end_date' => $memberProfile->end_date,
+            ];
+
+            $qrText = json_encode($qrData);
+            $qrRelativePath = "qr/member_{$user->user_id}.png";
+            $fullPath = storage_path("app/public/{$qrRelativePath}");
+
+            $directory = dirname($fullPath);
+            if (!file_exists($directory)) {
+                mkdir($directory, 0755, true);
+            }
+
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+
+            $result = Builder::create()
+                ->writer(new PngWriter())
+                ->data($qrText)
+                ->encoding(new Encoding('UTF-8'))
+                ->size(300)
+                ->margin(10)
+                ->build();
+
+            $result->saveToFile($fullPath);
+
+            if (!file_exists($fullPath)) {
+                throw new \Exception("QR code file was not created");
+            }
+
+            $fileSize = filesize($fullPath);
+            if ($fileSize === 0) {
+                throw new \Exception("QR code file is empty");
+            }
+
+            $memberProfile->qr_code = $qrRelativePath;
+            $memberProfile->save();
+
+            \Log::info("QR Code generated successfully", [
+                'path' => $qrRelativePath,
+                'file_size' => $fileSize
+            ]);
+
+            try {
+                Mail::to($user->email)->send(new MemberQRCodeMail($memberProfile, $fullPath));
+                \Log::info("QR Code email sent to: {$user->email}");
+            } catch (\Exception $e) {
+                \Log::error("Failed to send QR code email: " . $e->getMessage());
+            }
+
+        } catch (\Exception $e) {
+            \Log::error("QR Code generation failed", [
                 'error' => $e->getMessage()
             ]);
+            throw $e;
         }
-
-    } catch (\Exception $e) {
-        \Log::error("Failed to generate QR code", [
-            'user_id' => $user->user_id,
-            'member_id' => $memberProfile->member_id,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-        throw $e; // Re-throw to handle in approve method
     }
-}
+
+
+/**
+     * Suspend a member's membership
+     */
+    public function suspendMember($memberId)
+    {
+        try {
+            $member = MemberProfile::findOrFail($memberId);
+            $user = $member->user;
+
+            // Update member status to expired
+            $member->update([
+                'status' => 'expired',
+                'suspended_at' => now(),
+                'days_remaining_before_suspend' => $member->end_date 
+                    ? max(0, now()->diffInDays($member->end_date, false))
+                    : 0,
+            ]);
+
+            // Log the suspension
+            Logs::create([
+                'user_id' => Auth::id(),
+                'action' => "Suspended membership for: {$user->first_name} {$user->last_name}",
+                'timestamp' => now(),
+            ]);
+
+            return redirect()->route('admin.user_management')
+                ->with('success', "Member {$user->first_name} {$user->last_name} has been suspended.");
+
+        } catch (\Exception $e) {
+            \Log::error("Error suspending member", [
+                'member_id' => $memberId,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('admin.user_management')
+                ->with('error', 'Error suspending member: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reactivate a suspended member
+     */
+    public function reactivateMember($memberId)
+    {
+        try {
+            $member = MemberProfile::findOrFail($memberId);
+            $user = $member->user;
+
+            // Restore previous end date if it was suspended
+            if ($member->days_remaining_before_suspend > 0) {
+                $newEndDate = now()->addDays($member->days_remaining_before_suspend);
+            } else {
+                $newEndDate = $member->end_date;
+            }
+
+            $member->update([
+                'status' => 'active',
+                'suspended_at' => null,
+                'end_date' => $newEndDate,
+                'days_remaining_before_suspend' => null,
+            ]);
+
+            Logs::create([
+                'user_id' => Auth::id(),
+                'action' => "Reactivated membership for: {$user->first_name} {$user->last_name}",
+                'timestamp' => now(),
+            ]);
+
+            return redirect()->route('admin.user_management')
+                ->with('success', "Member {$user->first_name} {$user->last_name} has been reactivated.");
+
+        } catch (\Exception $e) {
+            \Log::error("Error reactivating member", [
+                'member_id' => $memberId,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('admin.user_management')
+                ->with('error', 'Error reactivating member: ' . $e->getMessage());
+        }
+    }
 }
