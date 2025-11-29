@@ -131,6 +131,10 @@ class AuthController extends Controller
             return redirect()->route('admin.dashboard')->with('success', 'Logged in successfully');
         }
 
+        if ($user->role === 'staff') {
+            return redirect()->route('staff.dashboard')->with('success', 'Logged in successfully');
+        }
+
         if ($user->role === 'member') {
 
             $profile = MemberProfile::where('user_id', $user->user_id)->first();
@@ -248,5 +252,5 @@ class AuthController extends Controller
 
 
 
-   
+
 }

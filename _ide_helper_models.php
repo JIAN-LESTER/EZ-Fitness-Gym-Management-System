@@ -15,7 +15,7 @@ namespace App\Models{
 /**
  * @property int $attendance_id
  * @property int $member_id
- * @property string|null $check_in_time
+ * @property \Illuminate\Support\Carbon|null $check_in_time
  * @property string|null $check_out_time
  * @property string $status
  * @property int|null $duration
@@ -181,24 +181,34 @@ namespace App\Models{
  * @property string|null $mobile_number
  * @property string|null $qr_code
  * @property string $status
+ * @property int $isApproved
+ * @property int $isDisabled
+ * @property string|null $approved_at
  * @property string|null $start_date
  * @property string|null $end_date
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Attendance> $attendance
- * @property-read int|null $attendance_count
+ * @property int $renewal_pending
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Attendance> $attendances
+ * @property-read int|null $attendances_count
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
  * @property-read \App\Models\MembershipPlan|null $plan
  * @property-read \App\Models\User $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile expired()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile expiringSoon(int $days = 7)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereApprovedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereBirthday($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereEndDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereHeight($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereIsApproved($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereIsDisabled($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereMemberId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereMobileNumber($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile wherePlanId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereQrCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereRenewalPending($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereSex($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereStartDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MemberProfile whereStatus($value)
@@ -241,37 +251,6 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
- * @property-read int|null $notifications_count
- * @property-read \App\Models\Orders|null $order
- * @property-read \App\Models\Product|null $product
- * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem query()
- * @mixin \Eloquent
- */
-	#[\AllowDynamicProperties]
-	class IdeHelperOrderItem {}
-}
-
-namespace App\Models{
-/**
- * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
- * @property-read int|null $notifications_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderItem> $orderItem
- * @property-read int|null $order_item_count
- * @property-read \App\Models\User|null $user
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Orders newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Orders newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Orders query()
- * @mixin \Eloquent
- */
-	#[\AllowDynamicProperties]
-	class IdeHelperOrders {}
-}
-
-namespace App\Models{
-/**
  * @property int $product_id
  * @property int $category_id
  * @property string $name
@@ -287,8 +266,6 @@ namespace App\Models{
  * @property-read \App\Models\Inventory|null $inventory
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderItem> $orderItems
- * @property-read int|null $order_items_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\StockIn> $stockIns
  * @property-read int|null $stock_ins_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\StockOut> $stockOuts
@@ -319,7 +296,9 @@ namespace App\Models{
  * @property string $tax
  * @property string $discount
  * @property string $payment_method
+ * @property string|null $reference_code
  * @property string $status
+ * @property string $type
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SalesItem> $items
@@ -334,10 +313,12 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales whereDiscount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales wherePaymentMethod($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales whereReferenceCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales whereSalesId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales whereTax($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales whereTotalAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Sales whereUserId($value)
  * @mixin \Eloquent
@@ -468,8 +449,6 @@ namespace App\Models{
  * @property-read \App\Models\MemberProfile|null $member
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Orders> $orders
- * @property-read int|null $orders_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Sales> $sales
  * @property-read int|null $sales_count
  * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
