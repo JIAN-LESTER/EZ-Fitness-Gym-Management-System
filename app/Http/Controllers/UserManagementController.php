@@ -19,29 +19,29 @@ use Storage;
 class UserManagementController extends Controller
 {
 
-   public function viewUsers(Request $request)
-{
-    $search = $request->get('search');
-    $roles = $request->get('roles', []);
-    $statuses = $request->get('user_status', []);
+    public function viewUsers(Request $request)
+    {
+        $search = $request->get('search');
+        $roles = $request->get('roles', []);
+        $statuses = $request->get('user_status', []);
 
-    $users = User::query()
-        ->with('member.plan')
-        ->when($search, function ($query, $search) {
-            return $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('username', 'like', "%{$search}%");
-            });
-        })
-        ->when(!empty($roles), function ($query) use ($roles) {
-            return $query->whereIn('role', $roles);
-        })
-        ->when(!empty($statuses), function ($query) use ($statuses) {
-            return $query->whereIn('status', $statuses);
-        })
-        // Custom ordering: Pending approval members first, then by role (member, staff, admin)
-        ->orderByRaw("
+        $users = User::query()
+            ->with('member.plan')
+            ->when($search, function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%");
+                });
+            })
+            ->when(!empty($roles), function ($query) use ($roles) {
+                return $query->whereIn('role', $roles);
+            })
+            ->when(!empty($statuses), function ($query) use ($statuses) {
+                return $query->whereIn('status', $statuses);
+            })
+            // Custom ordering: Pending approval members first, then by role (member, staff, admin)
+            ->orderByRaw("
             CASE 
                 WHEN role = 'member' AND EXISTS (
                     SELECT 1 FROM member_profiles 
@@ -54,20 +54,20 @@ class UserManagementController extends Controller
                 ELSE 5
             END
         ")
-        ->orderBy('created_at', 'desc')
-        ->paginate(12)
-        ->appends($request->query());
+            ->orderBy('created_at', 'desc')
+            ->paginate(12)
+            ->appends($request->query());
 
-    $plans = \App\Models\MembershipPlan::all();
+        $plans = \App\Models\MembershipPlan::all();
 
-    return view('admin.user-management', compact(
-        'users',
-        'search',
-        'roles',
-        'statuses',
-        'plans'
-    ));
-}
+        return view('admin.user-management', compact(
+            'users',
+            'search',
+            'roles',
+            'statuses',
+            'plans'
+        ));
+    }
 
     public function create()
     {
@@ -115,13 +115,13 @@ class UserManagementController extends Controller
             'password' => bcrypt($validated['password']),
             'role' => $validated['role'] ?? 'member',
             'status' => 'active',
-      
+
         ]);
 
 
         if ($user->role === 'member' && ($request->has('plan_id') || $request->has('sex'))) {
             $plan = \App\Models\MembershipPlan::find($validated['plan_id']);
-            
+
             $memberProfile = MemberProfile::create([
                 'user_id' => $user->user_id,
                 'plan_id' => $validated['plan_id'] ?? null,
@@ -188,7 +188,7 @@ class UserManagementController extends Controller
     public function update(Request $request, string $id)
     {
         $user = User::findOrFail($id);
-         $previousRole = $user->role;
+        $previousRole = $user->role;
 
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
@@ -226,12 +226,12 @@ class UserManagementController extends Controller
 
         $user->role = $validated['role'];
         $user->status = $validated['status'];
-        
+
 
         $user->save();
 
 
-         if ($user->role === 'member') {
+        if ($user->role === 'member') {
             $memberData = [
                 'plan_id' => $validated['plan_id'] ?? null,
                 'sex' => $validated['sex'] ?? null,
@@ -245,7 +245,7 @@ class UserManagementController extends Controller
                 $user->member->update($memberData);
             } else if ($request->has('plan_id') || $request->has('sex')) {
                 $plan = \App\Models\MembershipPlan::find($validated['plan_id']);
-                
+
                 $memberProfile = MemberProfile::create(array_merge($memberData, [
                     'user_id' => $user->user_id,
                     'status' => 'active',
@@ -317,9 +317,10 @@ public function approve($memberId)
             ->with('error', 'Cannot approve: Member has no membership plan assigned.');
     }
 
-
+    // Get payment method from query
     $paymentMethod = request()->query('payment', 'cash');
 
+    // Update member status FIRST
     $member->update([
         'isApproved' => true,
         'isDisabled' => false,
@@ -329,45 +330,57 @@ public function approve($memberId)
         'start_date' => now(),
         'end_date' => now()->addDays($plan->duration_days),
     ]);
-    $this->generateAndSendQRCode($user, $member, $plan);
 
+    // Refresh the member to ensure we have the latest data
+    $member->refresh();
 
+    // Generate and send QR code AFTER status update
+    try {
+        $this->generateAndSendQRCode($user, $member, $plan);
+        \Log::info("QR Code generation initiated for member: {$member->member_id}");
+    } catch (\Exception $e) {
+        \Log::error("QR Code generation failed during approval", [
+            'member_id' => $member->member_id,
+            'error' => $e->getMessage()
+        ]);
+        // Don't fail the approval, just log the error
+    }
+
+    // Create sales record for membership
     $sale = Sales::create([
         'user_id' => $member->user_id,
         'total_amount' => $plan->price,
         'tax' => 0,
         'discount' => 0,
-        'payment_method' => "{$paymentMethod}",
+        'payment_method' => $paymentMethod,
         'status' => 'paid',
         'type' => 'memberships',
     ]);
 
-
+    // Create sales item for the membership plan
     $sale->items()->create([
-        'product_id' => $plan->plan_id,
+        'plan_id' => $plan->plan_id,
+        'product_id' => null,
         'quantity' => 1,
         'price' => $plan->price,
         'sub_total' => $plan->price,
     ]);
 
-    // 5. LOG ACTION
+    // Log the approval action
     Logs::create([
         'user_id' => Auth::id(),
-        'action' => "Approved membership for: {$user->first_name} {$user->last_name} - Plan: {$plan->name}",
+        'action' => "Approved membership for: {$user->first_name} {$user->last_name} - Plan: {$plan->name} - Payment: {$paymentMethod}",
         'timestamp' => now(),
     ]);
 
     return redirect()->route('admin.user_management')
-        ->with('success', "Member approved! QR code sent to {$user->email}");
+        ->with('success', "Member approved! QR code sent to {$user->email}. Sale recorded.");
 }
-
-
-
-     public function renewMembership($memberId)
+    public function renewMembership($memberId)
     {
         $member = MemberProfile::findOrFail($memberId);
         $plan = $member->plan;
-        
+
         $member->update([
             'isApproved' => true,
             'isDisabled' => false,
@@ -385,7 +398,7 @@ public function approve($memberId)
     public function deny($memberId)
     {
         $member = MemberProfile::findOrFail($memberId);
-        
+
         $member->update([
             'isApproved' => false,
             'isDisabled' => true,
@@ -395,40 +408,96 @@ public function approve($memberId)
             ->with('success', 'Member access denied.');
     }
 
-      private function generateAndSendQRCode($user, $memberProfile, $plan)
+   private function generateAndSendQRCode($user, $memberProfile, $plan)
 {
-    if (!$plan) return;
+    if (!$plan) {
+        \Log::error("QR Code generation skipped: No plan provided");
+        return;
+    }
 
-    $qrData = [
-        'name' => "{$user->first_name} {$user->last_name}",
-        'email' => $user->email,
-        'plan' => $plan->name,
-        'price' => $plan->price,
-    ];
-
-    $qrText = json_encode($qrData);
-    $qrRelativePath = "qr/member_{$user->user_id}.png";
-    Storage::disk('public')->makeDirectory('qr');
-
-    $result = Builder::create()
-        ->writer(new PngWriter())
-        ->data($qrText)
-        ->encoding(new Encoding('UTF-8'))
-        ->size(300)
-        ->margin(10)
-        ->build();
-
-    $result->saveToFile(storage_path("app/public/{$qrRelativePath}"));
-
-    $memberProfile->qr_code = $qrRelativePath;
-    $memberProfile->save();
-
-    // Send email with QR code
     try {
-        Mail::to($user->email)->send(new MemberQRCodeMail($memberProfile, storage_path("app/public/{$qrRelativePath}")));
+        $qrData = [
+            'member_id' => $memberProfile->member_id,
+            'name' => "{$user->first_name} {$user->last_name}",
+            'email' => $user->email,
+            'plan' => $plan->name,
+            'price' => $plan->price,
+            'start_date' => $memberProfile->start_date,
+            'end_date' => $memberProfile->end_date,
+        ];
+
+        $qrText = json_encode($qrData);
+        $qrRelativePath = "qr/member_{$user->user_id}.png";
+
+        // Ensure directory exists
+        if (!Storage::disk('public')->exists('qr')) {
+            Storage::disk('public')->makeDirectory('qr');
+            \Log::info("Created QR directory");
+        }
+
+        // Delete old QR code if it exists
+        if ($memberProfile->qr_code && Storage::disk('public')->exists($memberProfile->qr_code)) {
+            Storage::disk('public')->delete($memberProfile->qr_code);
+            \Log::info("Deleted old QR code: {$memberProfile->qr_code}");
+        }
+
+        // Generate QR code
+        $result = Builder::create()
+            ->writer(new PngWriter())
+            ->data($qrText)
+            ->encoding(new Encoding('UTF-8'))
+            ->size(300)
+            ->margin(10)
+            ->build();
+
+        // Save to file
+        $fullPath = storage_path("app/public/{$qrRelativePath}");
+        
+        // Ensure parent directory exists
+        $directory = dirname($fullPath);
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        
+        $result->saveToFile($fullPath);
+
+        // Verify file was created
+        if (!file_exists($fullPath)) {
+            throw new \Exception("QR code file was not created at: {$fullPath}");
+        }
+
+        // Update member profile with QR code path
+        $memberProfile->qr_code = $qrRelativePath;
+        $memberProfile->save();
+
+        \Log::info("QR Code generated successfully", [
+            'user_id' => $user->user_id,
+            'member_id' => $memberProfile->member_id,
+            'path' => $qrRelativePath,
+            'file_exists' => file_exists($fullPath),
+            'file_size' => filesize($fullPath)
+        ]);
+
+        // Send email with QR code
+        try {
+            Mail::to($user->email)->send(new MemberQRCodeMail($memberProfile, $fullPath));
+            \Log::info("QR Code email sent successfully to: {$user->email}");
+        } catch (\Exception $e) {
+            \Log::error("Failed to send QR code email", [
+                'user_id' => $user->user_id,
+                'email' => $user->email,
+                'error' => $e->getMessage()
+            ]);
+        }
+
     } catch (\Exception $e) {
-        \Log::error("Failed to send QR code email: " . $e->getMessage());
+        \Log::error("Failed to generate QR code", [
+            'user_id' => $user->user_id,
+            'member_id' => $memberProfile->member_id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        throw $e; // Re-throw to handle in approve method
     }
 }
-
 }

@@ -18,6 +18,7 @@ class SalesItem extends Model
     protected $fillable = [
         'sales_id',
         'product_id',
+        'plan_id',
         'quantity',
         'price',
         'sub_total'
@@ -31,5 +32,10 @@ class SalesItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
+    }
+
+        public function plan()
+    {
+        return $this->belongsTo(MembershipPlan::class, 'plan_id', 'plan_id');
     }
 }
