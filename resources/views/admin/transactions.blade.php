@@ -492,7 +492,7 @@ function renderTransactionDetails(transaction) {
         let paymentClass = '';
         if (transaction.sale.payment_method === 'cash') paymentClass = 'bg-green-100 text-green-800';
         if (transaction.sale.payment_method === 'credit_card') paymentClass = 'bg-blue-100 text-blue-800';
-        if (transaction.sale.payment_method === 'qr') paymentClass = 'bg-purple-100 text-purple-800';
+        if (transaction.sale.payment_method === 'gcash') paymentClass = 'bg-purple-100 text-purple-800';
 
         let paymentLabel = transaction.sale.payment_method === 'credit_card' ? 'Credit Card' : 
         transaction.sale.payment_method.charAt(0).toUpperCase() + transaction.sale.payment_method.slice(1);
@@ -502,7 +502,7 @@ function renderTransactionDetails(transaction) {
         html += '<span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ' + paymentClass + '">' + paymentLabel + '</span>';
 
         // Display reference code on the right side for GCash
-        if (transaction.sale.payment_method === 'qr' && transaction.sale.reference_code) {
+        if (transaction.sale.payment_method === 'gcash' && transaction.sale.reference_code) {
             html += '<div class="flex items-center gap-2">';
             html += '<span class="text-sm text-gray-600 dark:text-gray-400">Ref:</span>';
             html += '<span class="text-lg font-semibold text-purple-600 dark:text-purple-400">' + transaction.sale.reference_code + '</span>';
@@ -516,7 +516,7 @@ function renderTransactionDetails(transaction) {
         html += '<p class="text-gray-800 dark:text-gray-200 font-medium">' + formatDate(transaction.sale.created_at) + '</p></div>';
         
         // Total Amount
-        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Amount with VAT (12%)</p>';
+        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Amount</p>';
         html += '<p class="text-2xl font-bold text-purple-600 dark:text-purple-400">₱' + parseFloat(transaction.sale.total_amount).toFixed(2) + '</p></div>';
         
         html += '</div></div></div>';
@@ -531,7 +531,7 @@ function renderTransactionDetails(transaction) {
             html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>';
             html += '<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantity</th>';
             html += '<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price</th>';
-            html += '<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Subtotal</th>';
+            html += '<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>';
             html += '</tr></thead><tbody class="divide-y divide-gray-200 dark:divide-gray-700">';
 
             transaction.sale.items.forEach(function(item) {

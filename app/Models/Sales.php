@@ -21,6 +21,7 @@ class Sales extends Model
         'tax',
         'discount',
         'payment_method',
+        'reference_code',
         'status',
         'type',
     ];

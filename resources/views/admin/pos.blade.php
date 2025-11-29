@@ -153,8 +153,8 @@
                         </div>
                     </button>
 
-                    <!-- QR Code Payment Option -->
-                    <button type="button" data-payment-method="qr"
+                    <!-- GCash Code Payment Option -->
+                    <button type="button" data-payment-method="gcash"
                         class="payment-button flex flex-col items-center p-1 border-2 border-gray-200 rounded cursor-pointer transition-all duration-200 hover:border-purple-400 hover:bg-purple-50 flex-1 h-full">
                         <div class="flex items-center justify-center w-8 h-8 bg-purple-100 rounded-full mb-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-600" fill="none"
@@ -226,6 +226,7 @@
             </div>
         </div>
     </div>
+    {{-- GCash Modal --}}
     <div id="gcashModal" class="fixed inset-0 bg-opacity-40 hidden backdrop-blur items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-lg w-80 p-5">
             <h2 class="text-base font-semibold text-gray-800 mb-2">GCash Payment</h2>
@@ -235,7 +236,7 @@
                 <input type="text" 
                     id="gcashReferenceCode" 
                     placeholder="Enter reference code"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-semibold text-gray-800">
                 <p class="text-xs text-gray-500 mt-1">Enter the transaction reference code from GCash</p>
             </div>
 
@@ -247,6 +248,59 @@
 
                 <button id="confirmGcash"
                     class="px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 transition text-sm">
+                    Confirm Payment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- Cash Modal --}}
+    {{-- Cash Payment Modal --}}
+    <div id="cashModal" class="fixed inset-0 bg-opacity-40 hidden backdrop-blur items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg w-80 p-5">
+            <h2 class="text-base font-semibold text-gray-800 mb-2">Cash Payment</h2>
+            
+            <!-- Display Total Amount -->
+            <div class="mb-3 p-2 bg-green-50 rounded-lg">
+                <p class="text-xs text-gray-600">Total Amount Due</p>
+                <p id="cashTotalAmount" class="text-lg font-bold text-green-700">₱0.00</p>
+            </div>
+            
+            <div class="mb-4">
+                <label for="cashAmount" class="block text-sm font-medium text-gray-700 mb-1">
+                    Amount Paid
+                </label>
+                <input type="number" 
+                    id="cashAmount" 
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm text-gray-800 font-semibold"
+                    oninput="calculateChange()">
+                <p class="text-xs text-gray-500 mt-1">Enter the amount received from customer</p>
+            </div>
+
+            <!-- Change Calculation -->
+            <div id="changeSection" class="hidden mb-4 p-2 bg-blue-50 rounded-lg">
+                <p class="text-xs text-gray-600">Change</p>
+                <p id="changeAmount" class="text-lg font-bold text-blue-700">₱0.00</p>
+            </div>
+
+            <!-- Warning for insufficient payment -->
+            <div id="insufficientWarning" class="hidden mb-4 p-2 bg-red-50 rounded-lg border border-red-200">
+                <p class="text-xs text-red-600 font-medium">Insufficient payment</p>
+                <p id="remainingAmount" class="text-sm text-red-700">₱0.00</p>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button id="cancelCash"
+                    class="px-3 py-1.5 rounded border text-gray-800 border-gray-300 hover:bg-gray-100 transition text-sm">
+                    Cancel
+                </button>
+
+                <button id="confirmCash"
+                    class="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    disabled>
                     Confirm Payment
                 </button>
             </div>
@@ -291,7 +345,7 @@
                         this.classList.add('border-green-500', 'bg-green-50');
                     } else if (paymentMethod === 'credit_card') {
                         this.classList.add('border-blue-500', 'bg-blue-50');
-                    } else if (paymentMethod === 'qr') {
+                    } else if (paymentMethod === 'gcash') {
                         this.classList.add('border-purple-500', 'bg-purple-50');
                     }
 
@@ -373,7 +427,7 @@
             const okBtn = document.getElementById('okConfirm');
 
             titleEl.textContent = title;
-            messageEl.textContent = message;
+            messageEl.innerHTML = message;
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -705,12 +759,16 @@
             }
 
             const paymentMethodDisplay = selectedPaymentMethod === 'credit_card' ? 'Credit/Debit Card' :
-                selectedPaymentMethod === 'qr' ? 'QR Code' : 'Cash';
+                selectedPaymentMethod === 'gcash' ? 'QR Code' : 'Cash';
 
-            // If payment method is GCash (qr), show reference code modal
-            if (selectedPaymentMethod === 'qr') {
+            // If payment method is GCash (gcash), show reference code modal
+            if (selectedPaymentMethod === 'gcash') {
                 showGcashModal();
-            } else {
+            } 
+            else if (selectedPaymentMethod === 'cash') {
+                showCashModal();
+            }
+            else {
                 // For other payment methods, proceed directly to confirmation
                 showConfirmModal(
                     "Confirm Checkout",
@@ -759,9 +817,9 @@
                 // Show final confirmation with reference code
                 showConfirmModal(
                     "Confirm GCash Payment",
-                    `Proceed with GCash payment? \nReference Code: ${referenceCode}`,
+                    `Proceed with GCash payment? <br> <strong> Reference Code: ${referenceCode} </strong>`,
                     () => {
-                        processCheckout('qr', referenceCode); // pass reference code to checkout
+                        processCheckout('gcash', referenceCode); // pass reference code to checkout
                     }
                 );
             };
@@ -777,9 +835,104 @@
             setTimeout(() => referenceInput.focus(), 100);
         }
 
+        // Cash Modal Function
+function showCashModal() {
+    const modal = document.getElementById('cashModal');
+    const cashInput = document.getElementById('cashAmount');
+    const cashTotal = document.getElementById('cashTotalAmount');
+    const changeSection = document.getElementById('changeSection');
+    const changeAmount = document.getElementById('changeAmount');
+    const insufficientWarning = document.getElementById('insufficientWarning');
+    const remainingAmount = document.getElementById('remainingAmount');
+    const cancelBtn = document.getElementById('cancelCash');
+    const confirmBtn = document.getElementById('confirmCash');
+
+    // Calculate total amount
+    const totalAmount = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
+    
+    // Update display
+    cashTotal.textContent = `₱${totalAmount.toFixed(2)}`;
+    cashInput.value = '';
+    cashInput.min = totalAmount.toFixed(2);
+    
+    // Reset UI
+    changeSection.classList.add('hidden');
+    insufficientWarning.classList.add('hidden');
+    confirmBtn.disabled = true;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    cancelBtn.onclick = () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    };
+
+    confirmBtn.onclick = () => {
+        const cashPaid = parseFloat(cashInput.value);
+        const totalDue = totalAmount;
+
+        if (!cashPaid || cashPaid < totalDue) {
+            showToast('error', 'Insufficient payment amount');
+            return;
+        }
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+
+        // Show final confirmation with cash details
+        const change = cashPaid - totalDue;
+        showConfirmModal(
+            "Confirm Cash Payment",
+            `<strong> Total: ₱${totalDue.toFixed(2)}</strong> <br> Amount Paid: ₱${cashPaid.toFixed(2)} <br> Change: ₱${change.toFixed(2)}`,
+            () => {
+                processCheckout('cash', null, cashPaid, change);
+            }
+        );
+    };
+
+    // Focus on input
+    setTimeout(() => cashInput.focus(), 100);
+}
+
+// Calculate change when cash amount is entered
+function calculateChange() {
+    const cashInput = document.getElementById('cashAmount');
+    const cashTotal = document.getElementById('cashTotalAmount');
+    const changeSection = document.getElementById('changeSection');
+    const changeAmount = document.getElementById('changeAmount');
+    const insufficientWarning = document.getElementById('insufficientWarning');
+    const remainingAmount = document.getElementById('remainingAmount');
+    const confirmBtn = document.getElementById('confirmCash');
+
+    const cashPaid = parseFloat(cashInput.value) || 0;
+    const totalDue = parseFloat(cashTotal.textContent.replace('₱', '')) || 0;
+
+    if (cashPaid >= totalDue) {
+        // Sufficient payment - show change
+        const change = cashPaid - totalDue;
+        changeAmount.textContent = `₱${change.toFixed(2)}`;
+        changeSection.classList.remove('hidden');
+        insufficientWarning.classList.add('hidden');
+        confirmBtn.disabled = false;
+    } else if (cashPaid > 0) {
+        // Insufficient payment - show remaining amount
+        const remaining = totalDue - cashPaid;
+        remainingAmount.textContent = `₱${remaining.toFixed(2)}`;
+        changeSection.classList.add('hidden');
+        insufficientWarning.classList.remove('hidden');
+        confirmBtn.disabled = true;
+    } else {
+        // No payment entered
+        changeSection.classList.add('hidden');
+        insufficientWarning.classList.add('hidden');
+        confirmBtn.disabled = true;
+    }
+}
+
 
         // Updated processCheckout to handle reference code
-function processCheckout(paymentMethod, referenceCode = null) {
+function processCheckout(paymentMethod, referenceCode = null, cashAmount = null, change = null) {
     const checkoutBtn = document.getElementById('checkoutBtn');
     checkoutBtn.disabled = true;
     checkoutBtn.innerHTML = '<span class="animate-pulse">Processing...</span>';
@@ -790,8 +943,14 @@ function processCheckout(paymentMethod, referenceCode = null) {
     };
 
     // Add reference code for GCash payments
-    if (paymentMethod === 'qr' && referenceCode) {
+    if (paymentMethod === 'gcash' && referenceCode) {
         checkoutData.reference_code = referenceCode;
+    }
+
+        // Add cash details for cash payments
+    if (paymentMethod === 'cash' && cashAmount !== null) {
+        checkoutData.cash_amount = cashAmount;
+        checkoutData.change = change;
     }
 
     fetch('{{ route("pos.checkout") }}', {
@@ -800,14 +959,16 @@ function processCheckout(paymentMethod, referenceCode = null) {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        body: JSON.stringify(checkoutData) // FIXED: Send checkoutData directly, not wrapped in another object
+        body: JSON.stringify(checkoutData) 
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
             let successMessage = 'Checkout completed successfully!';
-            if (paymentMethod === 'qr') {
+            if (paymentMethod === 'gcash') {
                 successMessage = `GCash payment completed! Reference: ${referenceCode}`;
+            } else if (paymentMethod === 'cash') {
+                successMessage = `Cash payment completed! Change: ₱${change.toFixed(2)}`;
             }
             showToast('success', successMessage);
             setTimeout(() => window.location.reload(), 1500);
