@@ -62,7 +62,22 @@
         Route::put('/profile/update', [MemberProfileController::class, 'updateProfile'])->name('profile.update');
     });
 
+            Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {
+                Route::get('/dashboard', function () {
+                    return view('admin.dashboard');
+                })->name('admin.dashboard');
+            });
 
+            Route::prefix('member')->name('member.')->group(function () {
+                Route::get('/dashboard', function () {
+                    return view('member.dashboard');
+                })->name('member.dashboard');
+            });
+   
+        
+
+        Route::get('/member/dashboard', [MemberProfileController::class, 'dashboard'])->name('member.dashboard');
+        Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
 
     Route::get('/member/dashboard', [MemberProfileController::class, 'dashboard'])->name('member.dashboard');
@@ -133,6 +148,7 @@
         
         // Checkout
         Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
+        
     });
 
     Route::prefix('categories')->name('categories.')->group(function () {
@@ -169,6 +185,18 @@
         ->name('member.check-approval');
 
 
+ 
+
+
+        Route::prefix('categories')->name('categories.')->group(function () {
+            Route::get('/', [CategoriesController::class, 'index'])->name('index');
+            Route::post('/', [CategoriesController::class, 'store'])->name('store');
+            Route::get('/{id}', [CategoriesController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [CategoriesController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [CategoriesController::class, 'update'])->name('update');
+            Route::delete('/{id}', [CategoriesController::class, 'destroy'])->name('destroy');
+        });
+
     // Email verification routes
 
     // Resend verification 
@@ -177,6 +205,10 @@
 
     Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
 
+        Route::post('/member/request-renewal', [MemberProfileController::class, 'requestRenewal'])->name('member.request-renewal');
+        Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
+        Route::get('/member/check-approval', [MemberProfileController::class, 'checkApprovalStatus'])
+            ->name('member.check-approval');
 
     Route::prefix('admin')->middleware(['auth'])->group(function () {
         Route::get('/plan-management', [App\Http\Controllers\MembershipPlanController::class, 'index'])->name('admin.plan_management');
@@ -186,8 +218,13 @@
     });
 
 
+        // Email verification routes
 
+        // Resend verification 
+        Route::post('/email/verification-notification', [AuthController::class, 'resendVerification'])
+            ->name('verification.send');
 
+        Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
 
     // Email verification routes
 
@@ -200,36 +237,62 @@
         ->middleware(['signed'])
         ->name('verification.verify');
 
+        // Resend verification 
+        Route::post('/email/verification-notification', [AuthController::class, 'resendVerification'])
+            ->name('verification.send');
 
         use App\Http\Controllers\LogController;
 
     Route::get('/logs', [LogController::class, 'viewLogs'])->name('logs.show');
 
+      
+        Route::get('/logs', [LogController::class, 'viewLogs'])->name('logs.show');
 
 
-    Route::get('/check-username', [AuthController::class, 'checkUsername'])->name('check.username');
-    Route::get('/check-email', [AuthController::class, 'checkEmail'])->name('check.email');
+
+        Route::get('/check-username', [AuthController::class, 'checkUsername'])->name('check.username');
+        Route::get('/check-email', [AuthController::class, 'checkEmail'])->name('check.email');
 
 
-    // Attendance Routes (add after your existing routes)
-    Route::middleware(['auth'])->group(function () {
-        
-        // QR Scanner (Admin/Staff only)
-        Route::get('/attendance/scanner', [AttendanceController::class, 'scanner'])
-            ->middleware('admin')
-            ->name('attendance.scanner');
-        
-        // Process QR Scan
-        Route::post('/attendance/scan', [AttendanceController::class, 'scan'])
-            ->middleware('admin')
-            ->name('attendance.scan');
-        
-        // Admin - View all attendance logs
-        Route::get('/admin/attendance', [AttendanceController::class, 'adminLogs'])
-            ->middleware('admin')
-            ->name('attendance.admin.logs');
-        
-        // Member - View own attendance logs
-        Route::get('/member/attendance', [AttendanceController::class, 'memberLogs'])
-            ->name('attendance.member.logs');
-    });
+        // Attendance Routes (add after your existing routes)
+        Route::middleware(['auth'])->group(function () {
+
+            // QR Scanner (Admin/Staff only)
+            Route::get('/attendance/scanner', [AttendanceController::class, 'scanner'])
+                ->name('attendance.scanner');
+
+            // Process QR Scan
+            Route::post('/attendance/scan', [AttendanceController::class, 'scan'])
+                ->name('attendance.scan');
+
+            // Get today's attendance (AJAX endpoint)
+            Route::get('/attendance/today', [AttendanceController::class, 'getTodayAttendance'])
+                ->name('attendance.today');
+
+            // Admin - View all attendance logs
+            Route::get('/admin/attendance', [AttendanceController::class, 'adminLogs'])
+                ->middleware('admin')
+                ->name('attendance.admin.logs');
+
+            // Member - View own attendance logs
+            Route::get('/member/attendance', [AttendanceController::class, 'memberLogs'])
+                ->name('attendance.member.logs');
+        });
+
+        // STAFF
+        Route::middleware(['auth', 'staff'])->group(function () {
+            // Dashboard
+            Route::get('/staff/dashboard', [StaffController::class, 'dashboard'])->name('staff.dashboard');
+
+            // API endpoints for dashboard
+            Route::get('/staff/quick-stats', [StaffController::class, 'getQuickStats'])->name('staff.quick-stats');
+            Route::get('/staff/sales-chart', [StaffController::class, 'getSalesChartData'])->name('staff.sales-chart');
+            Route::get('/staff/recent-activity', [StaffController::class, 'getRecentActivity'])->name('staff.recent-activity');
+            Route::get('/staff/inventory-alerts', [StaffController::class, 'getInventoryAlerts'])->name('staff.inventory-alerts');
+
+            // Staff product management
+            Route::get('/staff/products', [StaffController::class, 'productsIndex'])->name('staff.products.index');
+
+            // Staff sales reports
+            Route::get('/staff/sales-report', [StaffController::class, 'salesReport'])->name('staff.sales.report');
+        });

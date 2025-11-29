@@ -28,9 +28,14 @@
     x-init="$watch('sidebarOpen', val => localStorage.setItem('sidebarOpen', val))"
     class="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
-  <?php 
+<?php 
 $user = Auth::user();
-$member = $user->member;
+$member = null;
+
+// Only get member data if user is actually a member
+if ($user->role === 'member') {
+    $member = $user->member;
+}
 
 // Count pending member approvals (only for admins)
 $pendingApprovalsCount = 0;
@@ -89,12 +94,12 @@ if ($user->role === 'admin') {
     <!-- Notification Badge -->
     @if($pendingApprovalsCount > 0)
         <span x-show="sidebarOpen" x-cloak 
-              class="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
+            class="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
             {{ $pendingApprovalsCount }}
         </span>
         <!-- Dot indicator when sidebar is collapsed -->
         <span x-show="!sidebarOpen" x-cloak 
-              class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800">
+            class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800">
         </span>
     @endif
 </a>
@@ -182,7 +187,67 @@ if ($user->role === 'admin') {
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Logs</span>
                             </a>
 
+            @elseif(auth()->user()->role === 'staff')
+                <!-- Staff Menu Items -->
+                <a href="{{ route('staff.dashboard') }}" @click="profileOpen = false"
+                    class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('staff.dashboard') ? 'bg-white/20 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-cloak class="transition-opacity">Dashboard</span>
+                </a>
 
+                <a href="{{ route('attendance.scanner') }}" @click="profileOpen = false"  
+                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('attendance.scanner') ? 'bg-white/20 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-cloak class="transition-opacity">QR Scanner</span>
+                </a>
+
+                <a href="{{ route('products.index') }}" @click="profileOpen = false"
+                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('products.index') ? 'bg-white/20 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-cloak class="transition-opacity">Inventory</span>
+                </a>
+
+                <a href="{{ route('pos.index') }}" @click="profileOpen = false"
+                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('pos.index') ? 'bg-white/20 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-cloak class="transition-opacity">POS</span>
+                </a>
+
+                <a href="{{ route('sales.index') }}" @click="profileOpen = false"
+                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('sales.index') ? 'bg-white/20 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-cloak class="transition-opacity">Sales</span>
+                </a>
+
+                <a href="{{ route('transactions.index') }}" @click="profileOpen = false"
+                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('transactions.index') ? 'bg-white/20 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-cloak class="transition-opacity">Transactions</span>
+                </a>
             @elseif(auth()->user()->role === 'member')
                 <a href="{{ route('member.dashboard') }}" @click="profileOpen = false"
                     class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
@@ -218,11 +283,8 @@ if ($user->role === 'admin') {
 
           
             @endif
-
-
         </nav>
     </aside>
-
 
     <div class="flex-1 @yield('fullscreen', 'flex flex-col')">
         <!-- Header - conditionally positioned for fullscreen pages -->
@@ -278,7 +340,7 @@ if ($user->role === 'admin') {
                     </div>
 
                     <div class="py-1">
-                     @if($user->role === 'member' && $member && $member->status === 'inactive' && $member->isApproved == true)
+                    @if($user->role === 'member' && $member && $member->status === 'inactive' && $member->isApproved == true)
     <button
         onclick="opencompleteMembershipModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
         class="flex items-center w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600">
@@ -1148,7 +1210,7 @@ if ($user->role === 'admin') {
 
     <script src="//unpkg.com/alpinejs" defer></script>
 
-   <script>
+<script>
 function openProfileModal() {
     const modal = document.getElementById('profileModal');
     if (modal) {
@@ -1229,7 +1291,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const planContainer = this.querySelector('[x-data]');
             const planButton = planContainer?.querySelector('button');
             const hiddenPlanInput = this.querySelector('input[name="plan_id"]');
-
+            
             // Plan validation
             if (!hiddenPlanInput || !hiddenPlanInput.value) {
                 if (planButton) {
