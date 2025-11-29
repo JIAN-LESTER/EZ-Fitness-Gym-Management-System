@@ -23,12 +23,24 @@
     x-init="$watch('sidebarOpen', val => localStorage.setItem('sidebarOpen', val))"
     class="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
+<<<<<<< Updated upstream
     <?php $user = Auth::user();
 
 $member = $user->member;
 
 
     ?>
+=======
+<?php
+// Count pending member approvals (only for admins)
+$pendingApprovalsCount = 0;
+$user = auth()->user();
+if ($user && $user->role === 'admin') {
+    $pendingApprovalsCount = \App\Models\MemberProfile::where('renewal_pending', true)
+        ->count();
+}
+?>
+>>>>>>> Stashed changes
 
     <!-- Sidebar -->
     <aside
@@ -36,11 +48,30 @@ $member = $user->member;
     class="bg-gray-800 text-white dark:bg-gray-800 dark:text-white shadow-md flex flex-col"
     :class="sidebarOpen ? 'w-60' : 'w-16'">
 
+<<<<<<< Updated upstream
         <div  class="flex justify-center items-center p-4 pb-5 pt-5 font-bold text-white dark:text-white text-lg truncate">
             <span x-show="sidebarOpen" x-cloak class="transition-opacity">EZ Fitness</span>
             <span x-show="!sidebarOpen" x-cloak class="transition-opacity">EZ</span>
         </div>
 
+=======
+    <!-- Logo Section -->
+    <div class="flex justify-center items-center p-4 border-b border-gray-700">
+        <!-- Full logo when sidebar is expanded -->
+        <div x-show="sidebarOpen" x-cloak class="transition-all duration-300 flex items-center justify-center">
+            <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}"
+                alt="EZ Fitness"
+                class="h-30 w-auto max-w-[160px] rounded-2xl object-contain hover:scale-105 transition-transform shadow-lg shadow-gray-900/50 hover:shadow-xl hover:shadow-gray-900/40">
+        </div>
+
+        <!-- Icon/compact logo when sidebar is collapsed -->
+        <div x-show="!sidebarOpen" x-cloak class="transition-all duration-300 flex items-center justify-center">
+            <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}"
+                alt="EZ Fitness"
+                class="h-8 w-8 rounded-lg object-cover hover:scale-110 transition-transform">
+        </div>
+    </div>
+>>>>>>> Stashed changes
         <nav class="flex-1 px-2 space-y-2">
             @if(auth()->user()->role === 'admin')
                             <a href="{{ route('admin.dashboard') }}" @click="profileOpen = false"
@@ -53,7 +84,36 @@ $member = $user->member;
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Dashboard</span>
                             </a>
 
+<<<<<<< Updated upstream
                             <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
+=======
+                       <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"
+   class="flex items-center justify-between space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
+    <div class="flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        </svg>
+        <span x-show="sidebarOpen" x-cloak class="transition-opacity">Users</span>
+    </div>
+
+    <!-- Notification Badge -->
+    @if($pendingApprovalsCount > 0)
+        <span x-show="sidebarOpen" x-cloak
+              class="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
+            {{ $pendingApprovalsCount }}
+        </span>
+        <!-- Dot indicator when sidebar is collapsed -->
+        <span x-show="!sidebarOpen" x-cloak
+              class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800">
+        </span>
+    @endif
+</a>
+
+
+                            <a href="{{ route('attendance.scanner') }}" @click="profileOpen = false"  class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('attendance.scanner') ? 'bg-white/20 text-white' : '' }}">
+>>>>>>> Stashed changes
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -136,6 +196,12 @@ $member = $user->member;
                     </svg>
                     <span x-show="sidebarOpen" x-cloak class="transition-opacity">Store</span>
                 </a>
+<<<<<<< Updated upstream
+=======
+
+
+
+>>>>>>> Stashed changes
             @endif
 
 
@@ -258,10 +324,20 @@ $member = $user->member;
     </div>
 
 
+<<<<<<< Updated upstream
     @if($user->role === 'member' && $member && $member->status === 'inactive')
         <div id="completeMembershipModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="relative bg-white text-gray-800 dark:bg-white dark:text-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
 
+=======
+@if($user->role === 'member' && $member)
+
+    {{-- STATE 1: Profile incomplete - needs to fill out form --}}
+    @if(!$member->plan_id || !$member->sex || !$member->birthday || !$member->mobile_number)
+        {{-- Complete Membership Profile Modal - First time setup --}}
+        <div id="completeMembershipModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+>>>>>>> Stashed changes
                 <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
                     <div class="flex items-center space-x-3">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
@@ -418,6 +494,138 @@ $member = $user->member;
                 </form>
             </div>
         </div>
+<<<<<<< Updated upstream
+=======
+
+    {{-- STATE 2: Profile complete but waiting for admin approval --}}
+    @elseif($member->isApproved == false && $member->isDisabled == false && $member->status === 'inactive')
+        {{-- Waiting for Approval Modal with Retry --}}
+        <div id="waitingApprovalModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <div class="bg-yellow-500 text-white p-5 rounded-t-2xl">
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold">Pending Approval</h2>
+                    </div>
+                </div>
+
+                <div class="p-8 text-center">
+                    <div class="mb-6">
+                        <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Account Under Review</h3>
+                        <p id="approvalStatusMessage" class="text-gray-600 text-lg mb-4">
+                            Your profile has been submitted and is awaiting admin approval.
+                        </p>
+                        <p class="text-gray-500 text-sm">You'll receive an email with your QR code once approved.</p>
+
+                        @if($member->plan)
+                            <div class="mt-4 p-3 bg-gray-100 rounded-lg">
+                                <p class="text-sm text-gray-600">Selected Plan:</p>
+                                <p class="font-bold text-gray-800">{{ $member->plan->name }}</p>
+                                <p class="text-sm text-gray-500">₱{{ number_format($member->plan->price, 2) }}</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="space-y-3">
+                        <button onclick="checkApprovalStatus()"
+                            class="w-full px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 font-medium transition-colors flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Check Status
+                        </button>
+
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit"
+                                class="w-full px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors">
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- QR Code Approved Modal (hidden by default, shown via JavaScript) --}}
+        <div id="qrApprovedModal" class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <div class="bg-green-500 text-white p-5 rounded-t-2xl">
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold">Membership Approved!</h2>
+                    </div>
+                </div>
+
+                <div class="p-8 text-center">
+                    <div class="mb-6">
+                        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Welcome to EZ Fitness!</h3>
+                        <p class="text-gray-600 text-lg mb-4">Your membership has been activated.</p>
+                        <p class="text-gray-500 text-sm mb-4">Your QR code has been sent to your email.</p>
+
+                        <div id="qrCodeDisplay" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+                            <img id="qrCodeImage" src="" alt="QR Code" class="mx-auto w-48 h-48">
+                        </div>
+                    </div>
+
+                    <button onclick="closeQRApprovedModal()"
+                        class="w-full px-6 py-3 rounded-xl bg-green-500 text-white hover:bg-green-600 font-medium transition-colors">
+                        Continue to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    {{-- STATE 3: Account has been rejected/disabled --}}
+    @elseif($member->isDisabled == true)
+        {{-- Account Rejected Modal --}}
+        <div id="accountRejectedModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <div class="bg-red-500 text-white p-5 rounded-t-2xl">
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold">Account Not Approved</h2>
+                    </div>
+                </div>
+
+                <div class="p-8 text-center">
+                    <div class="mb-6">
+                        <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Access Denied</h3>
+                        <p class="text-gray-600 text-lg mb-4">Your account was not approved.</p>
+                        <p class="text-gray-500 text-sm">Please contact the administrator for more information.</p>
+                    </div>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="w-full px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+>>>>>>> Stashed changes
     @endif
 
 
@@ -795,6 +1003,77 @@ $member = $user->member;
         </div>
     </div>
 
+<<<<<<< Updated upstream
+=======
+    @if(session('membership_expired') && $user->role === 'member' && $member)
+<div id="renewalModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+        <div class="bg-orange-500 text-white p-5">
+            <div class="flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="text-xl font-semibold">Membership Expired</h2>
+            </div>
+        </div>
+
+        <div class="p-8">
+            <p class="text-gray-700 text-lg mb-6">
+                Your membership plan <strong>{{ $member->plan->name }}</strong> has expired.
+                Would you like to renew your membership?
+            </p>
+
+            <form action="{{ route('member.request-renewal') }}" method="POST" class="space-y-6">
+                @csrf
+
+                <div x-data="{ open: false, selected: '{{ $member->plan->name }} — ₱{{ number_format($member->plan->price, 2) }}', selectedId: '{{ $member->plan_id }}' }">
+                    <label class="block text-sm font-medium text-gray-800 mb-2">
+                        Select Membership Plan <span class="text-red-500">*</span>
+                    </label>
+
+                    <input type="hidden" name="plan_id" x-model="selectedId">
+
+                    <button type="button" @click="open = !open"
+                        class="w-full flex justify-between items-center rounded-xl border-2 border-gray-300 bg-gray-50 px-4 py-3">
+                        <span x-text="selected"></span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div x-show="open" @click.away="open = false"
+                         class="absolute mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-md z-50 max-h-60 overflow-y-auto">
+                        @foreach($plans as $plan)
+                            <div @click="
+                                    selected = '{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }}';
+                                    selectedId = '{{ $plan->plan_id }}';
+                                    open = false
+                                "
+                                class="flex justify-between px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                                <span>{{ $plan->name }}</span>
+                                <span>₱{{ number_format($plan->price, 2) }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" name="action" value="renew"
+                        class="flex-1 px-6 py-3 rounded-xl bg-orange-500 text-white hover:bg-orange-600 font-medium transition-colors">
+                        Request Renewal
+                    </button>
+                    <button type="submit" name="action" value="skip"
+                        class="flex-1 px-6 py-3 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 font-medium transition-colors">
+                        Skip for Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+>>>>>>> Stashed changes
 
 
 
@@ -1205,6 +1484,130 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 });
+<<<<<<< Updated upstream
+=======
+
+
+function checkApprovalStatus() {
+    const button = event.target;
+    const originalContent = button.innerHTML;
+
+    // Show loading state
+    button.disabled = true;
+    button.innerHTML = `
+        <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+    `;
+
+    fetch('{{ route("member.check-approval") }}', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'approved') {
+            // Hide waiting modal
+            document.getElementById('waitingApprovalModal').classList.add('hidden');
+
+            // Show approved modal
+            const approvedModal = document.getElementById('qrApprovedModal');
+            approvedModal.classList.remove('hidden');
+
+            // Show QR code if available
+            if (data.qr_code_url) {
+                const qrDisplay = document.getElementById('qrCodeDisplay');
+                const qrImage = document.getElementById('qrCodeImage');
+
+                // Add timestamp to prevent caching
+                qrImage.src = data.qr_code_url + '?t=' + new Date().getTime();
+
+                // Show the QR code container
+                qrDisplay.classList.remove('hidden');
+
+                // Handle image load errors
+                qrImage.onerror = function() {
+                    console.error('Failed to load QR code image:', data.qr_code_url);
+                    qrDisplay.innerHTML = `
+                        <div class="text-center py-4">
+                            <p class="text-sm text-gray-600">QR code will be sent to your email</p>
+                        </div>
+                    `;
+                };
+
+                // Log successful load
+                qrImage.onload = function() {
+                    console.log('QR code loaded successfully');
+                };
+            } else {
+                // If no QR code URL, show message
+                const qrDisplay = document.getElementById('qrCodeDisplay');
+                qrDisplay.innerHTML = `
+                    <div class="text-center py-4">
+                        <p class="text-sm text-gray-600">QR code has been sent to your email</p>
+                    </div>
+                `;
+                qrDisplay.classList.remove('hidden');
+            }
+
+            Toastify({
+                text: data.message,
+                duration: 5000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "linear-gradient(to right, #10b981, #059669)",
+                stopOnFocus: true,
+            }).showToast();
+        } else if (data.status === 'rejected') {
+            document.getElementById('approvalStatusMessage').innerHTML =
+                '<span class="text-red-600 font-semibold">Your application was not approved. Please contact support for more information.</span>';
+
+            Toastify({
+                text: data.message,
+                duration: 5000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
+                stopOnFocus: true,
+            }).showToast();
+        } else {
+            Toastify({
+                text: 'Still pending approval. Please check back later.',
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "linear-gradient(to right, #f59e0b, #d97706)",
+                stopOnFocus: true,
+            }).showToast();
+        }
+    })
+    .catch(error => {
+        console.error('Error checking approval status:', error);
+        Toastify({
+            text: 'Error checking status. Please try again.',
+            duration: 3000,
+            gravity: "top",
+            position: "right",
+            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
+            stopOnFocus: true,
+        }).showToast();
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    });
+}
+
+function closeQRApprovedModal() {
+    document.getElementById('qrApprovedModal').classList.add('hidden');
+    // Reload to show updated dashboard
+    window.location.reload();
+}
+>>>>>>> Stashed changes
 </script>
 
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
@@ -1253,6 +1656,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     stopOnFocus: true,
                 }).showToast();
             });
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
         </script>
     @endif
 

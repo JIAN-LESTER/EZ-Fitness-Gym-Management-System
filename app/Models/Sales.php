@@ -8,7 +8,10 @@ use Illuminate\Notifications\Notifiable;
 
 class Sales extends Model
 {
+
+    public $timestamps = false;
     use HasFactory, Notifiable;
+
 
 
     protected $primaryKey = 'sales_id';

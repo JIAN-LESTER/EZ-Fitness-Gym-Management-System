@@ -126,7 +126,7 @@ class AuthController extends Controller
 
         // Role-based dashboard redirection
         if ($user->role === 'admin') {
-            return redirect()->route('admin.dashboard')->with('success', 'Logged in successfully');
+            return redirect()->route('admin.dashboard');
         }
 
         if ($user->role === 'member') {
@@ -243,4 +243,8 @@ class AuthController extends Controller
 
         return redirect('/login')->with('success', 'Email verified successfully. You may now log in.');
     }
+<<<<<<< Updated upstream
 }
+=======
+}
+>>>>>>> Stashed changes

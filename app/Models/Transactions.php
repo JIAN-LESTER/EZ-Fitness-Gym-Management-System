@@ -8,6 +8,7 @@ use Illuminate\Notifications\Notifiable;
 
 class Transactions extends Model
 {
+    public $timestamps = false;
     use HasFactory, Notifiable;
 
 
@@ -29,5 +30,4 @@ class Transactions extends Model
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
-
 }
