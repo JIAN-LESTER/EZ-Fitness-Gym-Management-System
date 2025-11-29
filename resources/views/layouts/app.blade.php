@@ -652,7 +652,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
 
                     <button onclick="closeQRApprovedModal()" 
                         class="w-full px-6 py-3 rounded-xl bg-green-500 text-white hover:bg-green-600 font-medium transition-colors">
-                        Continue to Dashboard
+                        Continue
                     </button>
                 </div>
             </div>

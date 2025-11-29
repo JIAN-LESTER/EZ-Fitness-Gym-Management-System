@@ -1719,24 +1719,243 @@ function approveMember(memberId) {
     }).then((result) => {
         if (result.isConfirmed) {
             Swal.fire({
-                title: 'Select Payment Method',
-                input: 'select',
-                inputOptions: {
-                    'cash': 'Cash',
-                    'gcash': 'Gcash'
-                },
-                inputPlaceholder: 'Choose a payment method',
+                title: '<strong>Select Payment Method</strong>',
+                html: `
+                    <div style="padding: 20px 0;">
+                        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                            <!-- Cash Option -->
+                            <div class="payment-option" data-payment="cash" style="
+                                flex: 1;
+                                min-width: 200px;
+                                max-width: 250px;
+                                padding: 30px 20px;
+                                border: 3px solid #e5e7eb;
+                                border-radius: 12px;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                background: white;
+                                position: relative;
+                            ">
+                                <div style="
+                                    width: 60px;
+                                    height: 60px;
+                                    margin: 0 auto 15px;
+                                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                ">
+                                    <svg style="width: 32px; height: 32px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                </div>
+                                <h3 style="
+                                    font-size: 18px;
+                                    font-weight: 600;
+                                    color: #1f2937;
+                                    margin: 0 0 8px 0;
+                                ">Cash Payment</h3>
+                                <p style="
+                                    font-size: 14px;
+                                    color: #6b7280;
+                                    margin: 0;
+                                    line-height: 1.5;
+                                ">Direct cash payment at the counter</p>
+                                <div class="checkmark" style="
+                                    position: absolute;
+                                    top: 15px;
+                                    right: 15px;
+                                    width: 24px;
+                                    height: 24px;
+                                    border-radius: 50%;
+                                    background: #10b981;
+                                    display: none;
+                                    align-items: center;
+                                    justify-content: center;
+                                ">
+                                    <svg style="width: 14px; height: 14px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- GCash Option -->
+                            <div class="payment-option" data-payment="gcash" style="
+                                flex: 1;
+                                min-width: 200px;
+                                max-width: 250px;
+                                padding: 30px 20px;
+                                border: 3px solid #e5e7eb;
+                                border-radius: 12px;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                background: white;
+                                position: relative;
+                            ">
+                                <div style="
+                                    width: 60px;
+                                    height: 60px;
+                                    margin: 0 auto 15px;
+                                    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                ">
+                                    <svg style="width: 32px; height: 32px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <h3 style="
+                                    font-size: 18px;
+                                    font-weight: 600;
+                                    color: #1f2937;
+                                    margin: 0 0 8px 0;
+                                ">GCash Payment</h3>
+                                <p style="
+                                    font-size: 14px;
+                                    color: #6b7280;
+                                    margin: 0;
+                                    line-height: 1.5;
+                                ">Digital payment via GCash mobile app</p>
+                                <div class="checkmark" style="
+                                    position: absolute;
+                                    top: 15px;
+                                    right: 15px;
+                                    width: 24px;
+                                    height: 24px;
+                                    border-radius: 50%;
+                                    background: #3b82f6;
+                                    display: none;
+                                    align-items: center;
+                                    justify-content: center;
+                                ">
+                                    <svg style="width: 14px; height: 14px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="selected-payment" value="">
+                    </div>
+                `,
                 showCancelButton: true,
+                showConfirmButton: true,
                 confirmButtonColor: '#10b981',
                 cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Confirm Payment Method',
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    popup: 'payment-modal-popup'
+                },
+                didOpen: () => {
+                    // Add hover and click effects
+                    const options = document.querySelectorAll('.payment-option');
+                    const hiddenInput = document.getElementById('selected-payment');
+                    
+                    options.forEach(option => {
+                        // Hover effect
+                        option.addEventListener('mouseenter', function() {
+                            if (!this.classList.contains('selected')) {
+                                this.style.borderColor = '#cbd5e1';
+                                this.style.transform = 'translateY(-4px)';
+                                this.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.1)';
+                            }
+                        });
+                        
+                        option.addEventListener('mouseleave', function() {
+                            if (!this.classList.contains('selected')) {
+                                this.style.borderColor = '#e5e7eb';
+                                this.style.transform = 'translateY(0)';
+                                this.style.boxShadow = 'none';
+                            }
+                        });
+                        
+                        // Click effect
+                        option.addEventListener('click', function() {
+                            // Remove selection from all options
+                            options.forEach(opt => {
+                                opt.classList.remove('selected');
+                                opt.style.borderColor = '#e5e7eb';
+                                opt.style.background = 'white';
+                                opt.style.transform = 'translateY(0)';
+                                opt.style.boxShadow = 'none';
+                                opt.querySelector('.checkmark').style.display = 'none';
+                            });
+                            
+                            // Add selection to clicked option
+                            this.classList.add('selected');
+                            const payment = this.getAttribute('data-payment');
+                            hiddenInput.value = payment;
+                            
+                            if (payment === 'cash') {
+                                this.style.borderColor = '#10b981';
+                                this.style.background = 'linear-gradient(to bottom, #f0fdf4, white)';
+                            } else {
+                                this.style.borderColor = '#3b82f6';
+                                this.style.background = 'linear-gradient(to bottom, #eff6ff, white)';
+                            }
+                            
+                            this.style.transform = 'translateY(-4px)';
+                            this.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.15)';
+                            this.querySelector('.checkmark').style.display = 'flex';
+                        });
+                    });
+                },
+                preConfirm: () => {
+                    const selectedPayment = document.getElementById('selected-payment').value;
+                    if (!selectedPayment) {
+                        Swal.showValidationMessage('Please select a payment method');
+                        return false;
+                    }
+                    return selectedPayment;
+                }
             }).then((paymentResult) => {
                 if (paymentResult.isConfirmed && paymentResult.value) {
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Processing...',
+                        text: 'Approving member with ' + (paymentResult.value === 'cash' ? 'Cash' : 'GCash') + ' payment',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Redirect to approval endpoint
                     window.location.href = `/admin/user_crud/approve/${memberId}?payment=${paymentResult.value}`;
                 }
             });
         }
     });
 }
+
+const style = document.createElement('style');
+style.textContent = `
+    .payment-modal-popup {
+        border-radius: 16px !important;
+    }
+    
+    .payment-option {
+        user-select: none;
+    }
+    
+    .payment-option:active {
+        transform: scale(0.98) !important;
+    }
+    
+    @media (max-width: 640px) {
+        .payment-option {
+            min-width: 100% !important;
+        }
+    }
+`;
+document.head.appendChild(style);
+
 
 function denyMember(memberId) {
     if (typeof Swal === 'undefined') {
