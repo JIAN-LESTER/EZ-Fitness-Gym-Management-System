@@ -1802,58 +1802,93 @@
                 text: "This member will be able to complete their profile.",
                 icon: 'question',
                 showCancelButton: true,
+                showConfirmButton: true,
                 confirmButtonColor: '#10b981',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, approve!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'Select Payment Method',
-                        input: 'select',
-                        inputOptions: {
-                            'cash': 'Cash',
-                            'gcash': 'GCash'
-                        },
-                        inputPlaceholder: 'Choose a payment method',
-                        showCancelButton: true,
-                        confirmButtonColor: '#10b981',
-                        cancelButtonColor: '#6b7280',
-                        confirmButtonText: 'Next',
-                    }).then((paymentResult) => {
-                        if (paymentResult.isConfirmed && paymentResult.value) {
-                            const paymentMethod = paymentResult.value;
-
-                            // If GCash, ask for reference code
-                            if (paymentMethod === 'gcash') {
-                                Swal.fire({
-                                    title: 'GCash Reference Code',
-                                    html: `
-                                    <p class="text-gray-600 mb-3">Please enter the GCash reference code</p>
-                                    <input type="text" id="gcash-reference" class="swal2-input" placeholder="e.g., 1234567890" style="width: 80%; font-size: 1rem; padding: 0.75rem;">`,
-                                    showCancelButton: true,
-                                    confirmButtonColor: '#10b981',
-                                    cancelButtonColor: '#6b7280',
-                                    confirmButtonText: 'Approve',
-                                    preConfirm: () => {
-                                        const reference = document.getElementById('gcash-reference').value;
-                                        if (!reference || reference.trim() === '') {
-                                            Swal.showValidationMessage('Reference code is required');
-                                            return false;
-                                        }
-                                        return reference;
-                                    }
-                                }).then((referenceResult) => {
-                                    if (referenceResult.isConfirmed && referenceResult.value) {
-                                        window.location.href = `/admin/user_crud/approve/${memberId}?payment=${paymentMethod}&reference=${encodeURIComponent(referenceResult.value)}`;
-                                    }
-                                });
-                            } else {
-                                // Cash payment - no reference code needed
-                                window.location.href = `/admin/user_crud/approve/${memberId}?payment=${paymentMethod}`;
+                confirmButtonText: 'Confirm Payment Method',
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    popup: 'payment-modal-popup'
+                },
+                didOpen: () => {
+                    // Add hover and click effects
+                    const options = document.querySelectorAll('.payment-option');
+                    const hiddenInput = document.getElementById('selected-payment');
+                    
+                    options.forEach(option => {
+                        // Hover effect
+                        option.addEventListener('mouseenter', function() {
+                            if (!this.classList.contains('selected')) {
+                                this.style.borderColor = '#cbd5e1';
+                                this.style.transform = 'translateY(-4px)';
+                                this.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.1)';
                             }
+                        });
+                        
+                        option.addEventListener('mouseleave', function() {
+                            if (!this.classList.contains('selected')) {
+                                this.style.borderColor = '#e5e7eb';
+                                this.style.transform = 'translateY(0)';
+                                this.style.boxShadow = 'none';
+                            }
+                        });
+                        
+                        // Click effect
+                        option.addEventListener('click', function() {
+                            // Remove selection from all options
+                            options.forEach(opt => {
+                                opt.classList.remove('selected');
+                                opt.style.borderColor = '#e5e7eb';
+                                opt.style.background = 'white';
+                                opt.style.transform = 'translateY(0)';
+                                opt.style.boxShadow = 'none';
+                                opt.querySelector('.checkmark').style.display = 'none';
+                            });
+                            
+                            // Add selection to clicked option
+                            this.classList.add('selected');
+                            const payment = this.getAttribute('data-payment');
+                            hiddenInput.value = payment;
+                            
+                            if (payment === 'cash') {
+                                this.style.borderColor = '#10b981';
+                                this.style.background = 'linear-gradient(to bottom, #f0fdf4, white)';
+                            } else {
+                                this.style.borderColor = '#3b82f6';
+                                this.style.background = 'linear-gradient(to bottom, #eff6ff, white)';
+                            }
+                            
+                            this.style.transform = 'translateY(-4px)';
+                            this.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.15)';
+                            this.querySelector('.checkmark').style.display = 'flex';
+                        });
+                    });
+                },
+                preConfirm: () => {
+                    const selectedPayment = document.getElementById('selected-payment').value;
+                    if (!selectedPayment) {
+                        Swal.showValidationMessage('Please select a payment method');
+                        return false;
+                    }
+                    return selectedPayment;
+                }
+            }).then((paymentResult) => {
+                if (paymentResult.isConfirmed && paymentResult.value) {
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Processing...',
+                        text: 'Approving member with ' + (paymentResult.value === 'cash' ? 'Cash' : 'GCash') + ' payment',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
                         }
                     });
+                    
+                    // Redirect to approval endpoint
+                    window.location.href = `/admin/user_crud/approve/${memberId}?payment=${paymentResult.value}`;
                 }
             });
         }

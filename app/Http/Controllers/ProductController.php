@@ -212,7 +212,6 @@ class ProductController extends Controller
         Transactions::create([
             'product_id' => $product->product_id,
             'type' => 'stock_in',
-            'quantity' => $quantityDifference, // Store the amount added
             'timestamp' => now(),
         ]);
     }

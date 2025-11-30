@@ -201,14 +201,28 @@
                                 <p class="text-gray-900">{{ \Carbon\Carbon::parse($transaction->created_at)->format('M d, Y') }}</p>
                                 <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($transaction->created_at)->format('h:i A') }}</p>
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                <button onclick="showTransaction('{{ $transaction->transaction_id }}')" class="text-gray-500 hover:text-gray-700" title="View Details">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </button>
-                            </td>
+                           <td class="px-6 py-4 text-center">
+    <div class="flex items-center justify-center gap-2">
+        <button onclick="showTransaction('{{ $transaction->transaction_id }}')" 
+            class="text-gray-500 hover:text-gray-700 transition-colors" 
+            title="View Details">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+        </button>
+        
+        @if(Auth::user()->role === 'admin')
+        <button onclick="confirmDelete('{{ $transaction->transaction_id }}')" 
+            class="text-red-500 hover:text-red-700 transition-colors" 
+            title="Delete Transaction">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        </button>
+        @endif
+    </div>
+</td>
                         </tr>
                     @empty
                         <tr>
@@ -279,7 +293,64 @@
         </div>
     </div>
 
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+    <div class="absolute inset-0 backdrop-blur" onclick="closeDeleteModal()"></div>
+    
+    <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            
+            <h3 class="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
+                Delete Transaction
+            </h3>
+            
+            <p class="text-center text-gray-600 dark:text-gray-400 mb-6">
+                Are you sure you want to delete this transaction? This action cannot be undone.
+            </p>
+            
+            <form id="deleteForm" method="POST" action="">
+                @csrf
+                @method('DELETE')
+                
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeDeleteModal()" 
+                        class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                        class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
+                        Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
     <script>
+
+window.confirmDelete = function(transactionId) {
+    const form = document.getElementById('deleteForm');
+    form.action = 'transactions/' + transactionId;
+    
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    document.body.style.overflow = 'hidden';
+};
+
+window.closeDeleteModal = function() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    
+    document.body.style.overflow = '';
+};
 
 
 // Make functions globally accessible
@@ -443,7 +514,7 @@ function renderTransactionDetails(transaction) {
     let html = '<div class="space-y-6">';
     
     // Transaction Header
-    html += '<div class=" dark:bg-gray-800 rounded-lg p-6">';
+    html += '<div class="dark:bg-gray-800 rounded-lg p-6">';
     html += '<div class="flex justify-between items-start mb-4">';
     html += '<div>';
     html += '<h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Transaction #' + transaction.transaction_id + '</h3>';
@@ -459,7 +530,45 @@ function renderTransactionDetails(transaction) {
     html += '<span class="px-4 py-2 rounded-full text-sm font-semibold ' + typeClass + '">' + typeLabel + '</span>';
     html += '</div></div></div>';
 
-    // Sale Information
+    // Product Information for Stock Movements
+    if (transaction.product && (transaction.type === 'stock_in' || transaction.type === 'stock_out')) {
+        html += '<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">';
+        html += '<div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">';
+        html += '<h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Product Information</h4>';
+        html += '</div>';
+        html += '<div class="p-6">';
+        
+        // Product Image and Details
+        html += '<div class="flex flex-col md:flex-row gap-6">';
+        
+        if (transaction.product.image) {
+            html += '<div class="flex-shrink-0">';
+            html += '<img src="/storage/' + transaction.product.image + '" alt="' + transaction.product.name + '" class="w-32 h-32 object-cover rounded-lg border border-gray-200">';
+            html += '</div>';
+        }
+        
+        html += '<div class="flex-1 space-y-3">';
+        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400">Product Name</p>';
+        html += '<p class="text-lg font-semibold text-gray-800 dark:text-gray-200">' + transaction.product.name + '</p></div>';
+        
+        if (transaction.product.description) {
+            html += '<div><p class="text-sm text-gray-600 dark:text-gray-400">Description</p>';
+            html += '<p class="text-gray-800 dark:text-gray-200">' + transaction.product.description + '</p></div>';
+        }
+        
+        html += '<div class="grid grid-cols-2 gap-4">';
+        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400">Price</p>';
+        html += '<p class="text-lg font-semibold text-purple-600 dark:text-purple-400">₱' + parseFloat(transaction.product.price).toFixed(2) + '</p></div>';
+        
+        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400">Status</p>';
+        let statusClass = transaction.product.status === 'available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+        html += '<span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ' + statusClass + '">';
+        html += transaction.product.status.charAt(0).toUpperCase() + transaction.product.status.slice(1);
+        html += '</span></div>';
+        html += '</div></div></div></div></div>';
+    }
+
+    // Sale Information (existing code)
     if (transaction.sale) {
         html += '<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">';
         html += '<div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">';
@@ -497,11 +606,9 @@ function renderTransactionDetails(transaction) {
         let paymentLabel = transaction.sale.payment_method === 'credit_card' ? 'Credit Card' : 
         transaction.sale.payment_method.charAt(0).toUpperCase() + transaction.sale.payment_method.slice(1);
 
-        // Use flex container to place reference code beside payment method
         html += '<div class="flex items-center gap-3">';
         html += '<span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ' + paymentClass + '">' + paymentLabel + '</span>';
 
-        // Display reference code on the right side for GCash
         if (transaction.sale.payment_method === 'gcash' && transaction.sale.reference_code) {
             html += '<div class="flex items-center gap-2">';
             html += '<span class="text-sm text-gray-600 dark:text-gray-400">Ref:</span>';
@@ -510,7 +617,6 @@ function renderTransactionDetails(transaction) {
         }
         html += '</div></div>';
 
-        
         // Sale Date
         html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Sale Date</p>';
         html += '<p class="text-gray-800 dark:text-gray-200 font-medium">' + formatDate(transaction.sale.created_at) + '</p></div>';
@@ -550,12 +656,21 @@ function renderTransactionDetails(transaction) {
 
             html += '</tbody></table></div></div>';
         }
-    } else {
+    } else if (!transaction.product) {
         html += '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">';
-        html += '<p class="text-yellow-800">No associated sale found for this transaction.</p></div>';
+        html += '<p class="text-yellow-800">No associated sale or product found for this transaction.</p></div>';
     }
+    
+    html += '</div>';
     content.innerHTML = html;
 }
+
+// Add escape key handler for delete modal
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        closeDeleteModal();
+    }
+});
 
 // Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', function () {
