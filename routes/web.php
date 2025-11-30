@@ -35,6 +35,24 @@
         Route::post('/register', [AuthController::class, 'register'])->name('register');
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+
+Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])
+    ->middleware('guest')
+    ->name('password.request');
+
+Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])
+    ->middleware('guest')
+    ->name('password.email');
+
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])
+    ->middleware('guest')
+    ->name('password.reset');
+
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+    ->middleware('guest')
+    ->name('password.update');
+
+
         Route::middleware(['auth'])->group(function () {
 
             Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {
@@ -125,11 +143,13 @@
             Route::prefix('sales')->name('sales.')->group(function () {
                 Route::get('/', [SalesController::class, 'index'])->name('index');
                 Route::get('/{id}', [SalesController::class, 'show'])->name('show');
+                Route::delete('/{id}', [SalesController::class, 'destroy'])->name('sales.destroy');
             });
 
             Route::prefix('transactions')->name('transactions.')->group(function () {
                 Route::get('/', [TransactionController::class, 'index'])->name('index');
                 Route::get('/{id}', [TransactionController::class, 'show'])->name('show');
+                Route::delete('/{id}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
             });
 
             Route::post('/member/request-renewal', [MemberProfileController::class, 'requestRenewal'])->name('member.request-renewal');

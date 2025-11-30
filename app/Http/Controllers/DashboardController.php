@@ -72,7 +72,7 @@ class DashboardController extends Controller
             ->sum('sub_total');
 
         // Transaction Breakdown
-        $stockInCount = Transactions::whereMonth('created_at', Carbon::now()->month)
+        $stockInCount = Transactions::where('type', 'stock_in')->whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->count();
         
