@@ -14,12 +14,14 @@ class Transactions extends Model
     use HasFactory, Notifiable;
 
     protected $primaryKey = 'transaction_id';
-    
+
     protected $fillable = [
         'sales_id',
         'product_id',
         'type',
-        'quantity', // For stock in/out tracking
+        'performed_by',
+        'quantity'
+
     ];
 
     /**
@@ -29,18 +31,14 @@ class Transactions extends Model
     {
         return $this->belongsTo(Sales::class, 'sales_id', 'sales_id');
     }
-
-    /**
-     * Relationship to Product (for stock_in and stock_out transactions)
-     */
+    public function performer()
+    {
+        return $this->belongsTo(User::class, 'performed_by', 'user_id');
+    }
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
-
-    /**
-     * Get the user who made the transaction (through sale)
-     */
     public function user()
     {
         return $this->hasOneThrough(

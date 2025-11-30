@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            $table->integer('quantity')->default(0);
+            $table->foreignId('performed_by')->nullable()->references('user_id')->on('users')->onDelete('cascade'); // Added this
         });
     }
 
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('transactions_table2', function (Blueprint $table) {
+        Schema::table('transactions', function (Blueprint $table) {
             //
         });
     }

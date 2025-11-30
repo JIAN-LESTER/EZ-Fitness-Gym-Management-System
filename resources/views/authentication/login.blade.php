@@ -161,17 +161,6 @@
       }).showToast();
     @endif
 
-    @if(session('success'))
-      Toastify({
-        text: "{{ session('success') }}",
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        backgroundColor: "linear-gradient(to right, #10b981, #059669)",
-        stopOnFocus: true,
-      }).showToast();
-    @endif
-
     // Toggle password visibility
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
