@@ -326,7 +326,64 @@
         </div>
     </div>
 
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+    <div class="absolute inset-0 backdrop-blur" onclick="closeDeleteModal()"></div>
+    
+    <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            
+            <h3 class="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
+                Delete Transaction
+            </h3>
+            
+            <p class="text-center text-gray-600 dark:text-gray-400 mb-6">
+                Are you sure you want to delete this transaction? This action cannot be undone.
+            </p>
+            
+            <form id="deleteForm" method="POST" action="">
+                @csrf
+                @method('DELETE')
+                
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeDeleteModal()" 
+                        class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                        class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
+                        Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
     <script>
+
+window.confirmDelete = function(transactionId) {
+    const form = document.getElementById('deleteForm');
+    form.action = 'transactions/' + transactionId;
+    
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    document.body.style.overflow = 'hidden';
+};
+
+window.closeDeleteModal = function() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    
+    document.body.style.overflow = '';
+};
 
 
 // Make functions globally accessible
