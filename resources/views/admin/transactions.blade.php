@@ -152,78 +152,138 @@
         <!-- Transactions Table -->
         <div class="overflow-x-auto">
             <table class="min-w-full">
-                <thead>
-                    <tr class="bg-gray-100 border-b border-gray-200">
-                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Transaction Type</th>
-                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Sale ID</th>
-                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Cashier</th>
-                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
-                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
+                <!-- Updated Table Headers -->
+                    <thead>
+                        <tr class="bg-gray-100 border-b border-gray-200">
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Transaction ID</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Performed By</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Quantity</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
 
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($transactions as $transaction)
-                        <tr class="hover:bg-gray-50 transition-colors group">
-                     
-                            <td class="px-6 py-4 text-center">
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold
-                                    {{ $transaction->type === 'sales' ? 'bg-green-100 text-green-800' : '' }}
-                                    {{ $transaction->type === 'stock_in' ? 'bg-blue-100 text-blue-800' : '' }}
-                                    {{ $transaction->type === 'stock_out' ? 'bg-red-100 text-red-800' : '' }}">
-                                    {{ $transaction->type === 'stock_in' ? 'Stock In' : ($transaction->type === 'stock_out' ? 'Stock Out' : ucfirst($transaction->type)) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                @if($transaction->sale)
-                                    <p class="font-medium text-gray-900">#{{ $transaction->sale->sales_id }}</p>
-                                @else
-                                    <p class="text-gray-400">N/A</p>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                @if($transaction->sale && $transaction->sale->user)
-                                    <p class="font-medium text-gray-900">{{ $transaction->sale->user->first_name }} {{ $transaction->sale->user->last_name }}</p>
-                                    <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $transaction->sale->user->username }}</p>
-                                @else
-                                    <p class="text-gray-400">N/A</p>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                @if($transaction->sale)
-                                    <p class="font-semibold text-gray-900">₱{{ number_format($transaction->sale->total_amount, 2) }}</p>
-                                @else
-                                    <p class="text-gray-400">N/A</p>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <p class="text-gray-900">{{ \Carbon\Carbon::parse($transaction->created_at)->format('M d, Y') }}</p>
-                                <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($transaction->created_at)->format('h:i A') }}</p>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <button onclick="showTransaction('{{ $transaction->transaction_id }}')" class="text-gray-500 hover:text-gray-700" title="View Details">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                                <div class="flex flex-col items-center justify-center">
-                                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    <p class="text-lg font-medium">No transactions found</p>
-                                    <p class="text-sm mt-1">Try adjusting your search criteria</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
+                    <!-- Updated Table Body -->
+<tbody class="divide-y divide-gray-100">
+    @forelse($transactions as $transaction)
+        <tr class="hover:bg-gray-50 transition-colors group">
+            <!-- Transaction ID -->
+            <td class="px-6 py-4 text-center">
+                <p class="font-medium text-gray-900">#{{ $transaction->transaction_id }}</p>
+            </td>
+            
+            <!-- Transaction Type -->
+            <td class="px-6 py-4 text-center">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold
+                    {{ $transaction->type === 'sales' ? 'bg-green-100 text-green-800' : '' }}
+                    {{ $transaction->type === 'stock_in' ? 'bg-blue-100 text-blue-800' : '' }}
+                    {{ $transaction->type === 'stock_out' ? 'bg-red-100 text-red-800' : '' }}">
+                    {{ $transaction->type === 'stock_in' ? 'Stock In' : ($transaction->type === 'stock_out' ? 'Stock Out' : ucfirst($transaction->type)) }}
+                </span>
+            </td>
+            
+            <!-- Performed By -->
+            <td class="px-6 py-4 text-center">
+                @if($transaction->performer)
+                    <p class="font-medium text-gray-900">{{ $transaction->performer->first_name }} {{ $transaction->performer->last_name }}</p>
+                    <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $transaction->performer->username }}</p>
+                @elseif($transaction->type === 'sales' && $transaction->sale && $transaction->sale->user)
+                    <!-- Fallback for sales transactions - show the sale's user -->
+                    <p class="font-medium text-gray-900">{{ $transaction->sale->user->first_name }} {{ $transaction->sale->user->last_name }}</p>
+                    <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $transaction->sale->user->username }}</p>
+                    <p class="text-xs text-blue-600">Cashier</p>
+                @else
+                    <p class="text-gray-400">System</p>
+                @endif
+            </td>
+
+            <!-- Amount (Only for Sales) -->
+            <td class="px-6 py-4 text-center">
+                @if($transaction->type === 'sales' && $transaction->sale)
+                    <p class="font-semibold text-gray-900">₱{{ number_format($transaction->sale->total_amount, 2) }}</p>
+                @else
+                    <p class="text-gray-400">-</p>
+                @endif
+            </td>
+            
+            <!-- Quantity Column -->
+            <td class="px-6 py-4 text-center">
+                @if($transaction->type === 'sales')
+                    <!-- For Sales: Use the quantity from transaction record -->
+                    <div class="flex flex-col items-center">
+                        <p class="font-semibold text-green-600 text-lg">
+                            {{ $transaction->quantity }}
+                        </p>
+                        @if($transaction->sale && $transaction->sale->items)
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ $transaction->sale->items->count() }} item(s)
+                            </p>
+                        @endif
+                    </div>
+                @elseif(in_array($transaction->type, ['stock_in', 'stock_out']))
+                    <!-- For Stock Transactions: Use transaction quantity -->
+                    <div class="flex flex-col items-center">
+                        <p class="font-semibold text-lg
+                            {{ $transaction->type === 'stock_in' ? 'text-blue-600' : 'text-red-600' }}">
+                            {{ $transaction->quantity }}
+                        </p>
+                        @if($transaction->product)
+                            <p class="text-xs text-gray-500 mt-1">{{ $transaction->product->name }}</p>
+                        @endif
+                    </div>
+                @else
+                    <p class="text-gray-400">-</p>
+                @endif
+            </td>
+            
+            <!-- Date -->
+            <td class="px-6 py-4 text-center">
+                <p class="text-gray-900">{{ \Carbon\Carbon::parse($transaction->created_at)->format('M d, Y') }}</p>
+                <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($transaction->created_at)->format('h:i A') }}</p>
+            </td>
+            
+            <!-- Actions - Updated to include delete button -->
+            <td class="px-6 py-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                    <button onclick="showTransaction('{{ $transaction->transaction_id }}')" 
+                        class="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                        title="View Details">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 mr-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        View
+                    </button>
+                    
+                    @if(Auth::user()->role === 'admin')
+                    <button onclick="confirmDelete('{{ $transaction->transaction_id }}')" 
+                        class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200"
+                        title="Delete Transaction">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 mr-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                    </button>
+                    @endif
+                </div>
+            </td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                <div class="flex flex-col items-center justify-center">
+                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <p class="text-lg font-medium">No transactions found</p>
+                    <p class="text-sm mt-1">Try adjusting your search criteria</p>
+                </div>
+            </td>
+        </tr>
+    @endforelse
+</tbody>
             </table>
         </div>
 
@@ -279,7 +339,75 @@
         </div>
     </div>
 
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+    <div class="absolute inset-0 backdrop-blur" onclick="closeDeleteModal()"></div>
+    
+    <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            
+            <h3 class="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
+                Delete Transaction
+            </h3>
+            
+            <p class="text-center text-gray-600 dark:text-gray-400 mb-6">
+                Are you sure you want to delete this transaction? This action cannot be undone.
+            </p>
+            
+            <form id="deleteForm" method="POST" action="">
+                @csrf
+                @method('DELETE')
+                
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeDeleteModal()" 
+                        class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                        class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
+                        Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
     <script>
+@if(session('success'))
+    <div class="alert alert-success mb-4">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger mb-4">
+        {{ session('error') }}
+    </div>
+@endif
+
+window.confirmDelete = function(transactionId) {
+    const form = document.getElementById('deleteForm');
+    form.action = 'transactions/' + transactionId;
+    
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    document.body.style.overflow = 'hidden';
+};
+
+window.closeDeleteModal = function() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    
+    document.body.style.overflow = '';
+};
 
 
 // Make functions globally accessible
@@ -424,138 +552,229 @@ window.showTransaction = function(transactionId) {
 function renderTransactionDetails(transaction) {
     const content = document.getElementById('transactionShowContent');
     if (!content) return;
-    
-    const typeLabel = transaction.type === 'stock_in' ? 'Stock In' : 
-                     (transaction.type === 'stock_out' ? 'Stock Out' : 
-                      transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1));
-    
-    const formatDate = function(dateStr) {
+
+    const typeLabel = transaction.type === 'stock_in'
+        ? 'Stock In'
+        : transaction.type === 'stock_out'
+        ? 'Stock Out'
+        : transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1);
+
+    const formatDate = (dateStr) => {
         const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric', 
-            hour: '2-digit', 
-            minute: '2-digit' 
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
     };
-    
-    let html = '<div class="space-y-6">';
-    
-    // Transaction Header
-    html += '<div class=" dark:bg-gray-800 rounded-lg p-6">';
-    html += '<div class="flex justify-between items-start mb-4">';
-    html += '<div>';
-    html += '<h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Transaction #' + transaction.transaction_id + '</h3>';
-    html += '<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">' + formatDate(transaction.created_at) + '</p>';
-    html += '</div>';
-    html += '<div class="text-right">';
-    
-    let typeClass = '';
-    if (transaction.type === 'sales') typeClass = 'bg-green-100 text-green-800';
-    if (transaction.type === 'stock_in') typeClass = 'bg-blue-100 text-blue-800';
-    if (transaction.type === 'stock_out') typeClass = 'bg-red-100 text-red-800';
-    
-    html += '<span class="px-4 py-2 rounded-full text-sm font-semibold ' + typeClass + '">' + typeLabel + '</span>';
-    html += '</div></div></div>';
 
-    // Sale Information
-    if (transaction.sale) {
-        html += '<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">';
-        html += '<div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">';
-        html += '<h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Related Sale Information</h4>';
-        html += '</div>';
-        html += '<div class="p-6 space-y-4">';
-        html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
-        
-        // Sale ID
-        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Sale ID</p>';
-        html += '<p class="text-lg font-semibold text-gray-800 dark:text-gray-200">#' + transaction.sale.sales_id + '</p></div>';
-        
-        // Sale Status
-        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Sale Status</p>';
-        let statusClass = '';
-        if (transaction.sale.status === 'paid') statusClass = 'bg-green-100 text-green-800';
-        if (transaction.sale.status === 'pending') statusClass = 'bg-yellow-100 text-yellow-800';
-        if (transaction.sale.status === 'cancelled') statusClass = 'bg-red-100 text-red-800';
-        html += '<span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ' + statusClass + '">';
-        html += transaction.sale.status.charAt(0).toUpperCase() + transaction.sale.status.slice(1);
-        html += '</span></div>';
-        
-        // Customer
-        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Cashier</p>';
-        html += '<p class="text-lg font-semibold text-gray-800 dark:text-gray-200">' + transaction.sale.user.first_name + ' ' + transaction.sale.user.last_name + '</p>';
-        html += '<p class="text-sm text-gray-500">@' + transaction.sale.user.username + '</p></div>';
-        
-        // Payment Method
-        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Payment Method</p>';
-        let paymentClass = '';
-        if (transaction.sale.payment_method === 'cash') paymentClass = 'bg-green-100 text-green-800';
-        if (transaction.sale.payment_method === 'credit_card') paymentClass = 'bg-blue-100 text-blue-800';
-        if (transaction.sale.payment_method === 'gcash') paymentClass = 'bg-purple-100 text-purple-800';
+    const typeClass = {
+        sales: 'bg-green-100 text-green-800',
+        stock_in: 'bg-blue-100 text-blue-800',
+        stock_out: 'bg-red-100 text-red-800'
+    }[transaction.type] || '';
 
-        let paymentLabel = transaction.sale.payment_method === 'credit_card' ? 'Credit Card' : 
-        transaction.sale.payment_method.charAt(0).toUpperCase() + transaction.sale.payment_method.slice(1);
+    let html = `<div class="space-y-5">`;
 
-        // Use flex container to place reference code beside payment method
-        html += '<div class="flex items-center gap-3">';
-        html += '<span class="inline-block px-3 py-1 rounded-full text-sm font-semibold ' + paymentClass + '">' + paymentLabel + '</span>';
+    /* HEADER */
+    html += `
+        <div class="dark:bg-gray-800 p-5 rounded-lg">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-semibold">Transaction #${transaction.transaction_id}</h3>
+                    <p class="text-sm text-gray-500">${formatDate(transaction.created_at)}</p>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold ${typeClass}">
+                    ${typeLabel}
+                </span>
+            </div>
+        </div>
+    `;
 
-        // Display reference code on the right side for GCash
-        if (transaction.sale.payment_method === 'gcash' && transaction.sale.reference_code) {
-            html += '<div class="flex items-center gap-2">';
-            html += '<span class="text-sm text-gray-600 dark:text-gray-400">Ref:</span>';
-            html += '<span class="text-lg font-semibold text-purple-600 dark:text-purple-400">' + transaction.sale.reference_code + '</span>';
-            html += '</div>';
-        }
-        html += '</div></div>';
+    /* PRODUCT INFORMATION (for stock movements) */
+    if (transaction.product && (transaction.type === 'stock_in' || transaction.type === 'stock_out')) {
+        html += `
+            <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg">
+                <div class="px-5 py-3 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                    <h4 class="text-md font-semibold">Product Information</h4>
+                </div>
 
-        
-        // Sale Date
-        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Sale Date</p>';
-        html += '<p class="text-gray-800 dark:text-gray-200 font-medium">' + formatDate(transaction.sale.created_at) + '</p></div>';
-        
-        // Total Amount
-        html += '<div><p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Amount</p>';
-        html += '<p class="text-2xl font-bold text-purple-600 dark:text-purple-400">₱' + parseFloat(transaction.sale.total_amount).toFixed(2) + '</p></div>';
-        
-        html += '</div></div></div>';
+                <div class="p-5 space-y-4">
+                    <div class="flex flex-col md:flex-row gap-5">
+                        ${transaction.product.image ? `
+                            <img src="/storage/${transaction.product.image}" 
+                                 class="w-28 h-28 object-cover rounded-lg border border-gray-200">
+                        ` : ''}
 
-        // Sale Items
-        if (transaction.sale.items && transaction.sale.items.length > 0) {
-            html += '<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">';
-            html += '<div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">';
-            html += '<h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Items in Sale</h4></div>';
-            html += '<div class="overflow-x-auto"><table class="min-w-full">';
-            html += '<thead class="bg-gray-50 dark:bg-gray-900"><tr>';
-            html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>';
-            html += '<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantity</th>';
-            html += '<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price</th>';
-            html += '<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>';
-            html += '</tr></thead><tbody class="divide-y divide-gray-200 dark:divide-gray-700">';
+                        <div class="flex-1 space-y-3">
+                            <div>
+                                <p class="text-sm text-gray-500">Product Name</p>
+                                <p class="font-semibold">${transaction.product.name}</p>
+                            </div>
 
-            transaction.sale.items.forEach(function(item) {
-                html += '<tr class="hover:bg-gray-50 dark:hover:bg-gray-900">';
-                html += '<td class="px-6 py-4">';
-                html += '<p class="font-medium text-gray-900 dark:text-gray-200">' + item.product.name + '</p>';
-                if (item.product.description) {
-                    html += '<p class="text-sm text-gray-500">' + item.product.description + '</p>';
-                }
-                html += '</td>';
-                html += '<td class="px-6 py-4 text-center text-gray-900 dark:text-gray-200">' + item.quantity + '</td>';
-                html += '<td class="px-6 py-4 text-right text-gray-900 dark:text-gray-200">₱' + parseFloat(item.price).toFixed(2) + '</td>';
-                html += '<td class="px-6 py-4 text-right font-semibold text-gray-900 dark:text-gray-200">₱' + parseFloat(item.sub_total).toFixed(2) + '</td>';
-                html += '</tr>';
-            });
+                            ${transaction.product.description ? `
+                                <div>
+                                    <p class="text-sm text-gray-500">Description</p>
+                                    <p>${transaction.product.description}</p>
+                                </div>
+                            ` : ''}
 
-            html += '</tbody></table></div></div>';
-        }
-    } else {
-        html += '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">';
-        html += '<p class="text-yellow-800">No associated sale found for this transaction.</p></div>';
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-500">Price</p>
+                                    <p class="font-semibold text-purple-600 dark:text-purple-400">
+                                        ₱${parseFloat(transaction.product.price).toFixed(2)}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p class="text-sm text-gray-500">Status</p>
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${
+                                        transaction.product.status === 'available'
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-red-100 text-red-800'
+                                    }">
+                                        ${transaction.product.status.charAt(0).toUpperCase() + transaction.product.status.slice(1)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
+
+    /* SALE INFORMATION */
+    if (transaction.sale) {
+        const statusClass = {
+            paid: 'bg-green-100 text-green-800',
+            pending: 'bg-yellow-100 text-yellow-800',
+            cancelled: 'bg-red-100 text-red-800'
+        }[transaction.sale.status] || '';
+
+        const paymentClass = {
+            cash: 'bg-green-100 text-green-800',
+            credit_card: 'bg-blue-100 text-blue-800',
+            gcash: 'bg-purple-100 text-purple-800'
+        }[transaction.sale.payment_method] || '';
+
+        const paymentLabel = transaction.sale.payment_method === 'credit_card'
+            ? 'Credit Card'
+            : transaction.sale.payment_method.charAt(0).toUpperCase() + transaction.sale.payment_method.slice(1);
+
+        html += `
+            <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg">
+                <div class="px-5 py-3 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                    <h4 class="text-md font-semibold">Related Sale Information</h4>
+                </div>
+
+                <div class="p-5 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
+                        <div>
+                            <p class="text-gray-500">Sale ID</p>
+                            <p class="font-semibold">#${transaction.sale.sales_id}</p>
+                        </div>
+
+                        <div>
+                            <p class="text-gray-500 mb-2">Sale Status</p>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold ${statusClass}">
+                                ${transaction.sale.status.charAt(0).toUpperCase() + transaction.sale.status.slice(1)}
+                            </span>
+                        </div>
+
+                        <div>
+                            <p class="text-gray-500">Cashier</p>
+                            <p class="font-semibold">${transaction.sale.user.first_name} ${transaction.sale.user.last_name}</p>
+                            <p class="text-gray-500">@${transaction.sale.user.username}</p>
+                        </div>
+
+                        <div>
+                            <p class="text-gray-500 mb-2">Payment Method</p>
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold ${paymentClass}">
+                                    ${paymentLabel}
+                                </span>
+
+                                ${transaction.sale.payment_method === 'gcash' && transaction.sale.reference_code ? `
+                                    <span class="text-sm text-gray-500">Ref:</span>
+                                    <span class="font-semibold text-purple-600 dark:text-purple-600 rounded-full px-3 py-1 ${paymentClass}">
+                                        ${transaction.sale.reference_code}
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-gray-500">Sale Date</p>
+                            <p class="font-medium">${formatDate(transaction.sale.created_at)}</p>
+                        </div>
+
+                        <div>
+                            <p class="text-gray-500">Total Amount</p>
+                            <p class="text-xl font-bold text-purple-600 dark:text-purple-400">
+                                ₱${parseFloat(transaction.sale.total_amount).toFixed(2)}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /* SALE ITEMS TABLE */
+        if (transaction.sale.items?.length > 0) {
+            html += `
+                <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg">
+                    <div class="px-5 py-3 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                        <h4 class="text-md font-semibold">Items in Sale</h4>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-900 text-gray-500">
+                                <tr>
+                                    <th class="px-5 py-2 text-left text-xs">Product</th>
+                                    <th class="px-5 py-2 text-center text-xs">Qty</th>
+                                    <th class="px-5 py-2 text-right text-xs">Price</th>
+                                    <th class="px-5 py-2 text-right text-xs">Total</th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="divide-y dark:divide-gray-700">
+                                ${transaction.sale.items.map(item => `
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-900">
+                                        <td class="px-5 py-3">
+                                            <p class="font-medium">${item.product.name}</p>
+                                            ${item.product.description ? `<p class="text-xs text-gray-500">${item.product.description}</p>` : ''}
+                                        </td>
+                                        <td class="px-5 py-3 text-center">${item.quantity}</td>
+                                        <td class="px-5 py-3 text-right">₱${parseFloat(item.price).toFixed(2)}</td>
+                                        <td class="px-5 py-3 text-right font-semibold">₱${parseFloat(item.sub_total).toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    /* NO PRODUCT/SALE FALLBACK */
+    if (!transaction.product && !transaction.sale) {
+        html += `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p class="text-yellow-800">No associated sale or product found for this transaction.</p>
+            </div>
+        `;
+    }
+
+    html += `</div>`;
     content.innerHTML = html;
 }
+
 
 // Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', function () {

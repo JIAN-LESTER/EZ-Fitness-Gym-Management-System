@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\MemberProfile;
+use App\Models\MembershipPlan;
 use App\Models\Logs;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class AttendanceController extends Controller
 
         // Get today's check-ins for display
         $todayAttendances = Attendance::with(['member.user', 'member.plan'])
-            ->whereDate('check_in_time', Carbon::today())
+            ->whereDate('check_in_time', Carbon::today('Asia/Manila'))
             ->orderBy('check_in_time', 'desc')
             ->get();
 
@@ -86,28 +87,17 @@ class AttendanceController extends Controller
                 ], 403);
             }
 
-            // Check if already checked in today
-            $today = Carbon::today();
+            // Check if already checked in today (and not yet checked out)
+            $today = Carbon::today('Asia/Manila');
             $existingAttendance = Attendance::where('member_id', $memberProfile->member_id)
                 ->whereDate('check_in_time', $today)
+                ->whereNull('check_out_time') // Only find active check-ins (not checked out)
                 ->first();
 
             // If already checked in, process check-out
             if ($existingAttendance) {
-                // Check if already checked out
-                if ($existingAttendance->check_out_time) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Already checked out today at ' . Carbon::parse($existingAttendance->check_out_time)->format('h:i A'),
-                        'member' => [
-                            'name' => $user->first_name . ' ' . $user->last_name,
-                            'plan' => $memberProfile->plan->name ?? 'N/A',
-                        ]
-                    ], 409);
-                }
-
                 // Process check-out
-                $checkOutTime = now();
+                $checkOutTime = Carbon::now('Asia/Manila');
                 $checkInTime = Carbon::parse($existingAttendance->check_in_time);
                 $duration = $checkInTime->diffInMinutes($checkOutTime);
 
@@ -120,8 +110,8 @@ class AttendanceController extends Controller
                 // Log the check-out action
                 Logs::create([
                     'user_id' => $user->user_id,
-                    'action' => "Member checked out: {$user->first_name} {$user->last_name} (Scanned by: {$currentUser->role} - {$currentUser->first_name} {$currentUser->last_name})",
-                    'timestamp' => now(),
+                    'action' => "Member checked out: {$user->first_name} {$user->last_name} at {$checkOutTime->format('h:i A')} - Duration: {$this->formatDuration($duration)} (Scanned by: {$currentUser->role} - {$currentUser->first_name} {$currentUser->last_name})",
+                    'timestamp' => $checkOutTime,
                 ]);
 
                 return response()->json([
@@ -139,22 +129,24 @@ class AttendanceController extends Controller
                 ]);
             }
 
-            // Create new attendance record
+            // Create new attendance record (allows multiple check-ins per day after checkout)
+            $checkInTime = Carbon::now('Asia/Manila');
             $attendance = Attendance::create([
                 'member_id' => $memberProfile->member_id,
-                'check_in_time' => now(),
+                'check_in_time' => $checkInTime,
                 'status' => 'checked_in',
             ]);
 
-            // Log the action
+            // Log the check-in action
             Logs::create([
                 'user_id' => $user->user_id,
-                'action' => "Member checked in: {$user->first_name} {$user->last_name}",
-                'timestamp' => now(),
+                'action' => "Member checked in: {$user->first_name} {$user->last_name} at {$checkInTime->format('h:i A')} (Scanned by: {$currentUser->role} - {$currentUser->first_name} {$currentUser->last_name})",
+                'timestamp' => $checkInTime,
             ]);
 
             return response()->json([
                 'success' => true,
+                'action' => 'checkin',
                 'message' => 'Check-in successful!',
                 'member' => [
                     'name' => $user->first_name . ' ' . $user->last_name,
@@ -182,7 +174,7 @@ class AttendanceController extends Controller
         }
 
         $attendances = Attendance::with(['member.user', 'member.plan'])
-            ->whereDate('check_in_time', Carbon::today())
+            ->whereDate('check_in_time', Carbon::today('Asia/Manila'))
             ->orderBy('check_in_time', 'desc')
             ->get()
             ->map(function ($attendance) {
@@ -264,10 +256,42 @@ class AttendanceController extends Controller
             return redirect()->back()->with('error', 'Member profile not found');
         }
 
+        // Get paginated attendances with null check for check_in_time
         $attendances = Attendance::where('member_id', $memberProfile->member_id)
+            ->whereNotNull('check_in_time')
             ->orderBy('check_in_time', 'desc')
             ->paginate(20);
 
-        return view('attendance.member_logs', compact('attendances'));
+        // Calculate statistics from all attendances (not paginated)
+        $allAttendances = Attendance::where('member_id', $memberProfile->member_id)
+            ->whereNotNull('check_in_time')
+            ->orderBy('check_in_time', 'desc')
+            ->get();
+        
+        // Calculate this month's count
+        $thisMonthCount = 0;
+        try {
+            $thisMonthCount = $allAttendances->filter(function($attendance) {
+                return $attendance->check_in_time && 
+                       Carbon::parse($attendance->check_in_time)->isCurrentMonth();
+            })->count();
+        } catch (\Exception $e) {
+            // If calculation fails, default to 0
+            $thisMonthCount = 0;
+        }
+
+        // Get last check-in (safely)
+        $lastCheckIn = $allAttendances->first();
+
+        // Get membership plans for the layout
+        $plans = MembershipPlan::all();
+
+        return view('attendance.member_logs', compact(
+            'attendances', 
+            'memberProfile', 
+            'plans',
+            'thisMonthCount',
+            'lastCheckIn'
+        ));
     }
 }

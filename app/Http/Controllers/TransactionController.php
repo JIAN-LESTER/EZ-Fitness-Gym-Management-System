@@ -6,6 +6,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Logs;
+use Auth;
 use Illuminate\Http\Request;
 use App\Models\Transactions;
 use Illuminate\Routing\Controller;
@@ -65,4 +67,53 @@ class TransactionController extends Controller
             ], 500);
         }
     }
+    public function destroy($id)
+    {
+        try {
+            $currentUser = Auth::user();
+            
+            // Only admin can delete transactions
+            if ($currentUser->role !== 'admin') {
+                return redirect()->back()
+                    ->with('error', 'Only administrators can delete transactions.');
+            }
+
+            $transaction = Transactions::where('transaction_id', $id)->firstOrFail();
+            
+            // Store transaction details for logging
+            $transactionType = $transaction->type;
+            $transactionId = $transaction->transaction_id;
+            
+            // Get related information before deletion
+            $relatedInfo = '';
+            if ($transaction->sale) {
+                $relatedInfo = " (Sale #" . $transaction->sale->sales_id . ")";
+            } elseif ($transaction->product) {
+                $relatedInfo = " (Product: " . $transaction->product->name . ")";
+            }
+
+            // Delete the transaction
+            $transaction->delete();
+
+            // Log the deletion
+            Logs::create([
+                'user_id' => $currentUser->user_id,
+                'action' => "{$currentUser->last_name} deleted transaction #{$transactionId} - Type: {$transactionType}{$relatedInfo}",
+                'timestamp' => now(),
+            ]);
+
+            return redirect()->back()
+                ->with('success', 'Transaction deleted successfully.');
+
+        } catch (\Exception $e) {
+            Log::error("Error deleting transaction", [
+                'transaction_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Error deleting transaction: ' . $e->getMessage());
+        }
+    }
+
 }

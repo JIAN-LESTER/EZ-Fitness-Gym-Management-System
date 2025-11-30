@@ -36,28 +36,14 @@ class Product extends Model
         return $this->belongsTo(Categories::class, 'category_id', 'category_id');
     }
 
-
-    public function stockIns()
-    {
-        return $this->hasMany(StockIn::class, 'stock_in_id', 'stock_in_id');
-    }
-
-    public function stockOuts()
-    {
-        return $this->hasMany(StockOut::class, 'stock_out_id', 'stock_out_id');
-    }
-
-
-       public function transaction()
+    public function transaction()
     {
         return $this->hasMany(Transactions::class, 'product_id', 'product_id');
     }
 
 
-    public function cartItems() {
-    return $this->hasMany(CartItem::class, 'product_id', 'product_id');
-}
-
-
-
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class, 'product_id', 'product_id');
+    }
 }

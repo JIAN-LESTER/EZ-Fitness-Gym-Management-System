@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            $table->foreignId('product_id')->nullable()->references('product_id')->on('products')->onDelete('cascade');
+            $table->integer('quantity')->default(0);
         });
     }
 
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
+        Schema::table('transactions_table2', function (Blueprint $table) {
             //
         });
     }

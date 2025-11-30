@@ -14,103 +14,141 @@
         </div>
 
         <!-- Top Stats Row -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             
             <!-- Membership Status Card -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 
-                {{ $membershipStatus === 'expired' ? 'border-red-500' : ($membershipStatus === 'expiring_soon' ? 'border-orange-500' : 'border-green-500') }}">
-                <div class="flex items-center justify-between">
-                    <div class="w-full">
-                        <p class="text-gray-500 text-sm font-medium mb-2">Membership Status</p>
-                        @if($memberProfile)
-                            <h3 class="text-2xl font-bold mb-2
-                                {{ $membershipStatus === 'expired' ? 'text-red-600' : ($membershipStatus === 'expiring_soon' ? 'text-orange-600' : 'text-green-600') }}">
-                                {{ ucfirst(str_replace('_', ' ', $membershipStatus)) }}
-                            </h3>
-                            <div class="mb-3">
-                                <p class="text-sm text-gray-700 font-medium">{{ $memberProfile->plan->name ?? 'No Plan' }}</p>
-                                <p class="text-xs text-gray-500">
-                                    Started: {{ \Carbon\Carbon::parse($memberProfile->start_date)->format('M d, Y') }}
-                                </p>
-                            </div>
-                            
-                            @if($daysLeft !== null)
-                                @if($daysLeft > 0)
-                                    <div class="bg-blue-50 p-3 rounded-lg">
-                                        <p class="text-sm text-gray-600">Days Remaining</p>
-                                        <p class="text-3xl font-bold text-blue-600">{{ $daysLeft }}</p>
-                                    </div>
-                                @else
-                                    <div class="bg-red-50 p-3 rounded-lg">
-                                        <p class="text-sm text-red-600 font-medium">Membership Expired</p>
-                                        <p class="text-xs text-gray-600">{{ abs($daysLeft) }} days ago</p>
-                                    </div>
-                                @endif
-                            @endif
+            <div class="bg-white rounded-xl shadow-lg p-4 border-l-4 
+                {{ !$memberProfile ? 'border-gray-400' : ($membershipStatus === 'expired' ? 'border-red-500' : 'border-green-500') }}">
+                
+                @if($memberProfile)
+                    <!-- Header with Status -->
+                    <div class="flex items-center justify-between mb-3">
+                        <p class="text-gray-500 text-xs font-medium">Membership Status</p>
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold
+                            {{ $membershipStatus === 'expired' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
+                            {{ $membershipStatus === 'expired' ? 'Expired' : 'Active' }}
+                        </span>
+                    </div>
 
-                            @if($isExpiringSoon && $daysLeft > 0)
-                                <div class="mt-3 bg-orange-50 border border-orange-200 rounded-lg p-3">
-                                    <p class="text-xs text-orange-700 font-medium">⚠️ Renew soon to avoid interruption</p>
-                                </div>
-                            @endif
-                        @else
-                            <p class="text-gray-600">No active membership</p>
-                            <a href="#plans" class="mt-3 inline-block bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-medium">
-                                View Plans
-                            </a>
+                    <!-- Plan Info -->
+                    <div class="mb-3">
+                        <h4 class="text-lg font-bold text-gray-800">{{ $memberProfile->plan->name ?? 'No Plan' }}</h4>
+                        @if($memberProfile->plan)
+                            <p class="text-xs text-gray-600">₱{{ number_format($memberProfile->plan->price, 2) }} / {{ $memberProfile->plan->duration_days }} days</p>
                         @endif
                     </div>
-                </div>
+
+                    <!-- Days/Hours Remaining -->
+                    @if($daysLeft !== null || ($memberProfile->plan && strtolower($memberProfile->plan->name) === 'walk-in'))
+                        @php
+                            $isWalkIn = $memberProfile->plan && strtolower($memberProfile->plan->name) === 'walk-in';
+                            
+                            if ($isWalkIn) {
+                                // Calculate hours remaining for walk-in
+                                $now = \Carbon\Carbon::now();
+                                $endDateTime = \Carbon\Carbon::parse($memberProfile->end_date);
+                                $hoursLeft = $now->diffInHours($endDateTime, false);
+                                $hoursLeft = (int) ceil($hoursLeft);
+                            }
+                        @endphp
+                        
+                        <div class="flex items-center justify-between bg-gradient-to-r {{ ($isWalkIn ? $hoursLeft : $daysLeft) <= 0 ? 'from-red-50 to-red-100' : 'from-blue-50 to-blue-100' }} p-3 rounded-lg mb-2">
+                            <div>
+                                <p class="text-xs text-gray-600 font-medium">
+                                    {{ ($isWalkIn ? $hoursLeft : $daysLeft) > 0 ? ($isWalkIn ? 'Hours Left' : 'Days Left') : 'Overdue' }}
+                                </p>
+                                <p class="text-2xl font-bold {{ ($isWalkIn ? $hoursLeft : $daysLeft) <= 0 ? 'text-red-600' : 'text-blue-600' }}">
+                                    {{ $isWalkIn ? abs($hoursLeft) : abs($daysLeft) }}
+                                </p>
+                            </div>
+                            <svg class="w-8 h-8 {{ ($isWalkIn ? $hoursLeft : $daysLeft) <= 0 ? 'text-red-400' : 'text-blue-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                @if($isWalkIn)
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                @else
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                @endif
+                            </svg>
+                        </div>
+                    @endif
+
+                    <!-- Expiring Soon Warning (only for non-walk-in) -->
+                    @if($isExpiringSoon && $daysLeft > 0 && $daysLeft <= 7 && !($memberProfile->plan && strtolower($memberProfile->plan->name) === 'walk-in'))
+                        <div class="bg-orange-50 border-l-2 border-orange-400 p-2 rounded text-xs text-orange-800 mb-2">
+                            ⚠️ Membership expiring soon
+                        </div>
+                    @endif
+
+                    <!-- Action Button -->
+                    @if($daysLeft !== null && $daysLeft <= 0)
+                        <a href="#plans" class="block w-full text-center bg-red-600 text-white py-2 px-3 rounded-lg hover:bg-red-700 transition-colors font-medium text-xs">
+                            Renew Now
+                        </a>
+                    @endif
+
+                @else
+                    <!-- No Membership -->
+                    <div class="text-center py-3">
+                        <p class="text-gray-500 text-xs mb-2">Membership Status</p>
+                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                        </svg>
+                        <p class="text-gray-600 font-medium text-sm mb-2">No Active Membership</p>
+                        <a href="#plans" class="inline-block bg-green-500 text-white px-4 py-1.5 rounded-lg hover:bg-green-600 transition-colors text-xs font-medium">
+                            Get Started
+                        </a>
+                    </div>
+                @endif
             </div>
 
             <!-- Gym Occupancy Card -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm font-medium">Current Gym Occupancy</p>
-                        <h3 class="text-4xl font-bold text-blue-600 mt-2">{{ $currentOccupancy }}</h3>
-                        <p class="text-gray-600 text-sm mt-2">Members currently in gym</p>
-                        <div class="mt-4">
-                            @if($currentOccupancy < 10)
-                                <span class="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
-                                    🟢 Low Traffic
-                                </span>
-                            @elseif($currentOccupancy < 25)
-                                <span class="inline-block bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium">
-                                    🟡 Moderate Traffic
-                                </span>
-                            @else
-                                <span class="inline-block bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium">
-                                    🔴 High Traffic
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="bg-blue-100 p-4 rounded-full">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white rounded-xl shadow-lg p-4 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-gray-500 text-xs font-medium">Gym Occupancy</p>
+                    <div class="bg-blue-100 p-2 rounded-full">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                     </div>
                 </div>
+                
+                <h3 class="text-3xl font-bold text-blue-600 mb-1">{{ $currentOccupancy }}</h3>
+                <p class="text-xs text-gray-600 mb-3">Members in gym now</p>
+                
+                @if($currentOccupancy < 10)
+                    <span class="inline-flex items-center bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-xs font-semibold w-full justify-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Low Traffic
+                    </span>
+                @elseif($currentOccupancy < 25)
+                    <span class="inline-flex items-center bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-lg text-xs font-semibold w-full justify-center">
+                        <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                        Moderate Traffic
+                    </span>
+                @else
+                    <span class="inline-flex items-center bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-semibold w-full justify-center">
+                        <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                        High Traffic
+                    </span>
+                @endif
             </div>
 
             <!-- My Attendance Card -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <p class="text-gray-500 text-sm font-medium">My Check-ins</p>
-                        <h3 class="text-4xl font-bold text-purple-600 mt-2">{{ $thisMonthCheckIns }}</h3>
-                        <p class="text-gray-600 text-sm mt-2">This month</p>
-                    </div>
-                    <div class="bg-purple-100 p-4 rounded-full">
-                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white rounded-xl shadow-lg p-4 border-l-4 border-purple-500">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-gray-500 text-xs font-medium">My Check-ins</p>
+                    <div class="bg-purple-100 p-2 rounded-full">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
                 </div>
-                <div class="border-t pt-3">
-                    <p class="text-xs text-gray-500">Total all-time check-ins</p>
-                    <p class="text-2xl font-bold text-gray-800">{{ $totalCheckIns }}</p>
+                
+                <h3 class="text-3xl font-bold text-purple-600 mb-1">{{ $thisMonthCheckIns }}</h3>
+                <p class="text-xs text-gray-600 mb-3">This month</p>
+                
+                <div class="bg-gray-50 p-2.5 rounded-lg">
+                    <p class="text-xs text-gray-500">Total Check-ins</p>
+                    <p class="text-xl font-bold text-gray-800">{{ $totalCheckIns }}</p>
                 </div>
             </div>
 
@@ -122,9 +160,6 @@
             <!-- Left Column (2 columns) -->
             <div class="lg:col-span-2 space-y-6">
                 
-                <!-- My Profile Information -->
-                
-
                 <!-- Membership Plans Section -->
                 <div id="plans" class="bg-white rounded-xl shadow-lg p-6">
                     <h3 class="text-xl font-bold text-gray-800 mb-4">Available Membership Plans</h3>
@@ -141,11 +176,6 @@
                                 <p class="text-3xl font-bold text-green-600">₱{{ number_format($plan->price, 2) }}</p>
                                 <p class="text-sm text-gray-500">{{ $plan->duration_days }} days</p>
                             </div>
-                            @if(!$memberProfile || $memberProfile->plan_id !== $plan->plan_id)
-                                <button class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium">
-                                    Select Plan
-                                </button>
-                            @endif
                         </div>
                         @empty
                         <p class="text-gray-500 col-span-2 text-center py-4">No membership plans available</p>
@@ -188,7 +218,6 @@
                         @endforelse
                     </div>
                 </div>
-
 
             </div>
 

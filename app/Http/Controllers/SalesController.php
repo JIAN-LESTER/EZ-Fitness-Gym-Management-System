@@ -2,9 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SalesItem;
 use Illuminate\Http\Request;
 use App\Models\Sales;
+use App\Models\SaleItems;
+use App\Models\Transactions;
+use App\Models\Logs;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SalesController extends Controller
 {
@@ -82,5 +89,60 @@ class SalesController extends Controller
         ])->findOrFail($id);
 
         return response()->json($sale);
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $currentUser = Auth::user();
+            
+            // Only admin can delete sales
+            if ($currentUser->role !== 'admin') {
+                return redirect()->back()
+                    ->with('error', 'Only administrators can delete sales.');
+            }
+
+            DB::beginTransaction();
+
+            $sale = Sales::with(['items', 'user'])->findOrFail($id);
+            
+            // Store sale details for logging
+            $saleId = $sale->sales_id;
+            $totalAmount = $sale->total_amount;
+            $cashierName = $sale->user->first_name . ' ' . $sale->user->last_name;
+            $itemCount = $sale->items->count();
+            
+            // Delete related transactions first
+            Transactions::where('sales_id', $saleId)->delete();
+            
+            // Delete sale items
+            SalesItem::where('sales_id', $saleId)->delete();
+            
+            // Delete the sale
+            $sale->delete();
+
+            // Log the deletion with details
+            Logs::create([
+                'user_id' => $currentUser->user_id,
+                'action' => "{$currentUser->last_name} deleted sale #{$saleId} - Amount: ₱" . number_format($totalAmount, 2) . ", Items: {$itemCount}, Cashier: {$cashierName}",
+                'timestamp' => now(),
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()
+                ->with('success', 'Sale deleted successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error("Error deleting sale", [
+                'sale_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Error deleting sale: ' . $e->getMessage());
+        }
     }
 }

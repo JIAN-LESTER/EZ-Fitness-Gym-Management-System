@@ -452,6 +452,8 @@ document.addEventListener('DOMContentLoaded', function() {
     width: 100% !important;
     height: auto !important;
     display: block;
+    transform: scaleX(-1) !important; /* Prevent mirroring */
+
 }
 
 #qr-reader__dashboard {
