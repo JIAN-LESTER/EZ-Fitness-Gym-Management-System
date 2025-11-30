@@ -14,7 +14,7 @@ class Transactions extends Model
     use HasFactory, Notifiable;
 
     protected $primaryKey = 'transaction_id';
-    
+
     protected $fillable = [
         'sales_id',
         'product_id',
@@ -30,6 +30,14 @@ class Transactions extends Model
     public function sale()
     {
         return $this->belongsTo(Sales::class, 'sales_id', 'sales_id');
+    }
+    public function performer()
+    {
+        return $this->belongsTo(User::class, 'performed_by', 'user_id');
+    }
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
     public function user()
     {

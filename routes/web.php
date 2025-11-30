@@ -35,6 +35,18 @@ Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('regi
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])
+    ->name('password.request');
+
+Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])
+    ->name('password.email');
+
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])
+    ->name('password.reset');
+
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+    ->name('password.update');
+
 Route::middleware(['auth'])->group(function () {
 
     Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {
@@ -193,7 +205,6 @@ Route::middleware(['auth', 'staff'])->group(function () {
     // Staff sales reports
     Route::get('/staff/sales-report', [StaffController::class, 'salesReport'])->name('staff.sales.report');
 });
-
 // Verification link
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
     ->middleware(['signed'])
