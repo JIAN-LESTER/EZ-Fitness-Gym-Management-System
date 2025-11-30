@@ -265,7 +265,8 @@
                                         </div>
                                         <div>
                                             <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }}
-                                                {{ $user->last_name }}</p>
+                                                {{ $user->last_name }}
+                                            </p>
                                             <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
                                         </div>
                                     </div>
@@ -316,7 +317,8 @@
                                         </div>
                                         <div>
                                             <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }}
-                                                {{ $user->last_name }}</p>
+                                                {{ $user->last_name }}
+                                            </p>
                                             <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
                                         </div>
                                     </div>
@@ -365,7 +367,8 @@
                                                 </div>
                                                 <div>
                                                     <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }}
-                                                        {{ $user->last_name }}</p>
+                                                        {{ $user->last_name }}
+                                                    </p>
                                                     <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
                                                 </div>
                                             </div>
@@ -376,7 +379,7 @@
                                         <td class="px-6 py-4">
                                             <span
                                                 class="px-2 py-1 text-xs font-semibold rounded-full 
-                                                {{ $user->role === 'admin' ? 'bg-red-100 text-red-700' :
+                                                                    {{ $user->role === 'admin' ? 'bg-red-100 text-red-700' :
                                     ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700') }}">
                                                 {{ ucfirst($user->role) }}
                                             </span>
@@ -385,7 +388,7 @@
                                         <td class="px-6 py-4">
                                             <span
                                                 class="px-2 py-1 text-xs font-semibold rounded-full 
-                                                {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
+                                                                    {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
                                                 {{ ucfirst($user->status) }}
                                             </span>
                                         </td>
@@ -395,7 +398,7 @@
                                                     <div class="text-sm">
                                                         <span
                                                             class="px-2 py-1 text-xs font-semibold rounded-full 
-                                                                {{ $user->member->status === 'active' ? 'bg-green-100 text-green-700' :
+                                                                                            {{ $user->member->status === 'active' ? 'bg-green-100 text-green-700' :
                                                 ($user->member->status === 'expired' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700') }}">
                                                             {{ $user->member->plan->name ?? 'No Plan' }}
                                                         </span>
@@ -640,7 +643,8 @@
                     <div id="addMemberFields" class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-4"
                         style="{{ $isStaff ? 'display: block;' : '' }}">
                         <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Member Profile
-                            {{ $isStaff ? '(Required)' : '(Optional)' }}</h3>
+                            {{ $isStaff ? '(Required)' : '(Optional)' }}
+                        </h3>
 
                         <div>
                             <label for="plan_id"
@@ -821,7 +825,8 @@
                     <div id="editMemberFields" class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-4"
                         style="{{ $isStaff ? 'display: block;' : '' }}">
                         <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Member Profile
-                            {{ $isStaff ? '(Required)' : '(Optional)' }}</h3>
+                            {{ $isStaff ? '(Required)' : '(Optional)' }}
+                        </h3>
 
                         <div>
                             <label for="edit_plan_id"
@@ -1179,10 +1184,10 @@
                         const closeBtn = document.createElement('button');
                         closeBtn.className = 'menu-close-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1';
                         closeBtn.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    `;
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        `;
                         closeBtn.onclick = (e) => {
                             e.stopPropagation();
                             menu.classList.add('hidden');
@@ -1326,10 +1331,10 @@
             const content = document.getElementById('userShowContent');
             if (content) {
                 content.innerHTML = `
-                <div class="flex justify-center items-center py-12">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
-                </div>
-            `;
+                    <div class="flex justify-center items-center py-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
+                    </div>
+                `;
             }
 
             fetch(`/admin/user_crud/show/${userId}`)
@@ -1355,10 +1360,10 @@
                     console.error('Error:', error);
                     if (content) {
                         content.innerHTML = `
-                        <div class="text-center py-12">
-                            <p class="text-red-600">Error loading user details</p>
-                        </div>
-                    `;
+                            <div class="text-center py-12">
+                                <p class="text-red-600">Error loading user details</p>
+                            </div>
+                        `;
                     }
                     if (typeof toastr !== 'undefined') {
                         toastr.error('Failed to load user details');
@@ -1379,52 +1384,52 @@
             const statusColor = user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600';
 
             let html = `
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-1">
-                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-                        <div class="flex flex-col items-center mb-6">
-                            ${user.avatar ?
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1">
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                            <div class="flex flex-col items-center mb-6">
+                                ${user.avatar ?
                     `<img src="/storage/${user.avatar}" alt="${user.first_name}" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200">` :
                     `<div class="w-32 h-32 rounded-full bg-gray-400 flex items-center justify-center text-4xl font-bold text-white">${avatarInitial}</div>`
                 }
 
-                            <h2 class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-200">${user.first_name} ${user.last_name}</h2>
-                            <p class="text-gray-500 dark:text-gray-400">@${user.username}</p>
+                                <h2 class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-200">${user.first_name} ${user.last_name}</h2>
+                                <p class="text-gray-500 dark:text-gray-400">@${user.username}</p>
 
-                            <div class="flex gap-2 mt-3">
-                                <span class="px-3 py-1 text-xs rounded-full ${roleColor}">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
-                                <span class="px-3 py-1 text-xs rounded-full ${statusColor}">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                                <p class="text-gray-800 dark:text-gray-200 font-medium break-all">${user.email}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">User ID</p>
-                                <p class="text-gray-800 dark:text-gray-200 font-medium">#${user.user_id}</p>
-                            </div>
-                            ${user.created_at ? `
-                                <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Member Since</p>
-                                    <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                <div class="flex gap-2 mt-3">
+                                    <span class="px-3 py-1 text-xs rounded-full ${roleColor}">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
+                                    <span class="px-3 py-1 text-xs rounded-full ${statusColor}">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
                                 </div>
-                            ` : ''}
-                        </div>
+                            </div>
 
-                        <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-                            <button onclick="closeModal('userShowModal'); editUser('${user.user_id}');" 
-                                    class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                Edit User
-                            </button>
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                                    <p class="text-gray-800 dark:text-gray-200 font-medium break-all">${user.email}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">User ID</p>
+                                    <p class="text-gray-800 dark:text-gray-200 font-medium">#${user.user_id}</p>
+                                </div>
+                                ${user.created_at ? `
+                                    <div>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Member Since</p>
+                                        <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                                <button onclick="closeModal('userShowModal'); editUser('${user.user_id}');" 
+                                        class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    Edit User
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="lg:col-span-2 space-y-6">
-        `;
+                    <div class="lg:col-span-2 space-y-6">
+            `;
 
             if (user.member) {
                 const memberStatusColor = user.member.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700';
@@ -1446,67 +1451,67 @@
                 }
 
                 html += `
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                        </svg>
-                        Membership Information
-                    </h3>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                            </svg>
+                            Membership Information
+                        </h3>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Plan</p>
-                            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${user.member.plan ? user.member.plan.name : 'No Plan Assigned'}</p>
-                            ${user.member.plan ? `<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">₱${parseFloat(user.member.plan.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${user.member.plan.duration_days} days</p>` : ''}
-                        </div>
-
-                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Membership Status</p>
-                            <span class="inline-block px-3 py-1 text-sm rounded-full ${memberStatusColor}">${user.member.status.charAt(0).toUpperCase() + user.member.status.slice(1)}</span>
-                        </div>
-
-                        ${user.member.start_date ? `
-                            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Start Date</p>
-                                <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${new Date(user.member.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                            </div>
-                        ` : ''}
-
-                        ${user.member.end_date ? `
-                            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">End Date</p>
-                                <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${new Date(user.member.end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                                ${daysRemainingHTML}
-                            </div>
-                        ` : ''}
-                    </div>
-
-                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4">Personal Information</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            ${user.member.sex ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Sex</p><p class="text-gray-800 dark:text-gray-200 font-medium capitalize">${user.member.sex}</p></div>` : ''}
-                            ${user.member.birthday ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Birthday</p><p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(user.member.birthday).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>` : ''}
-                            ${user.member.height ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Height</p><p class="text-gray-800 dark:text-gray-200 font-medium">${user.member.height} cm</p></div>` : ''}
-                            ${user.member.weight ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Weight</p><p class="text-gray-800 dark:text-gray-200 font-medium">${user.member.weight} kg</p></div>` : ''}
-                            ${user.member.mobile_number ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Mobile Number</p><p class="text-gray-800 dark:text-gray-200 font-medium">${user.member.mobile_number}</p></div>` : ''}
-                            ${user.member.qr_code ? `<div class="md:col-span-2"><p class="text-sm text-gray-500 dark:text-gray-400 mb-2">QR Code</p><img src="/storage/${user.member.qr_code}" alt="QR Code" class="w-32 h-32 border border-gray-200 rounded"></div>` : ''}
+                            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Plan</p>
+                                <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${user.member.plan ? user.member.plan.name : 'No Plan Assigned'}</p>
+                                ${user.member.plan ? `<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">₱${parseFloat(user.member.plan.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${user.member.plan.duration_days} days</p>` : ''}
+                            </div>
+
+                            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Membership Status</p>
+                                <span class="inline-block px-3 py-1 text-sm rounded-full ${memberStatusColor}">${user.member.status.charAt(0).toUpperCase() + user.member.status.slice(1)}</span>
+                            </div>
+
+                            ${user.member.start_date ? `
+                                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Start Date</p>
+                                    <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${new Date(user.member.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                                </div>
+                            ` : ''}
+
+                            ${user.member.end_date ? `
+                                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">End Date</p>
+                                    <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${new Date(user.member.end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                                    ${daysRemainingHTML}
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4">Personal Information</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                ${user.member.sex ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Sex</p><p class="text-gray-800 dark:text-gray-200 font-medium capitalize">${user.member.sex}</p></div>` : ''}
+                                ${user.member.birthday ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Birthday</p><p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(user.member.birthday).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>` : ''}
+                                ${user.member.height ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Height</p><p class="text-gray-800 dark:text-gray-200 font-medium">${user.member.height} cm</p></div>` : ''}
+                                ${user.member.weight ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Weight</p><p class="text-gray-800 dark:text-gray-200 font-medium">${user.member.weight} kg</p></div>` : ''}
+                                ${user.member.mobile_number ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Mobile Number</p><p class="text-gray-800 dark:text-gray-200 font-medium">${user.member.mobile_number}</p></div>` : ''}
+                                ${user.member.qr_code ? `<div class="md:col-span-2"><p class="text-sm text-gray-500 dark:text-gray-400 mb-2">QR Code</p><img src="/storage/${user.member.qr_code}" alt="QR Code" class="w-32 h-32 border border-gray-200 rounded"></div>` : ''}
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
             } else {
                 html += `
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <div class="text-center py-8">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                        </svg>
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Not a Member</h3>
-                        <p class="text-gray-600 dark:text-gray-400">This user doesn't have a membership profile yet.</p>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div class="text-center py-8">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Not a Member</h3>
+                            <p class="text-gray-600 dark:text-gray-400">This user doesn't have a membership profile yet.</p>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
             }
 
             html += '</div></div>';
@@ -1799,13 +1804,70 @@
 
             Swal.fire({
                 title: 'Approve Member?',
-                text: "This member will be able to complete their profile.",
+                html: `
+                <div class="mb-4">
+                    <p class="text-gray-700 mb-4">Please select a payment method for this membership:</p>
+
+                    <input type="hidden" id="selected-payment" value="">
+
+                    <div class="space-y-3">
+                        <!-- Cash Option -->
+                        <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all hover:border-green-400" 
+                             data-payment="cash"
+                             style="transition: all 0.3s ease;">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                    </div>
+                                    <div class="text-left">
+                                        <div class="font-semibold text-gray-800">Cash Payment</div>
+                                        <div class="text-sm text-gray-500">Direct cash payment</div>
+                                    </div>
+                                </div>
+                                <div class="checkmark hidden w-6 h-6 bg-green-500 rounded-full items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GCash Option -->
+                        <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-400" 
+                             data-payment="gcash"
+                             style="transition: all 0.3s ease;">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <div class="text-left">
+                                        <div class="font-semibold text-gray-800">GCash Payment</div>
+                                        <div class="text-sm text-gray-500">Mobile wallet payment</div>
+                                    </div>
+                                </div>
+                                <div class="checkmark hidden w-6 h-6 bg-blue-500 rounded-full items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
                 icon: 'question',
                 showCancelButton: true,
-                showConfirmButton: true,
                 confirmButtonColor: '#10b981',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Confirm Payment Method',
+                confirmButtonText: 'Confirm Payment',
                 cancelButtonText: 'Cancel',
                 customClass: {
                     popup: 'payment-modal-popup'
@@ -1814,27 +1876,27 @@
                     // Add hover and click effects
                     const options = document.querySelectorAll('.payment-option');
                     const hiddenInput = document.getElementById('selected-payment');
-                    
+
                     options.forEach(option => {
                         // Hover effect
-                        option.addEventListener('mouseenter', function() {
+                        option.addEventListener('mouseenter', function () {
                             if (!this.classList.contains('selected')) {
                                 this.style.borderColor = '#cbd5e1';
                                 this.style.transform = 'translateY(-4px)';
                                 this.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.1)';
                             }
                         });
-                        
-                        option.addEventListener('mouseleave', function() {
+
+                        option.addEventListener('mouseleave', function () {
                             if (!this.classList.contains('selected')) {
                                 this.style.borderColor = '#e5e7eb';
                                 this.style.transform = 'translateY(0)';
                                 this.style.boxShadow = 'none';
                             }
                         });
-                        
+
                         // Click effect
-                        option.addEventListener('click', function() {
+                        option.addEventListener('click', function () {
                             // Remove selection from all options
                             options.forEach(opt => {
                                 opt.classList.remove('selected');
@@ -1844,12 +1906,12 @@
                                 opt.style.boxShadow = 'none';
                                 opt.querySelector('.checkmark').style.display = 'none';
                             });
-                            
+
                             // Add selection to clicked option
                             this.classList.add('selected');
                             const payment = this.getAttribute('data-payment');
                             hiddenInput.value = payment;
-                            
+
                             if (payment === 'cash') {
                                 this.style.borderColor = '#10b981';
                                 this.style.background = 'linear-gradient(to bottom, #f0fdf4, white)';
@@ -1857,7 +1919,7 @@
                                 this.style.borderColor = '#3b82f6';
                                 this.style.background = 'linear-gradient(to bottom, #eff6ff, white)';
                             }
-                            
+
                             this.style.transform = 'translateY(-4px)';
                             this.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.15)';
                             this.querySelector('.checkmark').style.display = 'flex';
@@ -1872,23 +1934,74 @@
                     }
                     return selectedPayment;
                 }
-            }).then((paymentResult) => {
-                if (paymentResult.isConfirmed && paymentResult.value) {
-                    // Show loading state
-                    Swal.fire({
-                        title: 'Processing...',
-                        text: 'Approving member with ' + (paymentResult.value === 'cash' ? 'Cash' : 'GCash') + ' payment',
-                        icon: 'info',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        showConfirmButton: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-                    
-                    // Redirect to approval endpoint
-                    window.location.href = `/admin/user_crud/approve/${memberId}?payment=${paymentResult.value}`;
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    const payment = result.value;
+
+                    // If GCash, ask for reference number
+                    if (payment === 'gcash') {
+                        Swal.fire({
+                            title: 'GCash Reference',
+                            html: `
+                            <div class="text-left">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Enter GCash Reference Number:
+                                </label>
+                                <input type="text" 
+                                       id="gcash-reference" 
+                                       class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="e.g., 1234567890123">
+                                <p class="text-xs text-gray-500 mt-2">This is required for GCash payments</p>
+                            </div>
+                        `,
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3b82f6',
+                            cancelButtonColor: '#6b7280',
+                            confirmButtonText: 'Submit',
+                            cancelButtonText: 'Back',
+                            preConfirm: () => {
+                                const reference = document.getElementById('gcash-reference').value;
+                                if (!reference || reference.trim() === '') {
+                                    Swal.showValidationMessage('Reference number is required');
+                                    return false;
+                                }
+                                return reference;
+                            }
+                        }).then((refResult) => {
+                            if (refResult.isConfirmed && refResult.value) {
+                                // Show loading and redirect
+                                Swal.fire({
+                                    title: 'Processing...',
+                                    text: 'Approving member with GCash payment',
+                                    icon: 'info',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    showConfirmButton: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+
+                                window.location.href = `/admin/user_crud/approve/${memberId}?payment=gcash&reference=${encodeURIComponent(refResult.value)}`;
+                            }
+                        });
+                    } else {
+                        // Cash payment - redirect directly
+                        Swal.fire({
+                            title: 'Processing...',
+                            text: 'Approving member with cash payment',
+                            icon: 'info',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        window.location.href = `/admin/user_crud/approve/${memberId}?payment=cash`;
+                    }
                 }
             });
         }
@@ -1928,9 +2041,9 @@
             Swal.fire({
                 title: 'Suspend Member?',
                 html: `
-                <p class="text-gray-700 mb-2">This will immediately expire the member's subscription.</p>
-                <p class="text-sm text-gray-500">The remaining days will be saved and can be restored if reactivated.</p>
-            `,
+                    <p class="text-gray-700 mb-2">This will immediately expire the member's subscription.</p>
+                    <p class="text-sm text-gray-500">The remaining days will be saved and can be restored if reactivated.</p>
+                `,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#f97316',
@@ -1955,9 +2068,9 @@
             Swal.fire({
                 title: 'Reactivate Member?',
                 html: `
-                <p class="text-gray-700 mb-2">This will restore the member's subscription.</p>
-                <p class="text-sm text-gray-500">Their remaining days will be restored if available.</p>
-            `,
+                    <p class="text-gray-700 mb-2">This will restore the member's subscription.</p>
+                    <p class="text-sm text-gray-500">Their remaining days will be restored if available.</p>
+                `,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#10b981',
@@ -1981,48 +2094,48 @@
             const style = document.createElement('style');
             style.id = 'customScrollbarStyles';
             style.textContent = `
-            /* Custom Scrollbar for Modals */
-            .overflow-y-auto::-webkit-scrollbar {
-                width: 8px;
-            }
+                /* Custom Scrollbar for Modals */
+                .overflow-y-auto::-webkit-scrollbar {
+                    width: 8px;
+                }
 
-            .overflow-y-auto::-webkit-scrollbar-track {
-                background: #F3F4F6;
-                border-radius: 10px;
-            }
+                .overflow-y-auto::-webkit-scrollbar-track {
+                    background: #F3F4F6;
+                    border-radius: 10px;
+                }
 
-            .overflow-y-auto::-webkit-scrollbar-thumb {
-                background: #9CA3AF;
-                border-radius: 10px;
-            }
+                .overflow-y-auto::-webkit-scrollbar-thumb {
+                    background: #9CA3AF;
+                    border-radius: 10px;
+                }
 
-            .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-                background: #6B7280;
-            }
+                .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+                    background: #6B7280;
+                }
 
-            /* Firefox */
-            .overflow-y-auto {
-                scrollbar-width: thin;
-                scrollbar-color: #9CA3AF #F3F4F6;
-                scroll-behavior: smooth;
-            }
+                /* Firefox */
+                .overflow-y-auto {
+                    scrollbar-width: thin;
+                    scrollbar-color: #9CA3AF #F3F4F6;
+                    scroll-behavior: smooth;
+                }
 
-            /* SweetAlert Custom Styles */
-            .swal-custom-popup {
-                border-radius: 1rem !important;
-            }
+                /* SweetAlert Custom Styles */
+                .swal-custom-popup {
+                    border-radius: 1rem !important;
+                }
 
-            .swal-confirm-btn,
-            .swal-cancel-btn {
-                border-radius: 0.5rem !important;
-                padding: 0.5rem 1.5rem !important;
-            }
+                .swal-confirm-btn,
+                .swal-cancel-btn {
+                    border-radius: 0.5rem !important;
+                    padding: 0.5rem 1.5rem !important;
+                }
 
-            /* Rotate icon */
-            .rotate-180 {
-                transform: rotate(180deg);
-            }
-        `;
+                /* Rotate icon */
+                .rotate-180 {
+                    transform: rotate(180deg);
+                }
+            `;
             document.head.appendChild(style);
         }
 
