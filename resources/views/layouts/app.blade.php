@@ -15,19 +15,132 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('logo_image/ez_fitness_gym_logo.png') }}">
 
     <style>
+        /* CRITICAL: Prevent any layout shift or flashing */
         [x-cloak] {
             display: none !important;
         }
-        link[rel="icon"] {
-            border-radius: 10px !important;
+        
+        /* Base sidebar styles - NO transitions on initial load */
+        .sidebar-container {
+            transition: none !important;
+            will-change: width;
+        }
+        
+        /* Only enable transitions after page load */
+        .sidebar-loaded .sidebar-container {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar-container.sidebar-open {
+            width: 15rem;
+        }
+        
+        .sidebar-container:not(.sidebar-open) {
+            width: 4rem;
+        }
+        
+        /* Content visibility transitions */
+        .sidebar-content {
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            display: none;
+        }
+        
+        .sidebar-open .sidebar-content {
+            opacity: 1;
+            display: block;
+            transition-delay: 0.1s;
+        }
+        
+        .sidebar-collapsed-content {
+            opacity: 1;
+            transition: opacity 0.2s ease-in-out;
+            display: block;
+        }
+        
+        .sidebar-open .sidebar-collapsed-content {
+            opacity: 0;
+            display: none;
+        }
+        
+        /* Prevent horizontal scrollbar during transition */
+        body {
+            overflow-x: hidden;
+        }
+        
+        /* Critical CSS for immediate render */
+        .sidebar-init-open .sidebar-container {
+            width: 15rem !important;
+        }
+        
+        .sidebar-init-closed .sidebar-container {
+            width: 4rem !important;
+        }
+        
+        .sidebar-init-closed .sidebar-content {
+            display: none !important;
+            opacity: 0 !important;
+        }
+        
+        .sidebar-init-open .sidebar-collapsed-content {
+            display: none !important;
+            opacity: 0 !important;
+        }
+        
+        .sidebar-init-open .sidebar-content {
+            display: block !important;
+            opacity: 1 !important;
+        }
+        
+        .sidebar-init-closed .sidebar-collapsed-content {
+            display: block !important;
+            opacity: 1 !important;
         }
     </style>
+    
+    <script>
+        // CRITICAL: Run BEFORE ANY rendering happens
+        (function() {
+            'use strict';
+            
+            // Get saved state (default to open if not set)
+            const sidebarOpen = localStorage.getItem('sidebarOpen') !== 'false';
+            
+            // Apply class to HTML element immediately
+            const htmlElement = document.documentElement;
+            if (sidebarOpen) {
+                htmlElement.classList.add('sidebar-init-open');
+                htmlElement.classList.remove('sidebar-init-closed');
+            } else {
+                htmlElement.classList.add('sidebar-init-closed');
+                htmlElement.classList.remove('sidebar-init-open');
+            }
+        })();
+    </script>
 </head>
 
-<body x-data="{ sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false' }"
-    x-init="$watch('sidebarOpen', val => localStorage.setItem('sidebarOpen', val))"
+<body x-data="{ 
+        sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false'
+    }"
+    x-init="
+        // Enable transitions after a brief delay
+        setTimeout(() => {
+            document.body.classList.add('sidebar-loaded');
+        }, 50);
+        
+        // Clean up initialization classes after Alpine loads
+        $nextTick(() => {
+            document.documentElement.classList.remove('sidebar-init-open', 'sidebar-init-closed');
+        });
+        
+        // Watch for changes and save to localStorage
+        $watch('sidebarOpen', val => {
+            localStorage.setItem('sidebarOpen', val);
+        });
+    "
     class="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
+<!-- Your PHP code here -->
 <?php 
 $user = Auth::user();
 $member = null;
@@ -35,7 +148,7 @@ $member = null;
 // Only get member data if user is actually a member
 if ($user->role === 'member') {
     $member = $user->member;
-    $plan = $member->plan;
+    $plan = $member->plan ?? null;
 }
 
 // Count pending member approvals (only for admins)
@@ -49,7 +162,7 @@ if ($user->role === 'admin') {
 // Count low stock products (for admins and staff)
 $lowStockCount = 0;
 if (in_array($user->role, ['admin', 'staff'])) {
-    $lowStockThreshold = 10; // Fixed threshold
+    $lowStockThreshold = 10;
     $lowStockCount = \App\Models\Inventory::where('quantity', '<=', $lowStockThreshold)
         ->where('quantity', '>', 0)
         ->count();
@@ -58,26 +171,25 @@ if (in_array($user->role, ['admin', 'staff'])) {
 
     <!-- Sidebar -->
     <aside
-    x-cloak
-    class="bg-gray-800 text-white dark:bg-gray-800 dark:text-white shadow-md flex flex-col"
-    :class="sidebarOpen ? 'w-60' : 'w-16'">
+        class="sidebar-container bg-gray-800 text-white dark:bg-gray-800 dark:text-white shadow-md flex flex-col"
+        :class="sidebarOpen ? 'sidebar-open' : ''">
 
     <!-- Logo Section -->
     <div class="flex justify-center items-center p-3 border-b border-gray-700">
-        <!-- Full logo when sidebar is expanded -->
-        <div x-show="sidebarOpen" x-cloak class="transition-all duration-300 flex items-center justify-center">
-            <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}" 
-                alt="EZ Fitness" 
-                class="h-24 w-auto max-w-[140px] rounded-2xl object-contain hover:scale-105 transition-transform shadow-lg shadow-gray-900/50 hover:shadow-xl hover:shadow-gray-900/40">
-        </div>
+            <!-- Full logo when sidebar is expanded -->
+            <div x-show="sidebarOpen" x-cloak class="sidebar-content">
+                <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}" 
+                    alt="EZ Fitness" 
+                    class="h-24 w-auto max-w-[140px] rounded-2xl object-contain hover:scale-105 transition-transform shadow-lg shadow-gray-900/50 hover:shadow-xl hover:shadow-gray-900/40">
+            </div>
         
         <!-- Icon/compact logo when sidebar is collapsed -->
-        <div x-show="!sidebarOpen" x-cloak class="transition-all duration-300 flex items-center justify-center">
-            <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}" 
-                alt="EZ Fitness" 
-                class="h-8 w-8 rounded-lg object-cover hover:scale-110 transition-transform">
+        <div x-show="!sidebarOpen" x-cloak class="sidebar-collapsed-content">
+                <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}" 
+                    alt="EZ Fitness" 
+                    class="h-8 w-8 rounded-lg object-cover hover:scale-110 transition-transform">
+            </div>
         </div>
-    </div>
         <nav class="flex-1 px-2 py-2 space-y-1">
            @if(auth()->user()->role === 'admin')
     <!-- Dashboard -->
@@ -86,11 +198,11 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Dashboard</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Dashboard</span>
     </a>
 
     <!-- MEMBERSHIP SECTION -->
-    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3">
+    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3 sidebar-content">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Membership</p>
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
@@ -100,9 +212,9 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm flex-1">Members and Staff</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm flex-1">Members and Staff</span>
         @if($pendingApprovalsCount > 0)
-            <span x-show="sidebarOpen" x-cloak class="ml-auto px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
+            <span x-show="sidebarOpen" x-cloak class="sidebar-content ml-auto px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
                 {{ $pendingApprovalsCount }}
             </span>
             <span x-show="!sidebarOpen" x-cloak class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800"></span>
@@ -114,11 +226,11 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Plans</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Membership Plans</span>
     </a>
 
     <!-- ATTENDANCE SECTION -->
-    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3">
+    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3 sidebar-content">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Attendance</p>
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
@@ -128,11 +240,11 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">QR Scanner</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">QR Scanner</span>
     </a>
 
     <!-- STORE SECTION -->
-    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3">
+    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3 sidebar-content">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Store</p>
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
@@ -142,9 +254,9 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm flex-1">Inventory</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm flex-1">Inventory</span>
         @if($lowStockCount > 0)
-            <span x-show="sidebarOpen" x-cloak class="ml-auto px-2 py-0.5 text-xs font-bold text-white bg-orange-500 rounded-full">
+            <span x-show="sidebarOpen" x-cloak class="sidebar-content ml-auto px-2 py-0.5 text-xs font-bold text-white bg-orange-500 rounded-full">
                 {{ $lowStockCount }}
             </span>
             <span x-show="!sidebarOpen" x-cloak class="absolute top-1 right-1 w-2.5 h-2.5 bg-orange-500 rounded-full border-2 border-gray-800"></span>
@@ -156,11 +268,11 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">POS</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">POS</span>
     </a>
 
     <!-- FINANCIAL SECTION -->
-    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3">
+    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3 sidebar-content">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Financial</p>
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
@@ -170,7 +282,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Sales</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Sales</span>
     </a>
 
     <a href="{{ route('transactions.index') }}" @click="profileOpen = false"
@@ -178,26 +290,25 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Transactions</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Transactions</span>
     </a>
 
     <!-- REPORTS SECTION -->
-    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3">
+    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3 sidebar-content">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Logs</p>
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
-
 
     <a href="{{ route('logs.show') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Activity Logs</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Activity Logs</span>
     </a>
 
     <!-- CONFIGURATION SECTION -->
-    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3">
+    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3 sidebar-content">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Configuration</p>
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
@@ -208,20 +319,21 @@ if (in_array($user->role, ['admin', 'staff'])) {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6h.008v.008H6V6z" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Categories</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Categories</span>
     </a>
 
 @elseif(auth()->user()->role === 'staff')
     <!-- Staff Section - Similar structure -->
-    <a href="{{ route('staff.dashboard') }}" @click="profileOpen = false"
-       class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('staff.dashboard') ? 'bg-white/20 text-white' : '' }}">
+   <a href="{{ route('staff.dashboard') }}" @click="profileOpen = false"
+       class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('staff.dashboard') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity">Dashboard</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Dashboard</span>
     </a>
 
-    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3">
+
+    <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3 sidebar-content">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Membership</p>
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
@@ -245,12 +357,12 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Plans</span>
+        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Membership Plans</span>
     </a>
 
 
     <!-- ATTENDANCE SECTION -->
-    <div x-show="sidebarOpen" x-cloak class="pt-4 pb-2 px-4">
+    <div x-show="sidebarOpen" x-cloak class="pt-4 pb-2 px-4 sidebar-content">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Attendance</p>
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-2"></div>
@@ -264,7 +376,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
     </a>
 
     <!-- STORE SECTION -->
-    <div x-show="sidebarOpen" x-cloak class="pt-4 pb-2 px-4">
+    <div x-show="sidebarOpen" x-cloak class="pt-4 pb-2 px-4 sidebar-content">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Store</p>
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-2"></div>
@@ -293,21 +405,22 @@ if (in_array($user->role, ['admin', 'staff'])) {
 
    
 @elseif(auth()->user()->role === 'member')
-    <a href="{{ route('member.dashboard') }}" @click="profileOpen = false"
-       class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('member.dashboard') ? 'bg-white/20 text-white' : '' }}">
+   <a href="{{ route('member.dashboard') }}" @click="profileOpen = false"
+       class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('member.dashboard') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity">Home</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Home</span>
     </a>
 
-        <a href="{{ route('attendance.member.logs') }}" @click="profileOpen = false"
-       class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('attendance.member.logs') ? 'bg-white/20 text-white' : '' }}">
+<a href="{{ route('attendance.member.logs') }}" @click="profileOpen = false"
+       class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('attendance.member.logs') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity">Your Attendance History</span>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Attendance History</span>
     </a>
+
 @endif
         </nav>
     </aside>
