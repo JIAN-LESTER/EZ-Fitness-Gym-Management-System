@@ -121,6 +121,16 @@
                                             <span class="ml-3 text-sm font-medium text-gray-700">Stock Out</span>
                                             <span class="ml-auto px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">Stock Out</span>
                                         </label>
+                                        
+                                        <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                            <input type="checkbox" name="status[]" value="memberships"
+                                                {{ in_array('memberships', request('status', [])) ? 'checked' : '' }}
+                                                onchange="updateFilterCount()"
+                                                class="w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                            <span class="ml-3 text-sm font-medium text-gray-700">Memberships</span>
+                                            <span class="ml-auto px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">Memberships</span>
+                                        </label>
+
                                     </div>
                                 </div>
 
@@ -194,8 +204,17 @@
                                 <span class="px-3 py-1 rounded-full text-xs font-semibold
                                     {{ $transaction->type === 'sales' ? 'bg-green-100 text-green-800' : '' }}
                                     {{ $transaction->type === 'stock_in' ? 'bg-blue-100 text-blue-800' : '' }}
-                                    {{ $transaction->type === 'stock_out' ? 'bg-red-100 text-red-800' : '' }}">
-                                    {{ $transaction->type === 'stock_in' ? 'Stock In' : ($transaction->type === 'stock_out' ? 'Stock Out' : ucfirst($transaction->type)) }}
+                                    {{ $transaction->type === 'stock_out' ? 'bg-red-100 text-red-800' : '' }}
+                                    {{ $transaction->type === 'memberships' ? 'bg-purple-100 text-purple-800' : '' }}">
+                                    @if($transaction->type === 'stock_in')
+                                        Stock In
+                                    @elseif($transaction->type === 'stock_out')
+                                        Stock Out
+                                    @elseif($transaction->type === 'memberships')
+                                        Membership
+                                    @else
+                                        {{ ucfirst($transaction->type) }}
+                                    @endif
                                 </span>
                             </td>
 
@@ -207,7 +226,6 @@
                                 @elseif($transaction->type === 'sales' && $transaction->sale && $transaction->sale->user)
                                     <p class="font-medium text-gray-900">{{ $transaction->sale->user->first_name }} {{ $transaction->sale->user->last_name }}</p>
                                     <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $transaction->sale->user->username }}</p>
-                                    <p class="text-xs text-blue-600">Cashier</p>
                                 @else
                                     <p class="text-gray-400">System</p>
                                 @endif
@@ -215,13 +233,12 @@
 
                             <!-- Amount (Only for Sales) -->
                             <td class="px-6 py-4 text-center">
-                                @if($transaction->type === 'sales' && $transaction->sale)
+                                @if($transaction->sale)
                                     <p class="font-semibold text-gray-900">₱{{ number_format($transaction->sale->total_amount, 2) }}</p>
                                 @else
                                     <p class="text-gray-400">-</p>
                                 @endif
                             </td>
-
                             <!-- Quantity Column -->
                             <td class="px-6 py-4 text-center">
                                 @if($transaction->type === 'sales')
@@ -234,6 +251,11 @@
                                                 {{ $transaction->sale->items->count() }} item(s)
                                             </p>
                                         @endif
+                                    </div>
+                                @elseif($transaction->type === 'memberships')
+                                    <div class="flex flex-col items-center">
+                                        <p class="font-semibold text-purple-600 text-lg">1</p>
+                                        <p class="text-xs text-gray-500 mt-1">membership</p>
                                     </div>
                                 @elseif(in_array($transaction->type, ['stock_in', 'stock_out']))
                                     <div class="flex flex-col items-center">
@@ -567,11 +589,10 @@
             const content = document.getElementById('transactionShowContent');
             if (!content) return;
 
-            const typeLabel = transaction.type === 'stock_in'
-                ? 'Stock In'
-                : transaction.type === 'stock_out'
-                ? 'Stock Out'
-                : transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1);
+            const typeLabel = transaction.type === 'stock_in' ? 'Stock In' :
+                            transaction.type === 'stock_out' ? 'Stock Out' :
+                            transaction.type === 'memberships' ? 'Membership' :
+                            transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1);
 
             const formatDate = (dateStr) => {
                 const date = new Date(dateStr);
@@ -587,7 +608,8 @@
             const typeClass = {
                 sales: 'bg-green-100 text-green-800',
                 stock_in: 'bg-blue-100 text-blue-800',
-                stock_out: 'bg-red-100 text-red-800'
+                stock_out: 'bg-red-100 text-red-800',
+                memberships: 'bg-purple-100 text-purple-800'
             }[transaction.type] || '';
 
             let html = `<div class="space-y-5">`;
@@ -607,6 +629,187 @@
                 </div>
             `;
 
+            /* MEMBERSHIP INFORMATION */
+            if (transaction.type === 'memberships' && transaction.sale) {
+                const statusClass = {
+                    paid: 'bg-green-100 text-green-800',
+                    pending: 'bg-yellow-100 text-yellow-800',
+                    cancelled: 'bg-red-100 text-red-800'
+                }[transaction.sale.status] || '';
+
+                const paymentClass = {
+                    cash: 'bg-green-100 text-green-800',
+                    credit_card: 'bg-blue-100 text-blue-800',
+                    gcash: 'bg-purple-100 text-purple-800'
+                }[transaction.sale.payment_method] || '';
+
+                const paymentLabel = transaction.sale.payment_method === 'credit_card' ? 'Credit Card' :
+                                    transaction.sale.payment_method === 'gcash' ? 'GCash' :
+                                    transaction.sale.payment_method?.charAt(0).toUpperCase() + transaction.sale.payment_method?.slice(1);
+
+                html += `
+                    <div class="bg-white border border-gray-200 rounded-lg">
+                        <div class="px-5 py-3 border-b border-gray-200 bg-purple-50">
+                            <h4 class="text-md font-semibold text-gray-800">Membership Transaction</h4>
+                        </div>
+
+                        <div class="p-5 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
+                                <div>
+                                    <p class="text-gray-500">Transaction ID</p>
+                                    <p class="font-semibold text-gray-800">#${transaction.transaction_id}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-500 mb-2">Status</p>
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${statusClass}">
+                                        ${transaction.sale.status.charAt(0).toUpperCase() + transaction.sale.status.slice(1)}
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-500">Member</p>
+                                    <p class="font-semibold text-gray-800">${transaction.sale.user.first_name} ${transaction.sale.user.last_name}</p>
+                                    <p class="text-gray-500">@${transaction.sale.user.username}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-500">Email</p>
+                                    <p class="font-medium text-gray-800">${transaction.sale.user.email}</p>
+                                </div>
+
+                                ${transaction.performer ? `
+                                    <div>
+                                        <p class="text-gray-500">Approved By</p>
+                                        <p class="font-semibold text-gray-800">${transaction.performer.first_name} ${transaction.performer.last_name}</p>
+                                        <p class="text-gray-500">@${transaction.performer.username}</p>
+                                    </div>
+                                ` : ''}
+
+                                <div>
+                                    <p class="text-gray-500">Transaction Date</p>
+                                    <p class="font-medium text-gray-800">${formatDate(transaction.created_at)}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-500">Membership Amount</p>
+                                    <p class="text-xl font-bold text-purple-700">
+                                        ₱${parseFloat(transaction.sale.total_amount).toFixed(2)}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-500 mb-2">Payment Method</p>
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${paymentClass}">
+                                            ${paymentLabel}
+                                        </span>
+
+                                        ${transaction.sale.payment_method === 'gcash' && transaction.sale.reference_code ? `
+                                            <span class="text-sm text-gray-500">Ref:</span>
+                                            <span class="font-semibold text-purple-600 rounded-full px-3 py-1 ${paymentClass}">
+                                                ${transaction.sale.reference_code}
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Check if user has member details
+                if (transaction.sale.user.member) {
+                    const member = transaction.sale.user.member;
+                    const memberStatusClass = {
+                        active: 'bg-green-100 text-green-800',
+                        expired: 'bg-red-100 text-red-800',
+                        inactive: 'bg-gray-100 text-gray-800'
+                    }[member.status] || '';
+
+                    html += `
+                        <div class="bg-white border border-gray-200 rounded-lg">
+                            <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
+                                <h4 class="text-md font-semibold text-gray-800">Member Profile</h4>
+                            </div>
+
+                            <div class="p-5 space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
+                                    <div>
+                                        <p class="text-gray-500">Member ID</p>
+                                        <p class="font-semibold text-gray-800">#${member.member_id}</p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-gray-500 mb-2">Current Status</p>
+                                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${memberStatusClass}">
+                                            ${member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                                        </span>
+                                    </div>
+
+                                    ${member.plan ? `
+                                        <div>
+                                            <p class="text-gray-500">Plan</p>
+                                            <p class="font-semibold text-gray-800">${member.plan.name}</p>
+                                            <p class="text-xs text-gray-500">${member.plan.duration_days} days</p>
+                                        </div>
+                                    ` : ''}
+
+                                    ${member.start_date ? `
+                                        <div>
+                                            <p class="text-gray-500">Start Date</p>
+                                            <p class="font-medium text-gray-800">${formatDate(member.start_date)}</p>
+                                        </div>
+                                    ` : ''}
+
+                                    ${member.end_date ? `
+                                        <div>
+                                            <p class="text-gray-500">End Date</p>
+                                            <p class="font-medium text-gray-800">${formatDate(member.end_date)}</p>
+                                        </div>
+                                    ` : ''}
+
+                                    ${member.mobile_number ? `
+                                        <div>
+                                            <p class="text-gray-500">Mobile Number</p>
+                                            <p class="font-medium text-gray-800">${member.mobile_number}</p>
+                                        </div>
+                                    ` : ''}
+
+                                    ${member.sex ? `
+                                        <div>
+                                            <p class="text-gray-500">Sex</p>
+                                            <p class="font-medium text-gray-800 capitalize">${member.sex}</p>
+                                        </div>
+                                    ` : ''}
+
+                                    ${member.birthday ? `
+                                        <div>
+                                            <p class="text-gray-500">Birthday</p>
+                                            <p class="font-medium text-gray-800">${formatDate(member.birthday)}</p>
+                                        </div>
+                                    ` : ''}
+
+                                    ${member.height ? `
+                                        <div>
+                                            <p class="text-gray-500">Height</p>
+                                            <p class="font-medium text-gray-800">${member.height} cm</p>
+                                        </div>
+                                    ` : ''}
+
+                                    ${member.weight ? `
+                                        <div>
+                                            <p class="text-gray-500">Weight</p>
+                                            <p class="font-medium text-gray-800">${member.weight} kg</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
             /* PRODUCT INFORMATION (for stock movements) */
             if (transaction.product && (transaction.type === 'stock_in' || transaction.type === 'stock_out')) {
                 html += `
@@ -619,7 +822,7 @@
                             <div class="flex flex-col md:flex-row gap-5">
                                 ${transaction.product.image ? `
                                     <img src="/storage/${transaction.product.image}"
-                                         class="w-28 h-28 object-cover rounded-lg border border-gray-200">
+                                        class="w-28 h-28 object-cover rounded-lg border border-gray-200">
                                 ` : ''}
 
                                 <div class="flex-1 space-y-3">
@@ -644,6 +847,11 @@
                                         </div>
 
                                         <div>
+                                            <p class="text-sm text-gray-500">Quantity</p>
+                                            <p class="font-semibold text-gray-800">${transaction.quantity}</p>
+                                        </div>
+
+                                        <div>
                                             <p class="text-sm text-gray-500">Status</p>
                                             <span class="px-3 py-1 rounded-full text-xs font-semibold ${
                                                 transaction.product.status === 'available'
@@ -661,8 +869,8 @@
                 `;
             }
 
-            /* SALE INFORMATION */
-            if (transaction.sale) {
+            /* SALE INFORMATION (for regular sales, not memberships) */
+            if (transaction.sale && transaction.type === 'sales') {
                 const statusClass = {
                     paid: 'bg-green-100 text-green-800',
                     pending: 'bg-yellow-100 text-yellow-800',
@@ -682,7 +890,7 @@
                 html += `
                     <div class="bg-white border border-gray-200 rounded-lg">
                         <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
-                            <h4 class="text-md font-semibold text-gray-800">Related Sale Information</h4>
+                            <h4 class="text-md font-semibold text-gray-800">Sale Information</h4>
                         </div>
 
                         <div class="p-5 space-y-4">
@@ -700,7 +908,7 @@
                                 </div>
 
                                 <div>
-                                    <p class="text-gray-500">Cashier</p>
+                                    <p class="text-gray-500">Customer</p>
                                     <p class="font-semibold text-gray-800">${transaction.sale.user.first_name} ${transaction.sale.user.last_name}</p>
                                     <p class="text-gray-500">@${transaction.sale.user.username}</p>
                                 </div>

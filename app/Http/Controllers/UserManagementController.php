@@ -366,7 +366,7 @@ class UserManagementController extends Controller
     {
         try {
             $member = MemberProfile::findOrFail($memberId);
-            $cashier = Auth::user();
+            $currentUser = Auth::user();
             $user = $member->user;
             $plan = $member->plan;
 
@@ -402,12 +402,12 @@ class UserManagementController extends Controller
             $this->generateAndSendQRCode($user, $member, $plan);
 
             $sale = Sales::create([
-                'user_id' => $cashier->user_id,
+                'user_id' => $currentUser->user_id,
                 'total_amount' => $plan->price,
                 'tax' => 0,
                 'discount' => 0,
                 'payment_method' => $paymentMethod,
-                'reference_code' => $referenceCode, 
+                'reference_code' => $referenceCode,
                 'status' => 'paid',
                 'type' => 'memberships',
             ]);
@@ -424,12 +424,14 @@ class UserManagementController extends Controller
 
             Transactions::create([
                 'sales_id' => $sale->sales_id,
-                'type' => 'sales',
+                'type' => 'memberships',
+                'performed_by' => $currentUser->user_id,
+                'quantity' => 1,
                 'timestamp' => now(),
             ]);
 
             Logs::create([
-                'user_id' => $cashier->user_id,
+                'user_id' => $currentUser->user_id,
                 'action' => "{$actionType} for: {$user->first_name} {$user->last_name} - Plan: {$plan->name} - Payment: {$paymentMethod}",
                 'timestamp' => now(),
             ]);

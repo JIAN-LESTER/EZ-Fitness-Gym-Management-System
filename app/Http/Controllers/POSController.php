@@ -300,7 +300,7 @@ class POSController extends Controller
                     SalesItem::create([
                         'sales_id'   => $sale->sales_id,
                         'product_id' => $item->product_id,
-                        'quantity'   => $totalQuantity,
+                        'quantity'   => $item->quantity,
                         'price' => $item->price,
                         'sub_total'  => $item->sub_total,
                     ]);
@@ -317,7 +317,7 @@ class POSController extends Controller
 
                 Transactions::create([
                     'sales_id' => $sale->sales_id,
-                    'quantity'   => $item->quantity,
+                    'quantity'   => $totalQuantity,
                     'type' => 'sales',
                     'timestamp' => now(),
                 ]);

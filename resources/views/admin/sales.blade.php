@@ -94,15 +94,6 @@
                                             <span class="ml-2 text-xs font-medium text-gray-700">GCash</span>
                                             <span class="ml-auto px-1.5 py-0.5 text-[10px] bg-purple-100 text-purple-700 rounded-full mr-1">GCash</span>
                                         </label>
-
-                                        <label class="flex items-center px-1 py-1.5 hover:bg-gray-50 rounded cursor-pointer transition-colors">
-                                            <input type="checkbox" name="payment_method[]" value="credit_card"
-                                                {{ in_array('credit_card', request('payment_method', [])) ? 'checked' : '' }}
-                                                onchange="updateFilterCount()"
-                                                class="w-3.5 h-3.5 text-blue-600 rounded focus:ring-1 focus:ring-blue-500 ml-1">
-                                            <span class="ml-2 text-xs font-medium text-gray-700">Credit Card</span>
-                                            <span class="ml-auto px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full mr-1">Card</span>
-                                        </label>
                                     </div>
                                 </div>
 
@@ -286,7 +277,7 @@
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Reference Code</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
@@ -294,7 +285,6 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse($sales as $sale)
                         <tr class="hover:bg-gray-50 transition-colors group">
-
                             <td class="px-6 py-4">
                                 <p class="font-medium text-gray-900">{{ $sale->user->first_name }} {{ $sale->user->last_name }}</p>
                                 <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $sale->user->username }}</p>
@@ -305,9 +295,8 @@
                             <td class="px-6 py-4 text-center">
                                 <span class="px-3 py-1 rounded-full text-xs font-semibold
                                     {{ $sale->payment_method === 'cash' ? 'bg-green-100 text-green-800' : '' }}
-                                    {{ $sale->payment_method === 'credit_card' ? 'bg-blue-100 text-blue-800' : '' }}
                                     {{ $sale->payment_method === 'gcash' ? 'bg-purple-100 text-purple-800' : '' }}">
-                                    {{ $sale->payment_method === 'credit_card' ? 'Credit Card' : ucfirst($sale->payment_method) }}
+                                    {{ ucfirst($sale->payment_method) }}
                                 </span>
                             </td>
                             <!-- Reference Code Column -->
@@ -332,32 +321,32 @@
                                     {{ ucfirst($sale->status) }}
                                 </span>
                             </td>
-                             <td class="px-6 py-4">
+                            <td class="px-6 py-4">
                                 <p class="text-gray-900">{{ \Carbon\Carbon::parse($sale->created_at)->format('M d, Y') }}</p>
                                 <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($sale->created_at)->format('h:i A') }}</p>
                             </td>
-      <td class="px-6 py-4 text-center">
-    <div class="flex items-center justify-center gap-2">
-        <button onclick="showSale('{{ $sale->sales_id }}')"
-            class="text-gray-500 hover:text-gray-700 transition-colors"
-            title="View Details">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-        </button>
+                                <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="showSale('{{ $sale->sales_id }}')"
+                                        class="text-gray-500 hover:text-gray-700 transition-colors"
+                                        title="View Details">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
 
-        @if(Auth::user()->role === 'admin')
-        <button onclick="confirmDelete('{{ $sale->sales_id }}')"
-            class="text-red-500 hover:text-red-700 transition-colors"
-            title="Delete Sale">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-        </button>
-        @endif
-    </div>
-</td>
+                                    @if(Auth::user()->role === 'admin')
+                                    <button onclick="confirmDelete('{{ $sale->sales_id }}')"
+                                        class="text-red-500 hover:text-red-700 transition-colors"
+                                        title="Delete Sale">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>
@@ -666,9 +655,7 @@ function closeDeleteModal() {
                             <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Payment Method</p>
                             <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold
                                 ${sale.payment_method === 'cash' ? 'bg-green-100 text-green-800' : ''}
-                                ${sale.payment_method === 'credit_card' ? 'bg-blue-100 text-blue-800' : ''}
                                 ${sale.payment_method === 'gcash' ? 'bg-purple-100 text-purple-800' : ''}">
-                                ${sale.payment_method === 'credit_card' ? 'Credit Card' : sale.payment_method.charAt(0).toUpperCase() + sale.payment_method.slice(1)}
                             </span>
                         </div>
                         ${sale.payment_method === 'gcash' && sale.reference_code ? `

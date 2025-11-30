@@ -657,16 +657,18 @@
                     @endif
 
                     {{-- Member fields - always visible for staff --}}
-                   <div id="addMemberFields" class="space-y-4 pt-4
-                        style="{{ $isStaff ? 'display: block;' : '' }}">
-                        <h3 class="text-sm font-semibold text-gray-700">Member Profile
-                            {{ $isStaff ? '(Required)' : '(Optional)' }}
+                    <div id="addMemberFields" class="space-y-4 pt-4" style="{{ $isStaff ? 'display: block;' : '' }}">
+                        <h3 class="text-sm font-semibold text-gray-700">
+                            Member Profile {{ $isStaff ? '(Required)' : '(Optional)' }}
                         </h3>
 
                         <div>
-                            <label for="plan_id"
-                                class="block text-sm font-medium text-gray-700">Membership Plan
-                                {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
+                            <label for="plan_id" class="block text-sm font-medium text-gray-700">
+                                Membership Plan
+                                @if($isStaff)
+                                    <span class="text-red-500">*</span>
+                                @endif
+                            </label>
                             <select name="plan_id" id="plan_id" {{ $isStaff ? 'required' : '' }}
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="">Select a plan{{ $isStaff ? '' : ' (optional)' }}</option>
@@ -679,8 +681,12 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="sex" class="block text-sm font-medium text-gray-700">Sex
-                                    {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
+                                <label for="sex" class="block text-sm font-medium text-gray-700">
+                                    Sex
+                                    @if($isStaff)
+                                        <span class="text-red-500">*</span>
+                                    @endif
+                                </label>
                                 <select name="sex" id="sex" {{ $isStaff ? 'required' : '' }}
                                     class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                     <option value="">Select...</option>
@@ -689,9 +695,12 @@
                                 </select>
                             </div>
                             <div>
-                                <label for="birthday"
-                                    class="block text-sm font-medium text-gray-700">Birthday
-                                    {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
+                                <label for="birthday" class="block text-sm font-medium text-gray-700">
+                                    Birthday
+                                    @if($isStaff)
+                                        <span class="text-red-500">*</span>
+                                    @endif
+                                </label>
                                 <input type="date" name="birthday" id="birthday" {{ $isStaff ? 'required' : '' }}
                                     class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
@@ -699,23 +708,24 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label for="height"
-                                    class="block text-sm font-medium text-gray-700">Height (cm)</label>
+                                <label for="height" class="block text-sm font-medium text-gray-700">Height (cm)</label>
                                 <input type="number" step="0.1" name="height" id="height"
                                     class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
                             <div>
-                                <label for="weight"
-                                    class="block text-sm font-medium text-gray-700">Weight (kg)</label>
+                                <label for="weight" class="block text-sm font-medium text-gray-700">Weight (kg)</label>
                                 <input type="number" step="0.1" name="weight" id="weight"
                                     class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
                         </div>
 
                         <div>
-                            <label for="mobile_number"
-                                class="block text-sm font-medium text-gray-700">Mobile Number
-                                {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
+                            <label for="mobile_number" class="block text-sm font-medium text-gray-700">
+                                Mobile Number
+                                @if($isStaff)
+                                    <span class="text-red-500">*</span>
+                                @endif
+                            </label>
                             <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789" {{ $isStaff ? 'required' : '' }}
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>

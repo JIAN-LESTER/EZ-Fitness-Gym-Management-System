@@ -343,7 +343,7 @@
     <div id="addProductModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
         <div class="absolute inset-0 bg-opacity-50" onclick="closeModal('addProductModal')"></div>
 
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+        <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
             <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
                 <h2 class="text-xl font-semibold">Add New Product</h2>
             </header>
@@ -354,14 +354,14 @@
 
                     <!-- Image Upload -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product Image</label>
+                        <label class="block text-sm font-medium text-gray-800 dark:text-gray-500 mb-2">Product Image</label>
                         <div class="image-preview" id="addImagePreview">
                             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
                         </div>
                         <input type="file" name="image" id="addImage" accept="image/*" onchange="previewImage(this, 'addImagePreview')"
-                            class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:bg-gray-700 cursor-pointer">
+                            class="mt-2 block w-full text-sm text-gray-800 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:bg-gray-700 cursor-pointer">
                         @error('image')
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                         @enderror
@@ -369,8 +369,8 @@
 
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700">Product Name <span class="text-red-500">*</span></label>
-                        <input type="text" name="name" id="name" required
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        <input type="text" name="name" id="name" placeholder="Name" required
+                            class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         @error('name')
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                         @enderror
@@ -379,7 +379,7 @@
                     <div>
                         <label for="category_id" class="block text-sm font-medium text-gray-700">Category <span class="text-red-500">*</span></label>
                         <select name="category_id" id="category_id" required
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             <option value="">Select a category</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->category_id }}">{{ $category->name }}</option>
@@ -392,8 +392,8 @@
 
                     <div>
                         <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea name="description" id="description" rows="3"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"></textarea>
+                        <textarea name="description" id="description" rows="3" placeholder="Description"
+                            class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"></textarea>
                         @error('description')
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                         @enderror
@@ -402,8 +402,8 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="price" class="block text-sm font-medium text-gray-700">Price (₱) <span class="text-red-500">*</span></label>
-                            <input type="number" step="0.01" name="price" id="price" required min="0"
-                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            <input type="number" step="0.01" name="price" id="price" required min="0" placeholder="₱ ---"
+                                class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('price')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                             @enderror
@@ -411,8 +411,8 @@
 
                         <div>
                             <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity <span class="text-red-500">*</span></label>
-                            <input type="number" step="1" name="quantity" id="quantity" required min="0"
-                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            <input type="number" step="1" name="quantity" id="quantity" required min="0" placeholder="---"
+                                class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('quantity')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                             @enderror
@@ -422,7 +422,7 @@
                     <div>
                         <label for="status" class="block text-sm font-medium text-gray-700">Status <span class="text-red-500">*</span></label>
                         <select name="status" id="status" required
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             <option value="available">Available</option>
                             <option value="unavailable">Unavailable</option>
                         </select>
@@ -431,7 +431,7 @@
                         @enderror
                     </div>
 
-                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white dark:bg-gray-900 pb-2">
                         <button type="button" onclick="closeModal('addProductModal')"
     class="px-6 py-2 rounded-lg border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 w-full sm:w-auto transition-colors">Cancel</button>
                        <button type="submit"
@@ -446,7 +446,7 @@
     <div id="productShowModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden p-4">
         <div class="absolute inset-0 bg-opacity-50" onclick="closeModal('productShowModal')"></div>
 
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto modal-scrollbar">
+        <div class="relative bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto modal-scrollbar">
             <header class="bg-gray-800 text-white p-4 sm:p-5 rounded-t-2xl sticky top-0 z-10 flex justify-between items-center">
                 <h2 class="text-lg sm:text-xl font-semibold">Product Details</h2>
                 <button onclick="closeModal('productShowModal')" class="text-white hover:text-gray-200">
@@ -468,7 +468,7 @@
     <div id="editProductModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden p-4">
         <div class="absolute inset-0 bg-opacity-50" onclick="closeModal('editProductModal')"></div>
 
-        <div class="relative bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <header class="bg-gray-800 text-white p-4 sm:p-5 rounded-t-2xl flex-shrink-0">
                 <h2 class="text-lg sm:text-xl font-semibold">Edit Product</h2>
             </header>
@@ -477,30 +477,29 @@
                 <form id="editProductForm" method="POST" enctype="multipart/form-data" class="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
                     @csrf
                     @method('PUT')
-
                     <!-- Image Upload -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product Image</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-500 mb-2">Product Image</label>
                         <div class="image-preview" id="editImagePreview">
                             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
                         </div>
                         <input type="file" name="image" id="editImage" accept="image/*" onchange="previewImage(this, 'editImagePreview')"
-                            class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:bg-gray-700 cursor-pointer">
+                            class="mt-2 block w-full text-sm bg-white-400 text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:bg-gray-700 cursor-pointer">
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep current image</p>
                     </div>
 
                     <div>
                         <label for="edit_name" class="block text-sm font-medium text-gray-700">Product Name <span class="text-red-500">*</span></label>
-                        <input type="text" name="name" id="edit_name" required
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        <input type="text" name="name" id="edit_name" required placeholder="Name"
+                            class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                     </div>
 
                     <div>
                         <label for="edit_category_id" class="block text-sm font-medium text-gray-700">Category <span class="text-red-500">*</span></label>
                         <select name="category_id" id="edit_category_id" required
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             <option value="">Select a category</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->category_id }}">{{ $category->name }}</option>
@@ -510,34 +509,34 @@
 
                     <div>
                         <label for="edit_description" class="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea name="description" id="edit_description" rows="3"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"></textarea>
+                        <textarea name="description" id="edit_description" rows="3" placeholder="Description"
+                            class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"></textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="edit_price" class="block text-sm font-medium text-gray-700">Price (₱) <span class="text-red-500">*</span></label>
-                            <input type="number" step="0.01" name="price" id="edit_price" required min="0"
-                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            <input type="number" step="0.01" name="price" id="edit_price" required min="0" placeholder="₱ ---"
+                                class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>
 
                         <div>
                             <label for="edit_quantity" class="block text-sm font-medium text-gray-700">Quantity <span class="text-red-500">*</span></label>
-                            <input type="number" step="1" name="quantity" id="edit_quantity" required min="0"
-                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            <input type="number" step="1" name="quantity" id="edit_quantity" required min="0" placeholder="---"
+                                class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>
                     </div>
 
                     <div>
                         <label for="edit_status" class="block text-sm font-medium text-gray-700">Status <span class="text-red-500">*</span></label>
                         <select name="status" id="edit_status" required
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             <option value="available">Available</option>
                             <option value="unavailable">Unavailable</option>
                         </select>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white dark:bg-gray-900 pb-2">
                         <button type="button" onclick="closeModal('editProductModal')"
     class="px-6 py-2 rounded-lg border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 w-full sm:w-auto transition-colors">Cancel</button>
                         <button type="submit"
