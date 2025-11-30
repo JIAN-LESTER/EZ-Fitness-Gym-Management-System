@@ -3,27 +3,23 @@
 @section('content')
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-4xl mx-auto">
-        <!-- Header -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">QR Code Scanner</h1>
             <p class="text-gray-600">Scan member QR codes for attendance check-in</p>
         </div>
 
-        <!-- Scanner Container -->
         <div class="bg-white rounded-lg shadow-md p-6">
             <div class="grid md:grid-cols-2 gap-6">
-                <!-- Video Scanner -->
                 <div>
                     <h3 class="text-lg font-semibold mb-4">Camera Scanner</h3>
                     <div class="relative">
-                        <!-- QR Reader Container -->
                         <div id="qr-reader" style="width: 100%;"></div>
                         <div id="scanner-status" class="mt-3 text-center text-sm text-gray-600">
                             Initializing camera...
                         </div>
                     </div>
                     
-                    <!-- Camera Controls -->
+                    <!-- Control sa Camera -->
                     <div class="mt-4 flex gap-2">
                         <button id="start-scan" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                             Start Scanning
@@ -34,7 +30,7 @@
                     </div>
                 </div>
 
-                <!-- Result Display -->
+                <!-- Ang user profile -->
                 <div>
                     <h3 class="text-lg font-semibold mb-4">Scan Result</h3>
                     <div id="result-container" class="bg-gray-50 rounded-lg p-6 min-h-[300px]">
@@ -49,7 +45,7 @@
             </div>
         </div>
 
-        <!-- Recent Check-ins -->
+        <!-- Recent nga Check-ins -->
         <div class="bg-white rounded-lg shadow-md p-6 mt-6">
             <h3 class="text-lg font-semibold mb-4">Recent Check-ins Today</h3>
             <div id="recent-checkins">
@@ -59,7 +55,7 @@
     </div>
 </div>
 
-<!-- Include QR Scanner Library -->
+<!-- QR Scanner Library gamit JS -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <script>
@@ -72,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusDiv = document.getElementById('scanner-status');
     const resultContainer = document.getElementById('result-container');
 
-    // Initialize scanner
+    // Initialize sa scanner
     html5QrCode = new Html5Qrcode("qr-reader");
 
     // Start scanning
