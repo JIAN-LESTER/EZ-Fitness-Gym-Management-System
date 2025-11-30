@@ -134,11 +134,13 @@ Route::middleware(['auth'])->group(function () {
 Route::prefix('sales')->name('sales.')->group(function () {
     Route::get('/', [SalesController::class, 'index'])->name('index');
     Route::get('/{id}', [SalesController::class, 'show'])->name('show');
+    Route::delete('/{id}', [SalesController::class, 'destroy'])->name('sales.destroy');
 });
 
 Route::prefix('transactions')->name('transactions.')->group(function () {
     Route::get('/', [TransactionController::class, 'index'])->name('index');
     Route::get('/{id}', [TransactionController::class, 'show'])->name('show');
+    Route::delete('/{id}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
 });
 
 Route::post('/member/request-renewal', [MemberProfileController::class, 'requestRenewal'])->name('member.request-renewal');
