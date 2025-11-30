@@ -15,7 +15,7 @@
             <form method="GET" id="searchForm" class="mb-3">
                 <input type="text" name="search" id="searchInput" value="{{ request('search') }}"
                     placeholder="Search product by name or description..."
-                    class="w-full px-3 py-2 border border-gray-200 text-gray-800 rounded-lg focus:ring-2 focus:ring-green-600 focus:outline-none text-sm">
+                    class="w-full px-3 py-2 border border-gray-200 text-gray-800 rounded-lg focus:ring-2 focus:ring-gray-500 focus:outline-none text-sm">
                 @if(request('category'))
                     <input type="hidden" name="category" value="{{ request('category') }}">
                 @endif
@@ -24,17 +24,17 @@
             <div class="mb-3 overflow-x-auto">
                 <div class="flex gap-2 pb-2">
                     {{-- ALL PRODUCTS TAB --}}
-                    <a href="{{ route('pos.index', ['search' => request('search')]) }}" class="px-4 py-1.5 rounded border transition-all duration-200 text-xs font-medium                                                                                                                                                                                   {{ !request('category')
-        ? 'bg-green-600 text-white '
-        : 'bg-white text-gray-800 hover:bg-green-50 border-gray-300' }}">
+                    <a href="{{ route('pos.index', ['search' => request('search')]) }}" class="px-4 py-1.5 rounded border transition-all duration-200 text-xs font-medium                                                                                                                                                                                  {{ !request('category')
+    ? 'bg-gray-800 text-white '
+    : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300' }}">
                         All
                     </a>
 
                     @foreach($categories as $category)
                                 <a href="{{ route('pos.index', ['category' => $category->category_id, 'search' => request('search')]) }}"
                                     class="px-4 py-1.5 rounded border text-xs font-medium transition-all duration-200 whitespace-nowrap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              {{ request('category') == $category->category_id
-                        ? 'bg-green-600 text-white'
-                        : 'bg-white text-gray-800 hover:bg-green-50 border-gray-300' }}">
+    ? 'bg-gray-800 text-white'
+    : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300' }}">
                                     {{ $category->name }}
                                 </a>
                     @endforeach
@@ -58,14 +58,14 @@
                                 @endif
                             </div>
 
-                            <span class="absolute top-1 right-1 
+                            <span class="absolute top-1 right-1
                                                                 @if($item->quantity == 0)
                                                                     bg-red-100 text-red-800
                                                                 @elseif($item->quantity < 5)
                                                                     bg-yellow-100 text-yellow-800
                                                                 @else
                                                                     bg-blue-100 text-blue-800
-                                                                @endif 
+                                                                @endif
                                                                 text-xs font-semibold px-1.5 py-0.5 rounded stock-badge"
                                 data-product-id="{{ $item->product->product_id }}" data-initial-stock="{{ $item->quantity }}">
                                 Stock: {{ $item->quantity }}
@@ -83,7 +83,7 @@
                                 <p class="font-bold text-green-700 text-xs">₱{{ number_format($item->product->price, 2) }}</p>
 
                                 <button onclick="addToCart({{ $item->product->product_id }})"
-                                    class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                    class="bg-gray-800 hover:bg-gray-700 text-white px-2 py-1 rounded text-xs flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Add to Cart" data-product-id="{{ $item->product->product_id }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
                                         stroke="currentColor">
@@ -120,7 +120,7 @@
 
             <div class="flex justify-between items-center mb-3">
                 <h2 class="text-lg font-semibold text-gray-800">Cart</h2>
-                <span id="cart-count" class="bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded-full">0</span>
+                <span id="cart-count" class="bg-gray-800 text-white text-xs font-semibold px-2 py-1 rounded-full">0</span>
             </div>
 
             <div id="cart-items" class="flex-1 overflow-y-auto border-b pb-2 space-y-2">
@@ -139,9 +139,9 @@
                 <div class="flex flex-row gap-2">
                     <!-- Cash Payment Option -->
                     <button type="button" data-payment-method="cash"
-                        class="payment-button flex flex-col items-center p-1 border-2 border-gray-200 rounded cursor-pointer transition-all duration-200 hover:border-green-400 hover:bg-green-50 flex-1 h-full">
-                        <div class="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full mb-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none"
+                        class="payment-button flex flex-col items-center p-1 border-2 border-gray-200 rounded cursor-pointer transition-all duration-200 hover:border-gray-400 hover:bg-gray-50 flex-1 h-full">
+                        <div class="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full mb-1">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -174,11 +174,11 @@
             <div class="mt-3 space-y-2">
                 <div class="mt-4 border-t border-gray-200 pt-3 space-y-2">
                     <!-- Total Amount -->
-                    <div class="flex justify-between items-center bg-green-50 rounded p-2 -mx-1">
+                    <div class="flex justify-between items-center bg-gray-50 rounded p-2 -mx-1">
                         <div>
                             <p class="text-base font-bold text-gray-800">Total</p>
                         </div>
-                        <p id="cart-total" class="text-xl font-bold text-green-700">₱0.00</p>
+                        <p id="cart-total" class="text-xl font-bold text-gray-800">₱0.00</p>
                     </div>
 
                     <!-- Optional: Items Count -->
@@ -195,7 +195,7 @@
                 </div>
 
                 <button id="checkoutBtn" onclick="checkout()"
-                    class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
+                    class="w-full bg-gray-800 text-white py-2 rounded hover:bg-gray-700 transition font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
                     disabled>
                     Checkout
                 </button>
@@ -220,7 +220,7 @@
                 </button>
 
                 <button id="okConfirm"
-                    class="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm">
+                    class="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 transition text-sm">
                     Confirm
                 </button>
             </div>
@@ -231,10 +231,10 @@
         <div class="bg-white rounded-xl shadow-lg w-80 p-5">
             <h2 class="text-base font-semibold text-gray-800 mb-2">GCash Payment</h2>
             <p class="text-gray-600 mb-4 text-sm">Please enter the GCash reference code:</p>
-            
+
             <div class="mb-4">
-                <input type="text" 
-                    id="gcashReferenceCode" 
+                <input type="text"
+                    id="gcashReferenceCode"
                     placeholder="Enter reference code"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-semibold text-gray-800">
                 <p class="text-xs text-gray-500 mt-1">Enter the transaction reference code from GCash</p>
@@ -259,23 +259,23 @@
     <div id="cashModal" class="fixed inset-0 bg-opacity-40 hidden backdrop-blur items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-lg w-80 p-5">
             <h2 class="text-base font-semibold text-gray-800 mb-2">Cash Payment</h2>
-            
+
             <!-- Display Total Amount -->
-            <div class="mb-3 p-2 bg-green-50 rounded-lg">
-                <p class="text-xs text-gray-600">Total Amount Due</p>
-                <p id="cashTotalAmount" class="text-lg font-bold text-green-700">₱0.00</p>
+            <div class="mb-3 p-2 bg-gray-50 rounded-lg">
+    <p class="text-xs text-gray-600">Total Amount Due</p>
+    <p id="cashTotalAmount" class="text-lg font-bold text-gray-800">₱0.00</p>
             </div>
-            
+
             <div class="mb-4">
                 <label for="cashAmount" class="block text-sm font-medium text-gray-700 mb-1">
                     Amount Paid
                 </label>
-                <input type="number" 
-                    id="cashAmount" 
+                <input type="number"
+                    id="cashAmount"
                     placeholder="0.00"
                     step="0.01"
                     min="0"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm text-gray-800 font-semibold"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-sm text-gray-800 font-semibold"
                     oninput="calculateChange()">
                 <p class="text-xs text-gray-500 mt-1">Enter the amount received from customer</p>
             </div>
@@ -299,7 +299,7 @@
                 </button>
 
                 <button id="confirmCash"
-                    class="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    class="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 transition text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
                     disabled>
                     Confirm Payment
                 </button>
@@ -324,25 +324,25 @@
 
             // Set cash as default selected on page load
             const cashButton = document.querySelector('[data-payment-method="cash"]');
-            if (cashButton) {
-                cashButton.classList.add('border-green-500', 'bg-green-50');
-            }
+if (cashButton) {
+    cashButton.classList.add('border-gray-500', 'bg-gray-50');
+}
 
             paymentButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     const paymentMethod = this.getAttribute('data-payment-method');
 
                     // Remove active styles from all payment buttons
-                    paymentButtons.forEach(btn => {
-                        btn.classList.remove(
-                            'border-green-500', 'border-blue-500', 'border-purple-500',
-                            'bg-green-50', 'bg-blue-50', 'bg-purple-50'
-                        );
-                    });
+paymentButtons.forEach(btn => {
+    btn.classList.remove(
+        'border-gray-500', 'border-blue-500', 'border-purple-500',
+        'bg-gray-50', 'bg-blue-50', 'bg-purple-50'
+    );
+});
 
                     // Add active style to selected button
-                    if (paymentMethod === 'cash') {
-                        this.classList.add('border-green-500', 'bg-green-50');
+                   if (paymentMethod === 'cash') {
+    this.classList.add('border-gray-500', 'bg-gray-50');
                     } else if (paymentMethod === 'credit_card') {
                         this.classList.add('border-blue-500', 'bg-blue-50');
                     } else if (paymentMethod === 'gcash') {
@@ -359,7 +359,7 @@
 
             // Function to get the selected payment method from buttons
             function getSelectedPaymentMethod() {
-                const activeButton = document.querySelector('.payment-button.border-green-500, .payment-button.border-blue-500, .payment-button.border-purple-500');
+    const activeButton = document.querySelector('.payment-button.border-gray-500, .payment-button.border-blue-500, .payment-button.border-purple-500');
                 return activeButton ? activeButton.getAttribute('data-payment-method') : null;
             }
 
@@ -566,7 +566,7 @@
                             <p class="text-sm font-semibold text-green-700">₱${parseFloat(item.subtotal).toFixed(2)}</p>
                         </div>
                         <div class="flex items-center gap-1">
-                            <button onclick="updateQuantity(${item.cart_item_id}, ${item.product_id}, ${item.quantity - 1})" 
+                            <button onclick="updateQuantity(${item.cart_item_id}, ${item.product_id}, ${item.quantity - 1})"
                                     class="w-7 h-7 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center transition shadow-sm hover:shadow"
                                     ${item.quantity <= 1 ? 'disabled' : ''}
                                     title="Decrease quantity">
@@ -574,13 +574,13 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
                                 </svg>
                             </button>
-                            <input type="number" 
-                                    value="${item.quantity}" 
+                            <input type="number"
+                                    value="${item.quantity}"
                                     onchange="updateQuantity(${item.cart_item_id}, ${item.product_id}, this.value)"
-                                    class="w-14 text-center border text-gray-800 border-gray-300 rounded px-1 py-1 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none shadow-sm"
+                                    class="w-14 text-center border text-gray-800 border-gray-300 rounded px-1 py-1 text-sm focus:ring-2 focus:ring-gray-500 focus:outline-none shadow-sm"
                                     min="1"
                                     title="Quantity">
-                            <button onclick="updateQuantity(${item.cart_item_id}, ${item.product_id}, ${item.quantity + 1})" 
+                            <button onclick="updateQuantity(${item.cart_item_id}, ${item.product_id}, ${item.quantity + 1})"
                                     class="w-7 h-7 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center transition shadow-sm hover:shadow"
                                     title="Increase quantity">
                                 <svg class="w-3 h-3 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -588,7 +588,7 @@
                                 </svg>
                             </button>
                         </div>
-                        <button onclick="removeFromCart(${item.cart_item_id}, ${item.product_id})" 
+                        <button onclick="removeFromCart(${item.cart_item_id}, ${item.product_id})"
                                 class="text-red-500 hover:text-red-700 ml-1 transition p-1 rounded hover:bg-red-50"
                                 title="Remove item">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -764,7 +764,7 @@
             // If payment method is GCash (gcash), show reference code modal
             if (selectedPaymentMethod === 'gcash') {
                 showGcashModal();
-            } 
+            }
             else if (selectedPaymentMethod === 'cash') {
                 showCashModal();
             }
@@ -849,12 +849,12 @@ function showCashModal() {
 
     // Calculate total amount
     const totalAmount = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-    
+
     // Update display
     cashTotal.textContent = `₱${totalAmount.toFixed(2)}`;
     cashInput.value = '';
     cashInput.min = totalAmount.toFixed(2);
-    
+
     // Reset UI
     changeSection.classList.add('hidden');
     insufficientWarning.classList.add('hidden');
@@ -959,7 +959,7 @@ function processCheckout(paymentMethod, referenceCode = null, cashAmount = null,
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        body: JSON.stringify(checkoutData) 
+        body: JSON.stringify(checkoutData)
     })
     .then(r => r.json())
     .then(data => {
