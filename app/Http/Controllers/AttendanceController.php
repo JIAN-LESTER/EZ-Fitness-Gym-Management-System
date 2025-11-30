@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\MemberProfile;
+use App\Models\MembershipPlan;
 use App\Models\Logs;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -165,6 +166,9 @@ class AttendanceController extends Controller
             ->orderBy('check_in_time', 'desc')
             ->paginate(20);
 
-        return view('attendance.member_logs', compact('attendances'));
+        // Get membership plans for the layout
+        $plans = MembershipPlan::all();
+
+        return view('attendance.member_logs', compact('attendances', 'memberProfile', 'plans'));
     }
 }

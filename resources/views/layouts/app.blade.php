@@ -62,15 +62,6 @@ $member = $user->member;
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Users</span>
                             </a>
 
-                            <a href="{{ route('attendance.scanner') }}" @click="profileOpen = false"  class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                                </svg>
-                                <span x-show="sidebarOpen" x-cloak class="transition-opacity">QR Scanner</span>
-                            </a>
-
                             <a href="{{ route('admin.plan_management') }}" @click="profileOpen = false"  class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.plan_management') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
@@ -125,16 +116,46 @@ $member = $user->member;
                                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 <span x-show="sidebarOpen" x-cloak class="transition-opacity">Transactions</span>
+
                             </a>
-                                      <a href="#" @click="profileOpen = false"
-                                class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span x-show="sidebarOpen" x-cloak class="transition-opacity">Attendance Logs</span>
-                            </a>
+                                @if(Auth::user()->role === 'admin')
+                                    <!-- QR Scanner -->
+                                    <a href="{{ route('attendance.scanner') }}" @click="profileOpen = false"
+                                        class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('attendance.scanner') ? 'bg-white/20 text-white' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                        </svg>
+                                        <span x-show="sidebarOpen" x-cloak class="transition-opacity">QR Scanner</span>
+                                    </a>
+
+                                    <!-- Attendance Logs -->
+                                    <a href="{{ route('attendance.admin.logs') }}" @click="profileOpen = false"
+                                        class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('attendance.admin.logs') ? 'bg-white/20 text-white' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span x-show="sidebarOpen" x-cloak class="transition-opacity">Attendance Logs</span>
+                                    </a>
+                                @endif
+
+                                <!-- MEMBER NAVIGATION - Add this to member sidebar -->
+                                @if(Auth::user()->role === 'member')
+                                    <!-- My Attendance -->
+                                    <a href="{{ route('attendance.member.logs') }}" @click="profileOpen = false"
+                                        class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('attendance.member.logs') ? 'bg-white/20 text-white' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span x-show="sidebarOpen" x-cloak class="transition-opacity">My Attendance</span>
+                                    </a>
+                                @endif
+
                             <a href="{{ route('logs.show') }}" @click="profileOpen = false"
                                 class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
@@ -154,6 +175,17 @@ $member = $user->member;
                             d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
                     </svg>
                     <span x-show="sidebarOpen" x-cloak class="transition-opacity">Dashboard</span>
+                </a>
+
+                <!-- My Attendance Link - NEW -->
+                <a href="{{ route('attendance.member.logs') }}" @click="profileOpen = false"
+                    class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('attendance.member.logs') ? 'bg-white/20 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span x-show="sidebarOpen" x-cloak class="transition-opacity">My Attendance</span>
                 </a>
 
           
