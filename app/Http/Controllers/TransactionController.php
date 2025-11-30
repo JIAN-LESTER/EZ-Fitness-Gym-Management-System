@@ -1,9 +1,5 @@
 <?php
 
-// ============================================
-// TRANSACTION CONTROLLER (App/Http/Controllers/TransactionController.php)
-// ============================================
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -19,17 +15,30 @@ class TransactionController extends Controller
         $statuses = $request->get('status', []);
 
         $transactions = Transactions::query()
-            ->with(['sale.user', 'sale.items.product'])
+            ->with([
+                'sale.user', 
+                'sale.items.product',
+                'performer', // Added performer relationship
+                'product'    // Added product relationship for stock transactions
+            ])
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
                     $q->where('transaction_id', 'like', "%{$search}%")
                         ->orWhere('type', 'like', "%{$search}%")
+                        ->orWhereHas('performer', function ($q3) use ($search) {
+                            $q3->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('username', 'like', "%{$search}%");
+                        })
                         ->orWhereHas('sale', function ($q2) use ($search) {
                             $q2->whereHas('user', function ($q3) use ($search) {
                                 $q3->where('first_name', 'like', "%{$search}%")
                                     ->orWhere('last_name', 'like', "%{$search}%")
                                     ->orWhere('username', 'like', "%{$search}%");
                             });
+                        })
+                        ->orWhereHas('product', function ($q4) use ($search) {
+                            $q4->where('name', 'like', "%{$search}%");
                         });
                 });
             })
@@ -46,9 +55,13 @@ class TransactionController extends Controller
     public function show($id)
     {
         try {
-            // Use where() instead of find() - same as Sales controller
             $transaction = Transactions::where('transaction_id', $id)
-                ->with(['sale.user', 'sale.items.product'])
+                ->with([
+                    'sale.user', 
+                    'sale.items.product',
+                    'performer',
+                    'product'
+                ])
                 ->first();
 
             if (!$transaction) {

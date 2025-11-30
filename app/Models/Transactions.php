@@ -19,21 +19,25 @@ class Transactions extends Model
         'sales_id',
         'product_id',
         'type',
+        'performed_by',
+        'quantity'
+
     ];
 
     public function sale()
     {
         return $this->belongsTo(Sales::class, 'sales_id', 'sales_id');
     }
-
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
-
-        public function product()
+    public function product()
     {
-        return $this->belongsTo(User::class, 'product_id', 'product_id');
+        return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
-
+    public function performer()
+    {
+        return $this->belongsTo(User::class, 'performed_by', 'user_id');
+    }
 }

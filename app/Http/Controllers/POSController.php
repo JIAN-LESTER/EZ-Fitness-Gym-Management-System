@@ -257,6 +257,9 @@ class POSController extends Controller
                 // Calculate totals with discount
                 $finalTotal = $cartItems->sum('sub_total');
 
+                // Calculate total quantity BEFORE the loop
+                $totalQuantity = $cartItems->sum('quantity');
+
                 $saleData = [
                     'user_id' => $userId,
                     'total_amount' => $finalTotal,
@@ -297,7 +300,7 @@ class POSController extends Controller
                     SalesItem::create([
                         'sales_id'   => $sale->sales_id,
                         'product_id' => $item->product_id,
-                        'quantity'   => $item->quantity,
+                        'quantity'   => $totalQuantity,
                         'price' => $item->price,
                         'sub_total'  => $item->sub_total,
                     ]);
@@ -311,10 +314,10 @@ class POSController extends Controller
                 if ($cart->status == 'checked_out') {
                     $cart->delete();
                 }
-                $currentUser = Auth::user();
 
                 Transactions::create([
                     'sales_id' => $sale->sales_id,
+                    'quantity'   => $item->quantity,
                     'type' => 'sales',
                     'timestamp' => now(),
                 ]);
