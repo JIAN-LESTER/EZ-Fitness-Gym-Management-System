@@ -73,7 +73,7 @@
           @enderror
         </div>
         <div>
-          <input type="text" id="last_name" name="last_name" placeholder="Firstname"
+          <input type="text" id="last_name" name="last_name" placeholder="Lastname"
             class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
           @error('last_name')
             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
