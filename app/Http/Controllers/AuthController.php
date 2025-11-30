@@ -7,14 +7,17 @@ use App\Models\Member_Profile;
 use App\Models\member;
 use App\Models\MemberProfile;
 use App\Models\User;
-use Auth;
-use Hash;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Str;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Auth\Events\PasswordReset;
 
 class AuthController extends Controller
 {
@@ -127,8 +130,12 @@ class AuthController extends Controller
 
 
         // Role-based dashboard redirection
-        if ($user->role === 'admin') {
+        if ($user->role === 'admin' || $user->role === 'staff') {
             return redirect()->route('admin.dashboard')->with('success', 'Logged in successfully');
+        }
+
+        if ($user->role === 'staff') {
+            return redirect()->route('staff.dashboard')->with('success', 'Logged in successfully');
         }
 
         if ($user->role === 'member') {
@@ -228,7 +235,7 @@ class AuthController extends Controller
             return redirect('/login')->with('error', 'Invalid or expired verification link.');
         }
 
-        // Double-check that the hash matches the user’s email
+        // Double-check that the hash matches the user's email
         if (!hash_equals($hash, sha1($user->getEmailForVerification()))) {
             return redirect('/login')->with('error', 'Invalid verification link.');
         }
@@ -247,6 +254,99 @@ class AuthController extends Controller
     }
 
 
+    /**
+     * Show the form to request a password reset link.
+     */
+    public function showForgotPasswordForm()
+    {
+        return view('authentication.forgot-password');
+    }
 
-   
+    /**
+     * Handle the password reset link request.
+     */
+    public function sendResetLinkEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ], [
+            'email.required' => 'Email is required',
+            'email.email' => 'Please enter a valid email address',
+            'email.exists' => 'We could not find an account with that email address',
+        ]);
+
+        // Send the password reset link
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        if ($status === Password::RESET_LINK_SENT) {
+            // Log the action
+            $user = User::where('email', $request->email)->first();
+            if ($user) {
+                Logs::create([
+                    'user_id' => $user->user_id,
+                    'action' => "{$user->last_name} requested a password reset link.",
+                    'timestamp' => now(),
+                ]);
+            }
+
+            return back()->with('status', 'Password reset link sent! Please check your email.');
+        }
+
+        return back()->with('error', 'Unable to send password reset link. Please try again.');
+    }
+
+    /**
+     * Show the password reset form.
+     */
+    public function showResetPasswordForm(Request $request, $token)
+    {
+        return view('authentication.reset-password', [
+            'token' => $token,
+            'email' => $request->email
+        ]);
+    }
+
+    /**
+     * Handle the password reset.
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email|exists:users,email',
+            'password' => 'required|string|min:6|confirmed',
+        ], [
+            'email.required' => 'Email is required',
+            'email.exists' => 'We could not find an account with that email address',
+            'password.required' => 'Password is required',
+            'password.min' => 'Password must be at least 6 characters',
+            'password.confirmed' => 'Password confirmation does not match',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->save();
+
+                // Log the password reset
+                Logs::create([
+                    'user_id' => $user->user_id,
+                    'action' => "{$user->last_name} has reset their password.",
+                    'timestamp' => now(),
+                ]);
+
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return redirect()->route('loginForm')->with('success', 'Password reset successfully! You can now log in with your new password.');
+        }
+
+        return back()->with('error', 'This password reset link is invalid or has expired. Please request a new one.');
+    }
 }

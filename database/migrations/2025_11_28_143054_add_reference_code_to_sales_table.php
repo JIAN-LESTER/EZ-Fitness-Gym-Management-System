@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stock_in', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('sales', function (Blueprint $table) {
+            $table->string('reference_code', 100)->nullable()->after('payment_method');
         });
     }
 
@@ -22,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('stock_in');
+        Schema::table('sales', function (Blueprint $table) {
+            $table->dropColumn('reference_code');
+        });
     }
 };
