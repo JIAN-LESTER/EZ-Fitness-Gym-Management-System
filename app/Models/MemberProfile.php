@@ -77,6 +77,7 @@ class MemberProfile extends Model
 
         return $today->diffInDays($endDate) <= $days;
     }
+    
     /**
      * Get days remaining (negative if expired)
      */

@@ -36,16 +36,14 @@ class Product extends Model
         return $this->belongsTo(Categories::class, 'category_id', 'category_id');
     }
 
-       public function transaction()
+    public function transaction()
     {
         return $this->hasMany(Transactions::class, 'product_id', 'product_id');
     }
 
 
-    public function cartItems() {
-    return $this->hasMany(CartItem::class, 'product_id', 'product_id');
-}
-
-
-
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class, 'product_id', 'product_id');
+    }
 }
