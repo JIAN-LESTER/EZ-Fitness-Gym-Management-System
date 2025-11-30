@@ -67,7 +67,6 @@ class TransactionController extends Controller
             ], 500);
         }
     }
-
     public function destroy($id)
     {
         try {
@@ -116,4 +115,5 @@ class TransactionController extends Controller
                 ->with('error', 'Error deleting transaction: ' . $e->getMessage());
         }
     }
+
 }
