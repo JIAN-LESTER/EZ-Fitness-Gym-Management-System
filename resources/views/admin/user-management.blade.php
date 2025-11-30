@@ -39,6 +39,23 @@
     .clickable-row:hover {
         background-color: #f9fafb;
     }
+
+    /* Fix for input text visibility */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+        color: #111827 !important;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: #9CA3AF !important;
+    }
 </style>
 
 @section('content')
@@ -53,7 +70,7 @@
             class="flex justify-between items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
             <h2 class="text-2xl font-bold text-gray-800">User Management</h2>
             <button onclick="openModal('addUserModal')"
-                class="flex items-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
+                class="flex items-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                     class="w-5 h-5">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -85,7 +102,7 @@
                     <!-- Filter Dropdown -->
                     <div class="relative w-full sm:w-auto">
                         <button type="button" onclick="toggleFilterDropdown()"
-                            class="w-full sm:w-auto flex items-center justify-between gap-2 bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-xl hover:border-gray-300 shadow-sm transition-all duration-300 font-semibold whitespace-nowrap">
+                            class="w-full sm:w-auto flex items-center justify-between gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-sm transition-all duration-300 font-semibold whitespace-nowrap">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -167,7 +184,7 @@
                                         Clear All
                                     </button>
                                     <button type="submit"
-                                        class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors">
+                                        class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
                                         Apply Filters
                                     </button>
                                 </div>
@@ -177,7 +194,7 @@
 
                     <div class="w-full sm:w-auto">
                         <button type="submit"
-                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
+                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -378,7 +395,7 @@
 
                                         <td class="px-6 py-4">
                                             <span
-                                                class="px-2 py-1 text-xs font-semibold rounded-full 
+                                                class="px-2 py-1 text-xs font-semibold rounded-full
                                                                     {{ $user->role === 'admin' ? 'bg-red-100 text-red-700' :
                                     ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700') }}">
                                                 {{ ucfirst($user->role) }}
@@ -387,7 +404,7 @@
 
                                         <td class="px-6 py-4">
                                             <span
-                                                class="px-2 py-1 text-xs font-semibold rounded-full 
+                                                class="px-2 py-1 text-xs font-semibold rounded-full
                                                                     {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
                                                 {{ ucfirst($user->status) }}
                                             </span>
@@ -397,7 +414,7 @@
                                             @if($user->member)
                                                     <div class="text-sm">
                                                         <span
-                                                            class="px-2 py-1 text-xs font-semibold rounded-full 
+                                                            class="px-2 py-1 text-xs font-semibold rounded-full
                                                                                             {{ $user->member->status === 'active' ? 'bg-green-100 text-green-700' :
                                                 ($user->member->status === 'expired' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700') }}">
                                                             {{ $user->member->plan->name ?? 'No Plan' }}
@@ -531,7 +548,7 @@
                         <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Prev</span>
                     @else
                         <a href="{{ $users->previousPageUrl() }}"
-                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-md transition-all duration-200 font-medium">Prev</a>
+                            class="px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-gray-700 shadow-md transition-all duration-200 font-medium">Prev</a>
                     @endif
 
                     <span class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium sm:hidden">
@@ -540,7 +557,7 @@
 
                     @if($users->hasMorePages())
                         <a href="{{ $users->nextPageUrl() }}"
-                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-md transition-all duration-200 font-medium">Next</a>
+                            class="px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-gray-700 shadow-md transition-all duration-200 font-medium">Next</a>
                     @else
                         <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Next</span>
                     @endif
@@ -554,8 +571,8 @@
         <div class="absolute inset-0" onclick="closeModal('addUserModal')"></div>
 
         <div
-            class="relative bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
-            <header class="bg-gray-600 text-white p-5 rounded-t-2xl flex-shrink-0">
+            class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+            <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
                 <h2 class="text-xl font-semibold">Add New {{ $isStaff ? 'Member' : 'User' }}</h2>
             </header>
 
@@ -570,19 +587,19 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">First
+                            <label for="first_name" class="block text-sm font-medium text-gray-700">First
                                 Name</label>
                             <input type="text" name="first_name" id="first_name"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('first_name')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                         <div>
-                            <label for="last_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Last
+                            <label for="last_name" class="block text-sm font-medium text-gray-700">Last
                                 Name</label>
                             <input type="text" name="last_name" id="last_name"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('last_name')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                             @enderror
@@ -591,18 +608,18 @@
 
                     <div>
                         <label for="username"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+                            class="block text-sm font-medium text-gray-700">Username</label>
                         <input type="text" name="username" id="username"
-                            class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         @error('username')
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
                         <input type="email" name="email" id="email"
-                            class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         @error('email')
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                         @enderror
@@ -611,27 +628,27 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="password"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                                class="block text-sm font-medium text-gray-700">Password</label>
                             <input type="password" name="password" id="password"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('password')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                         <div>
                             <label for="password_confirmation"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</label>
+                                class="block text-sm font-medium text-gray-700">Confirm Password</label>
                             <input type="password" name="password_confirmation" id="password_confirmation"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>
                     </div>
 
                     {{-- Only show role selector for non-staff --}}
                     @if(!$isStaff)
                         <div>
-                            <label for="role" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                            <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
                             <select name="role" id="role" onchange="toggleMemberFields('add')"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="member">Member</option>
                                 <option value="staff">Staff</option>
                                 <option value="admin">Admin</option>
@@ -640,18 +657,18 @@
                     @endif
 
                     {{-- Member fields - always visible for staff --}}
-                    <div id="addMemberFields" class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-4"
+                   <div id="addMemberFields" class="space-y-4 pt-4
                         style="{{ $isStaff ? 'display: block;' : '' }}">
-                        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Member Profile
+                        <h3 class="text-sm font-semibold text-gray-700">Member Profile
                             {{ $isStaff ? '(Required)' : '(Optional)' }}
                         </h3>
 
                         <div>
                             <label for="plan_id"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Membership Plan
+                                class="block text-sm font-medium text-gray-700">Membership Plan
                                 {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
                             <select name="plan_id" id="plan_id" {{ $isStaff ? 'required' : '' }}
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="">Select a plan{{ $isStaff ? '' : ' (optional)' }}</option>
                                 @foreach($plans ?? [] as $plan)
                                     <option value="{{ $plan->plan_id }}">{{ $plan->name }} -
@@ -662,10 +679,10 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="sex" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sex
+                                <label for="sex" class="block text-sm font-medium text-gray-700">Sex
                                     {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
                                 <select name="sex" id="sex" {{ $isStaff ? 'required' : '' }}
-                                    class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                     <option value="">Select...</option>
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
@@ -673,43 +690,43 @@
                             </div>
                             <div>
                                 <label for="birthday"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Birthday
+                                    class="block text-sm font-medium text-gray-700">Birthday
                                     {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
                                 <input type="date" name="birthday" id="birthday" {{ $isStaff ? 'required' : '' }}
-                                    class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label for="height"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Height (cm)</label>
+                                    class="block text-sm font-medium text-gray-700">Height (cm)</label>
                                 <input type="number" step="0.1" name="height" id="height"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
                             <div>
                                 <label for="weight"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Weight (kg)</label>
+                                    class="block text-sm font-medium text-gray-700">Weight (kg)</label>
                                 <input type="number" step="0.1" name="weight" id="weight"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
                         </div>
 
                         <div>
                             <label for="mobile_number"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mobile Number
+                                class="block text-sm font-medium text-gray-700">Mobile Number
                                 {{ $isStaff ? '<span class="text-red-500">*</span>' : '' }}</label>
                             <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789" {{ $isStaff ? 'required' : '' }}
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>
                     </div>
 
                     <div
-                        class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-gray-100 dark:bg-gray-900 pb-2">
+                        class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
                         <button type="button" onclick="closeModal('addUserModal')"
-                            class="px-6 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
+                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto"to">Cancel</button>
                         <button type="submit"
-                            class="px-6 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto">Add
+                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">Add
                             {{ $isStaff ? 'Member' : 'User' }}</button>
                     </div>
                 </form>
@@ -722,8 +739,8 @@
         <div class="absolute inset-0" onclick="closeModal('editUserModal')"></div>
 
         <div
-            class="relative bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
-            <header class="bg-gray-600 text-white p-5 rounded-t-2xl flex-shrink-0">
+            class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+            <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
                 <h2 class="text-xl font-semibold">Edit {{ $isStaff ? 'Member' : 'User' }}</h2>
             </header>
 
@@ -741,18 +758,18 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="edit_first_name"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
+                                class="block text-sm font-medium text-gray-700">First Name</label>
                             <input type="text" name="first_name" id="edit_first_name"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('first_name')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                         <div>
                             <label for="edit_last_name"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
+                                class="block text-sm font-medium text-gray-700">Last Name</label>
                             <input type="text" name="last_name" id="edit_last_name"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('last_name')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                             @enderror
@@ -761,9 +778,9 @@
 
                     <div>
                         <label for="edit_username"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+                            class="block text-sm font-medium text-gray-700">Username</label>
                         <input type="text" name="username" id="edit_username"
-                            class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         @error('username')
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                         @enderror
@@ -771,9 +788,9 @@
 
                     <div>
                         <label for="edit_email"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                            class="block text-sm font-medium text-gray-700">Email</label>
                         <input type="email" name="email" id="edit_email"
-                            class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         @error('email')
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                         @enderror
@@ -782,28 +799,28 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="edit_password"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Password
+                                class="block text-sm font-medium text-gray-700">New Password
                                 (Optional)</label>
                             <input type="password" name="password" id="edit_password"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('password')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                         <div>
                             <label for="edit_password_confirmation"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</label>
+                                class="block text-sm font-medium text-gray-700">Confirm Password</label>
                             <input type="password" name="password_confirmation" id="edit_password_confirmation"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>
                     </div>
 
                     @if(!$isStaff)
                         <div>
                             <label for="edit_role"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                                class="block text-sm font-medium text-gray-700">Role</label>
                             <select name="role" id="edit_role" onchange="toggleMemberFields('edit')"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="member">Member</option>
                                 <option value="staff">Staff</option>
                                 <option value="admin">Admin</option>
@@ -812,9 +829,9 @@
 
                         <div>
                             <label for="edit_status"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                                class="block text-sm font-medium text-gray-700">Status</label>
                             <select name="status" id="edit_status"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                             </select>
@@ -822,17 +839,17 @@
                     @endif
 
                     {{-- Member fields - always visible for staff --}}
-                    <div id="editMemberFields" class="space-y-4 border-t border-gray-300 dark:border-gray-700 pt-4"
+                    <div id="editMemberFields" class="space-y-4 border-t border-2 border-gray-300 border-gray-700 (change to border-gray-200) pt-4"
                         style="{{ $isStaff ? 'display: block;' : '' }}">
-                        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Member Profile
+                        <h3 class="text-sm font-semibold text-gray-700">Member Profile
                             {{ $isStaff ? '(Required)' : '(Optional)' }}
                         </h3>
 
                         <div>
                             <label for="edit_plan_id"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Membership Plan</label>
+                                class="block text-sm font-medium text-gray-700">Membership Plan</label>
                             <select name="plan_id" id="edit_plan_id"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="">Select a plan (optional)</option>
                                 @foreach($plans ?? [] as $plan)
                                     <option value="{{ $plan->plan_id }}">{{ $plan->name }} -
@@ -844,9 +861,9 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="edit_sex"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sex</label>
+                                    class="block text-sm font-medium text-gray-700">Sex</label>
                                 <select name="sex" id="edit_sex"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                     <option value="">Select...</option>
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
@@ -854,41 +871,41 @@
                             </div>
                             <div>
                                 <label for="edit_birthday"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Birthday</label>
+                                    class="block text-sm font-medium text-gray-700">Birthday</label>
                                 <input type="date" name="birthday" id="edit_birthday"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label for="edit_height"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Height (cm)</label>
+                                    class="block text-sm font-medium text-gray-700">Height (cm)</label>
                                 <input type="number" step="0.1" name="height" id="edit_height"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
                             <div>
                                 <label for="edit_weight"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Weight (kg)</label>
+                                    class="block text-sm font-medium text-gray-700">Weight (kg)</label>
                                 <input type="number" step="0.1" name="weight" id="edit_weight"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
                         </div>
 
                         <div>
                             <label for="edit_mobile_number"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mobile Number</label>
+                                class="block text-sm font-medium text-gray-700">Mobile Number</label>
                             <input type="tel" name="mobile_number" id="edit_mobile_number" placeholder="e.g. 09123456789"
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>
                     </div>
 
                     <div
-                        class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-gray-100 dark:bg-gray-900 pb-2">
+                        class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
                         <button type="button" onclick="closeModal('editUserModal')"
-                            class="px-6 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
+                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto"to">Cancel</button>
                         <button type="submit"
-                            class="px-6 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto">Update
+                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">Update
                             {{ $isStaff ? 'Member' : 'User' }}</button>
                     </div>
                 </form>
@@ -901,8 +918,8 @@
         <div class="absolute inset-0" onclick="closeModal('userShowModal')"></div>
 
         <div
-            class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-            <header class="bg-gray-600 text-white p-5 rounded-t-2xl sticky top-0 z-10 flex justify-between items-center">
+            class="block text-sm font-medium text-gray-700">
+            <header class="bg-gray-800 text-white p-5 rounded-t-2xl sticky top-0 z-10 flex justify-between items-center">
                 <h2 class="text-xl font-semibold">User Details</h2>
                 <button onclick="closeModal('userShowModal')" class="text-white hover:text-gray-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
@@ -927,7 +944,7 @@
         const showError = (element, message) => {
             if (!element) return;
 
-            element.classList.remove('border-gray-300');
+            element.classList.remove('border-2 border-gray-300');
             element.classList.add('border-red-500');
 
             const container = element.closest('div');
@@ -944,7 +961,7 @@
             if (!element) return;
 
             element.classList.remove('border-red-500');
-            element.classList.add('border-gray-300');
+            element.classList.add('border-2 border-gray-300');
 
             const container = element.closest('div');
             const errorSpan = container.querySelector('.error-message');
@@ -957,7 +974,7 @@
             form.querySelectorAll('.error-message').forEach(el => el.remove());
             form.querySelectorAll('.border-red-500').forEach(el => {
                 el.classList.remove('border-red-500');
-                el.classList.add('border-gray-300');
+                el.classList.add('border-2 border-gray-300');
             });
         };
 
@@ -1393,8 +1410,8 @@
                     `<div class="w-32 h-32 rounded-full bg-gray-400 flex items-center justify-center text-4xl font-bold text-white">${avatarInitial}</div>`
                 }
 
-                                <h2 class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-200">${user.first_name} ${user.last_name}</h2>
-                                <p class="text-gray-500 dark:text-gray-400">@${user.username}</p>
+                                <h2 class="text-2xl font-bold mt-4 text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${user.first_name} ${user.last_name}</h2>
+                                <p class="text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">@${user.username}</p>
 
                                 <div class="flex gap-2 mt-3">
                                     <span class="px-3 py-1 text-xs rounded-full ${roleColor}">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
@@ -1402,26 +1419,26 @@
                                 </div>
                             </div>
 
-                            <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
+                            <div class="border-t border-gray-200 border-gray-700 (change to border-gray-200) pt-4 space-y-3">
                                 <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                                    <p class="text-gray-800 dark:text-gray-200 font-medium break-all">${user.email}</p>
+                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Email</p>
+                                    <p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium break-all">${user.email}</p>
                                 </div>
                                 <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">User ID</p>
-                                    <p class="text-gray-800 dark:text-gray-200 font-medium">#${user.user_id}</p>
+                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">User ID</p>
+                                    <p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">#${user.user_id}</p>
                                 </div>
                                 ${user.created_at ? `
                                     <div>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Member Since</p>
-                                        <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                        <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Member Since</p>
+                                        <p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                     </div>
                                 ` : ''}
                             </div>
 
-                            <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-                                <button onclick="closeModal('userShowModal'); editUser('${user.user_id}');" 
-                                        class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <div class="border-t border-gray-200 border-gray-700 (change to border-gray-200) pt-4 mt-4">
+                                <button onclick="closeModal('userShowModal'); editUser('${user.user_id}');"
+                                        class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
                                     Edit User
                                 </button>
                             </div>
@@ -1451,8 +1468,8 @@
                 }
 
                 html += `
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-xl font-bold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) mb-4 flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
                             </svg>
@@ -1460,55 +1477,55 @@
                         </h3>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Plan</p>
-                                <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${user.member.plan ? user.member.plan.name : 'No Plan Assigned'}</p>
-                                ${user.member.plan ? `<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">₱${parseFloat(user.member.plan.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${user.member.plan.duration_days} days</p>` : ''}
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">Plan</p>
+                                <p class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${user.member.plan ? user.member.plan.name : 'No Plan Assigned'}</p>
+                                ${user.member.plan ? `<p class="text-sm text-gray-600 text-gray-400  (if on dark background, change to text-gray-600) mt-1">₱${parseFloat(user.member.plan.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${user.member.plan.duration_days} days</p>` : ''}
                             </div>
 
-                            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Membership Status</p>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">Membership Status</p>
                                 <span class="inline-block px-3 py-1 text-sm rounded-full ${memberStatusColor}">${user.member.status.charAt(0).toUpperCase() + user.member.status.slice(1)}</span>
                             </div>
 
                             ${user.member.start_date ? `
-                                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Start Date</p>
-                                    <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${new Date(user.member.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">Start Date</p>
+                                    <p class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${new Date(user.member.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                                 </div>
                             ` : ''}
 
                             ${user.member.end_date ? `
-                                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">End Date</p>
-                                    <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${new Date(user.member.end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">End Date</p>
+                                    <p class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${new Date(user.member.end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                                     ${daysRemainingHTML}
                                 </div>
                             ` : ''}
                         </div>
 
-                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4">Personal Information</h4>
+                        <div class="mt-6 pt-6 border-t border-gray-200 border-gray-700 (change to border-gray-200)">
+                            <h4 class="font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) mb-4">Personal Information</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                ${user.member.sex ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Sex</p><p class="text-gray-800 dark:text-gray-200 font-medium capitalize">${user.member.sex}</p></div>` : ''}
-                                ${user.member.birthday ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Birthday</p><p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(user.member.birthday).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>` : ''}
-                                ${user.member.height ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Height</p><p class="text-gray-800 dark:text-gray-200 font-medium">${user.member.height} cm</p></div>` : ''}
-                                ${user.member.weight ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Weight</p><p class="text-gray-800 dark:text-gray-200 font-medium">${user.member.weight} kg</p></div>` : ''}
-                                ${user.member.mobile_number ? `<div><p class="text-sm text-gray-500 dark:text-gray-400">Mobile Number</p><p class="text-gray-800 dark:text-gray-200 font-medium">${user.member.mobile_number}</p></div>` : ''}
-                                ${user.member.qr_code ? `<div class="md:col-span-2"><p class="text-sm text-gray-500 dark:text-gray-400 mb-2">QR Code</p><img src="/storage/${user.member.qr_code}" alt="QR Code" class="w-32 h-32 border border-gray-200 rounded"></div>` : ''}
+                                ${user.member.sex ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Sex</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium capitalize">${user.member.sex}</p></div>` : ''}
+                                ${user.member.birthday ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Birthday</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${new Date(user.member.birthday).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>` : ''}
+                                ${user.member.height ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Height</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${user.member.height} cm</p></div>` : ''}
+                                ${user.member.weight ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Weight</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${user.member.weight} kg</p></div>` : ''}
+                                ${user.member.mobile_number ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Mobile Number</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${user.member.mobile_number}</p></div>` : ''}
+                                ${user.member.qr_code ? `<div class="md:col-span-2"><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-2">QR Code</p><img src="/storage/${user.member.qr_code}" alt="QR Code" class="w-32 h-32 border border-gray-200 rounded"></div>` : ''}
                             </div>
                         </div>
                     </div>
                 `;
             } else {
                 html += `
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="bg-white rounded-lg shadow-md p-6">
                         <div class="text-center py-8">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                             </svg>
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Not a Member</h3>
-                            <p class="text-gray-600 dark:text-gray-400">This user doesn't have a membership profile yet.</p>
+                            <h3 class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) mb-2">Not a Member</h3>
+                            <p class="text-gray-600 text-gray-400  (if on dark background, change to text-gray-600)">This user doesn't have a membership profile yet.</p>
                         </div>
                     </div>
                 `;
@@ -1812,14 +1829,14 @@
 
                     <div class="space-y-3">
                         <!-- Cash Option -->
-                        <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all hover:border-green-400" 
+                        <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all hover:border-green-400"
                              data-payment="cash"
                              style="transition: all 0.3s ease;">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                                         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                   d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                         </svg>
                                     </div>
@@ -1837,14 +1854,14 @@
                         </div>
 
                         <!-- GCash Option -->
-                        <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-400" 
+                        <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-400"
                              data-payment="gcash"
                              style="transition: all 0.3s ease;">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                                         <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                   d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                         </svg>
                                     </div>
@@ -1947,9 +1964,9 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     Enter GCash Reference Number:
                                 </label>
-                                <input type="text" 
-                                       id="gcash-reference" 
-                                       class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                <input type="text"
+                                       id="gcash-reference"
+                                       class="w-full px-4 py-2 border-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                        placeholder="e.g., 1234567890123">
                                 <p class="text-xs text-gray-500 mt-2">This is required for GCash payments</p>
                             </div>
