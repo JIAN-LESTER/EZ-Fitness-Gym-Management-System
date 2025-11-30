@@ -166,111 +166,124 @@
                     </thead>
 
                     <!-- Updated Table Body -->
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse($transactions as $transaction)
-                            <tr class="hover:bg-gray-50 transition-colors group">
-                                <!-- Transaction ID -->
-                                <td class="px-6 py-4 text-center">
-                                    <p class="font-medium text-gray-900">#{{ $transaction->transaction_id }}</p>
-                                </td>
-                                
-                                <!-- Transaction Type -->
-                                <td class="px-6 py-4 text-center">
-                                    <span class="px-3 py-1 rounded-full text-xs font-semibold
-                                        {{ $transaction->type === 'sales' ? 'bg-green-100 text-green-800' : '' }}
-                                        {{ $transaction->type === 'stock_in' ? 'bg-blue-100 text-blue-800' : '' }}
-                                        {{ $transaction->type === 'stock_out' ? 'bg-red-100 text-red-800' : '' }}">
-                                        {{ $transaction->type === 'stock_in' ? 'Stock In' : ($transaction->type === 'stock_out' ? 'Stock Out' : ucfirst($transaction->type)) }}
-                                    </span>
-                                </td>
-                                
-                                <!-- Performed By -->
-                                <td class="px-6 py-4 text-center">
-                                    @if($transaction->performer)
-                                        <p class="font-medium text-gray-900">{{ $transaction->performer->first_name }} {{ $transaction->performer->last_name }}</p>
-                                        <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $transaction->performer->username }}</p>
-                                    @elseif($transaction->type === 'sales' && $transaction->sale && $transaction->sale->user)
-                                        <!-- Fallback for sales transactions - show the sale's user -->
-                                        <p class="font-medium text-gray-900">{{ $transaction->sale->user->first_name }} {{ $transaction->sale->user->last_name }}</p>
-                                        <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $transaction->sale->user->username }}</p>
-                                        <p class="text-xs text-blue-600">Cashier</p>
-                                    @else
-                                        <p class="text-gray-400">System</p>
-                                    @endif
-                                </td>
+<tbody class="divide-y divide-gray-100">
+    @forelse($transactions as $transaction)
+        <tr class="hover:bg-gray-50 transition-colors group">
+            <!-- Transaction ID -->
+            <td class="px-6 py-4 text-center">
+                <p class="font-medium text-gray-900">#{{ $transaction->transaction_id }}</p>
+            </td>
+            
+            <!-- Transaction Type -->
+            <td class="px-6 py-4 text-center">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold
+                    {{ $transaction->type === 'sales' ? 'bg-green-100 text-green-800' : '' }}
+                    {{ $transaction->type === 'stock_in' ? 'bg-blue-100 text-blue-800' : '' }}
+                    {{ $transaction->type === 'stock_out' ? 'bg-red-100 text-red-800' : '' }}">
+                    {{ $transaction->type === 'stock_in' ? 'Stock In' : ($transaction->type === 'stock_out' ? 'Stock Out' : ucfirst($transaction->type)) }}
+                </span>
+            </td>
+            
+            <!-- Performed By -->
+            <td class="px-6 py-4 text-center">
+                @if($transaction->performer)
+                    <p class="font-medium text-gray-900">{{ $transaction->performer->first_name }} {{ $transaction->performer->last_name }}</p>
+                    <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $transaction->performer->username }}</p>
+                @elseif($transaction->type === 'sales' && $transaction->sale && $transaction->sale->user)
+                    <!-- Fallback for sales transactions - show the sale's user -->
+                    <p class="font-medium text-gray-900">{{ $transaction->sale->user->first_name }} {{ $transaction->sale->user->last_name }}</p>
+                    <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $transaction->sale->user->username }}</p>
+                    <p class="text-xs text-blue-600">Cashier</p>
+                @else
+                    <p class="text-gray-400">System</p>
+                @endif
+            </td>
 
-                                <!-- Amount (Only for Sales) -->
-                                <td class="px-6 py-4 text-center">
-                                    @if($transaction->type === 'sales' && $transaction->sale)
-                                        <p class="font-semibold text-gray-900">₱{{ number_format($transaction->sale->total_amount, 2) }}</p>
-                                    @else
-                                        <p class="text-gray-400">-</p>
-                                    @endif
-                                </td>
-                                
-                                <!-- Quantity Column -->
-                                <td class="px-6 py-4 text-center">
-                                    @if($transaction->type === 'sales')
-                                        <!-- For Sales: Use the quantity from transaction record -->
-                                        <div class="flex flex-col items-center">
-                                            <p class="font-semibold text-green-600 text-lg">
-                                                {{ $transaction->quantity }}
-                                            </p>
-                                            @if($transaction->sale && $transaction->sale->items)
-                                                <p class="text-xs text-gray-500 mt-1">
-                                                    {{ $transaction->sale->items->count() }} item(s)
-                                                </p>
-                                            @endif
-                                        </div>
-                                    @elseif(in_array($transaction->type, ['stock_in', 'stock_out']))
-                                        <!-- For Stock Transactions: Use transaction quantity -->
-                                        <div class="flex flex-col items-center">
-                                            <p class="font-semibold text-lg
-                                                {{ $transaction->type === 'stock_in' ? 'text-blue-600' : 'text-red-600' }}">
-                                                {{ $transaction->quantity }}
-                                            </p>
-                                            @if($transaction->product)
-                                                <p class="text-xs text-gray-500 mt-1">{{ $transaction->product->name }}</p>
-                                            @endif
-                                        </div>
-                                    @else
-                                        <p class="text-gray-400">-</p>
-                                    @endif
-                                </td>
-                                
-                                <!-- Date -->
-                                <td class="px-6 py-4 text-center">
-                                    <p class="text-gray-900">{{ \Carbon\Carbon::parse($transaction->created_at)->format('M d, Y') }}</p>
-                                    <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($transaction->created_at)->format('h:i A') }}</p>
-                                </td>
-                                
-                                <!-- Actions -->
-                                <td class="px-6 py-4 text-center">
-                                    <button onclick="showTransaction('{{ $transaction->transaction_id }}')" 
-                                            class="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
-                                            title="View Details">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 mr-1">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                        View
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                                    <div class="flex flex-col items-center justify-center">
-                                        <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                        </svg>
-                                        <p class="text-lg font-medium">No transactions found</p>
-                                        <p class="text-sm mt-1">Try adjusting your search criteria</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
+            <!-- Amount (Only for Sales) -->
+            <td class="px-6 py-4 text-center">
+                @if($transaction->type === 'sales' && $transaction->sale)
+                    <p class="font-semibold text-gray-900">₱{{ number_format($transaction->sale->total_amount, 2) }}</p>
+                @else
+                    <p class="text-gray-400">-</p>
+                @endif
+            </td>
+            
+            <!-- Quantity Column -->
+            <td class="px-6 py-4 text-center">
+                @if($transaction->type === 'sales')
+                    <!-- For Sales: Use the quantity from transaction record -->
+                    <div class="flex flex-col items-center">
+                        <p class="font-semibold text-green-600 text-lg">
+                            {{ $transaction->quantity }}
+                        </p>
+                        @if($transaction->sale && $transaction->sale->items)
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ $transaction->sale->items->count() }} item(s)
+                            </p>
+                        @endif
+                    </div>
+                @elseif(in_array($transaction->type, ['stock_in', 'stock_out']))
+                    <!-- For Stock Transactions: Use transaction quantity -->
+                    <div class="flex flex-col items-center">
+                        <p class="font-semibold text-lg
+                            {{ $transaction->type === 'stock_in' ? 'text-blue-600' : 'text-red-600' }}">
+                            {{ $transaction->quantity }}
+                        </p>
+                        @if($transaction->product)
+                            <p class="text-xs text-gray-500 mt-1">{{ $transaction->product->name }}</p>
+                        @endif
+                    </div>
+                @else
+                    <p class="text-gray-400">-</p>
+                @endif
+            </td>
+            
+            <!-- Date -->
+            <td class="px-6 py-4 text-center">
+                <p class="text-gray-900">{{ \Carbon\Carbon::parse($transaction->created_at)->format('M d, Y') }}</p>
+                <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($transaction->created_at)->format('h:i A') }}</p>
+            </td>
+            
+            <!-- Actions - Updated to include delete button -->
+            <td class="px-6 py-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                    <button onclick="showTransaction('{{ $transaction->transaction_id }}')" 
+                        class="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                        title="View Details">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 mr-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        View
+                    </button>
+                    
+                    @if(Auth::user()->role === 'admin')
+                    <button onclick="confirmDelete('{{ $transaction->transaction_id }}')" 
+                        class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200"
+                        title="Delete Transaction">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 mr-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                    </button>
+                    @endif
+                </div>
+            </td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                <div class="flex flex-col items-center justify-center">
+                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <p class="text-lg font-medium">No transactions found</p>
+                    <p class="text-sm mt-1">Try adjusting your search criteria</p>
+                </div>
+            </td>
+        </tr>
+    @endforelse
+</tbody>
             </table>
         </div>
 
@@ -365,6 +378,17 @@
 </div>
 
     <script>
+@if(session('success'))
+    <div class="alert alert-success mb-4">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger mb-4">
+        {{ session('error') }}
+    </div>
+@endif
 
 window.confirmDelete = function(transactionId) {
     const form = document.getElementById('deleteForm');
