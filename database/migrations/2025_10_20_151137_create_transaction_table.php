@@ -15,7 +15,7 @@
         {
             Schema::create('transactions', function (Blueprint $table) {
                 $table->id('transaction_id');
-                $table->enum('type', ['sales', 'stock_in', 'stock_out']);
+                $table->enum('type', ['sales', 'stock_in', 'stock_out', 'memberships']);
                 $table->foreignId('sales_id')->nullable()->references('sales_id')->on('sales')->onDelete('cascade');
                 $table->timestamps();
             });
