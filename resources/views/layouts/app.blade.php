@@ -428,7 +428,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
     <div class="flex-1 @yield('fullscreen', 'flex flex-col')">
         <!-- Header - conditionally positioned for fullscreen pages -->
         <header
-            class="@yield('header-class', 'relative') h-16 bg-gray-800 text-white p-4 flex justify-between items-center shadow-sm dark:bg-white dark:text-gray-800 z-30">
+            class="@yield('header-class', 'relative') h-16 bg-white text-white p-4 flex justify-between items-center shadow-sm dark:bg-white dark:text-gray-800 z-30">
             <div class="flex items-center space-x-3">
                 <button @click="sidebarOpen = !sidebarOpen"
                     class="p-2 rounded hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white focus:outline-none transition-colors">
