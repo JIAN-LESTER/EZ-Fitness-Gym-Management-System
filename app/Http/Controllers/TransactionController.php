@@ -21,7 +21,7 @@ class TransactionController extends Controller
         $statuses = $request->get('status', []);
 
         $transactions = Transactions::query()
-            ->with(['sale.user', 'sale.items.product'])
+            ->with(['sale.user.member.plan', 'sale.items.product', 'performer'])
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
                     $q->where('transaction_id', 'like', "%{$search}%")
@@ -32,6 +32,11 @@ class TransactionController extends Controller
                                     ->orWhere('last_name', 'like', "%{$search}%")
                                     ->orWhere('username', 'like', "%{$search}%");
                             });
+                        })
+                        ->orWhereHas('performer', function ($q2) use ($search) {
+                            $q2->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('username', 'like', "%{$search}%");
                         });
                 });
             })
@@ -50,7 +55,7 @@ class TransactionController extends Controller
         try {
             // Use where() instead of find() - same as Sales controller
             $transaction = Transactions::where('transaction_id', $id)
-                ->with(['sale.user', 'sale.items.product'])
+                ->with(['sale.user.member.plan', 'sale.items.product', 'performer'])
                 ->first();
 
             if (!$transaction) {
@@ -67,6 +72,7 @@ class TransactionController extends Controller
             ], 500);
         }
     }
+    
     public function destroy($id)
     {
         try {
@@ -86,7 +92,9 @@ class TransactionController extends Controller
             
             // Get related information before deletion
             $relatedInfo = '';
-            if ($transaction->sale) {
+            if ($transaction->sale && $transaction->type === 'memberships') {
+                $relatedInfo = " (Membership - " . $transaction->sale->user->first_name . " " . $transaction->sale->user->last_name . ")";
+            } elseif ($transaction->sale) {
                 $relatedInfo = " (Sale #" . $transaction->sale->sales_id . ")";
             } elseif ($transaction->product) {
                 $relatedInfo = " (Product: " . $transaction->product->name . ")";
@@ -115,5 +123,4 @@ class TransactionController extends Controller
                 ->with('error', 'Error deleting transaction: ' . $e->getMessage());
         }
     }
-
 }

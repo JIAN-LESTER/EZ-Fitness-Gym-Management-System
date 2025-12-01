@@ -4,30 +4,48 @@
 @section('header', 'Categories Management')
 
 <style>
-/* Custom Scrollbar for Modals */
-.modal-scrollbar::-webkit-scrollbar {
-    width: 8px;
-}
+    /* Custom Scrollbar for Modals */
+    .modal-scrollbar::-webkit-scrollbar {
+        width: 8px;
+    }
 
-.modal-scrollbar::-webkit-scrollbar-track {
-    background: #F3F4F6;
-    border-radius: 10px;
-}
+    .modal-scrollbar::-webkit-scrollbar-track {
+        background: #F3F4F6;
+        border-radius: 10px;
+    }
 
-.modal-scrollbar::-webkit-scrollbar-thumb {
-    background: #9CA3AF;
-    border-radius: 10px;
-}
+    .modal-scrollbar::-webkit-scrollbar-thumb {
+        background: #9CA3AF;
+        border-radius: 10px;
+    }
 
-.modal-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #6B7280;
-}
+    .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #6B7280;
+    }
 
-.modal-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #9CA3AF #F3F4F6;
-    scroll-behavior: smooth;
-}
+    /* Firefox */
+    .modal-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #9CA3AF #F3F4F6;
+        scroll-behavior: smooth;
+    }
+
+    /* Fix for input text visibility */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+        color: #111827 !important;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: #9CA3AF !important;
+    }
 </style>
 
 @section('content')
@@ -37,7 +55,7 @@
         <div class="flex justify-between items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
             <h2 class="text-2xl font-bold text-gray-800">Categories Management</h2>
             <button onclick="openModal('addCategoryModal')"
-                class="flex items-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
+                class="flex items-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -57,7 +75,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                 </svg>
                             </div>
-                            <input type="text" id="search" name="search" value="{{ request('search') }}" 
+                            <input type="text" id="search" name="search" value="{{ request('search') }}"
                                 placeholder="Search by category name..."
                                 class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all">
                         </div>
@@ -66,7 +84,7 @@
                     <!-- Search Button -->
                     <div class="w-full sm:w-auto">
                         <button type="submit"
-                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
+                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
@@ -95,7 +113,6 @@
             <table class="min-w-full">
                 <thead>
                     <tr class="bg-gray-100 border-b border-gray-200">
-                 
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category Name</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -104,7 +121,6 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse($categories as $category)
                         <tr class="hover:bg-gray-50 transition-colors group">
-                           
                             <td class="px-6 py-4">
                                 <button onclick="showCategory('{{ $category->category_id }}')" class="hover:text-gray-900 transition-colors text-left w-full">
                                     <p class="font-semibold text-gray-900">{{ $category->name }}</p>
@@ -135,7 +151,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="2" class="px-6 py-12 text-center text-gray-500">
                                 <div class="flex flex-col items-center justify-center">
                                     <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -163,7 +179,7 @@
                     @if($categories->onFirstPage())
                         <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Prev</span>
                     @else
-                        <a href="{{ $categories->previousPageUrl() }}" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-md transition-all duration-200 font-medium">Prev</a>
+                        <a href="{{ $categories->previousPageUrl() }}" class="px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-gray-700 shadow-md transition-all duration-200 font-medium">Prev</a>
                     @endif
 
                     <span class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium sm:hidden">
@@ -171,7 +187,7 @@
                     </span>
 
                     @if($categories->hasMorePages())
-                        <a href="{{ $categories->nextPageUrl() }}" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-md transition-all duration-200 font-medium">Next</a>
+                        <a href="{{ $categories->nextPageUrl() }}" class="px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-gray-700 shadow-md transition-all duration-200 font-medium">Next</a>
                     @else
                         <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Next</span>
                     @endif
@@ -182,69 +198,81 @@
 
     <!-- Add Category Modal -->
     <div id="addCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
-        <div class="absolute inset-0 bg-opacity-50" onclick="closeModal('addCategoryModal')"></div>
+        <div class="absolute inset-0" onclick="closeModal('addCategoryModal')"></div>
 
-        <div class="relative bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4">
-            <header class="bg-gray-600 text-white p-5 rounded-t-2xl">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+            <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
                 <h2 class="text-xl font-semibold">Add New Category</h2>
             </header>
 
-            <form action="{{ route('categories.store') }}" method="POST" class="p-6 space-y-6">
-                @csrf
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" id="name" required
-                        class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
-                    @error('name')
-                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
+            <div class="overflow-y-auto flex-1 modal-scrollbar">
+                <form action="{{ route('categories.store') }}" method="POST" class="p-6 md:p-8 space-y-6">
+                    @csrf
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Category Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" id="name" required
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        @error('name')
+                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
 
-                <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <button type="button" onclick="closeModal('addCategoryModal')"
-                        class="px-6 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
-                    <button type="submit"
-                        class="px-6 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto">Add Category</button>
-                </div>
-            </form>
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
+                        <button type="button" onclick="closeModal('addCategoryModal')"
+                            class="px-6 py-2 rounded-lg border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 w-full sm:w-auto transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">
+                            Add Category
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <!-- Edit Category Modal -->
     <div id="editCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
-        <div class="absolute inset-0 bg-opacity-50" onclick="closeModal('editCategoryModal')"></div>
+        <div class="absolute inset-0" onclick="closeModal('editCategoryModal')"></div>
 
-        <div class="relative bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4">
-            <header class="bg-gray-600 text-white p-5 rounded-t-2xl">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+            <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
                 <h2 class="text-xl font-semibold">Edit Category</h2>
             </header>
 
-            <form id="editCategoryForm" method="POST" class="p-6 space-y-6">
-                @csrf
-                @method('PUT')
+            <div class="overflow-y-auto flex-1 modal-scrollbar">
+                <form id="editCategoryForm" method="POST" class="p-6 md:p-8 space-y-6">
+                    @csrf
+                    @method('PUT')
 
-                <div>
-                    <label for="edit_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" id="edit_name" required
-                        class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
-                </div>
+                    <div>
+                        <label for="edit_name" class="block text-sm font-medium text-gray-700">Category Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" id="edit_name" required
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                    </div>
 
-                <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <button type="button" onclick="closeModal('editCategoryModal')"
-                        class="px-6 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 w-full sm:w-auto">Cancel</button>
-                    <button type="submit"
-                        class="px-6 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 w-full sm:w-auto">Update Category</button>
-                </div>
-            </form>
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
+                        <button type="button" onclick="closeModal('editCategoryModal')"
+                            class="px-6 py-2 rounded-lg border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 w-full sm:w-auto transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">
+                            Update Category
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <!-- View Category Modal -->
     <div id="categoryShowModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
-        <div class="absolute inset-0 bg-opacity-50" onclick="closeModal('categoryShowModal')"></div>
+        <div class="absolute inset-0" onclick="closeModal('categoryShowModal')"></div>
 
-        <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4">
-            <header class="bg-gray-600 text-white p-5 rounded-t-2xl flex justify-between items-center">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+            <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0 flex justify-between items-center">
                 <h2 class="text-xl font-semibold">Category Details</h2>
                 <button onclick="closeModal('categoryShowModal')" class="text-white hover:text-gray-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -253,7 +281,7 @@
                 </button>
             </header>
 
-            <div id="categoryShowContent" class="p-6">
+            <div id="categoryShowContent" class="overflow-y-auto flex-1 modal-scrollbar p-6">
                 <div class="flex justify-center items-center py-12">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
                 </div>
@@ -266,31 +294,36 @@
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
         const scrollY = window.scrollY;
-        
+
         document.body.style.position = 'fixed';
         document.body.style.top = `-${scrollY}px`;
         document.body.style.width = '100%';
-        
+        document.body.style.overflowY = 'scroll';
+
         modal.classList.remove('hidden');
     }
 
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         const scrollY = document.body.style.top;
-        
+
         modal.classList.add('hidden');
-        
+
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.width = '';
-        
+        document.body.style.overflowY = '';
+
         window.scrollTo(0, parseInt(scrollY || '0') * -1);
     }
 
     // Edit Category
     function editCategory(categoryId) {
         fetch(`/categories/${categoryId}/edit`)
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to fetch category data');
+                return res.json();
+            })
             .then(category => {
                 document.getElementById('edit_name').value = category.name;
                 document.getElementById('editCategoryForm').action = `/categories/${category.category_id}`;
@@ -298,14 +331,18 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to load category data');
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Failed to load category data');
+                } else {
+                    alert('Failed to load category data');
+                }
             });
     }
 
     // Show Category
     function showCategory(categoryId) {
         openModal('categoryShowModal');
-        
+
         document.getElementById('categoryShowContent').innerHTML = `
             <div class="flex justify-center items-center py-12">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
@@ -327,42 +364,45 @@
                         <p class="text-red-600">Error loading category details</p>
                     </div>
                 `;
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Failed to load category details');
+                }
             });
     }
 
     function renderCategoryDetails(category) {
         const content = document.getElementById('categoryShowContent');
-        
+
         let html = `
             <div class="space-y-6">
-                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                <div class="bg-gray-50 rounded-lg p-6">
                     <div class="flex justify-between items-start mb-6">
                         <div>
-                            <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">${category.name}</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Category ID: #${category.category_id}</p>
+                            <h3 class="text-2xl font-bold text-gray-800">${category.name}</h3>
+                            <p class="text-sm text-gray-500 mt-1">Category ID: #${category.category_id}</p>
                         </div>
                     </div>
 
                     ${category.created_at ? `
-                        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <div class="border-t border-gray-200 pt-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Created At</p>
-                                    <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(category.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                    <p class="text-sm text-gray-500">Created At</p>
+                                    <p class="text-gray-800 font-medium">${new Date(category.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                 </div>
                                 ${category.updated_at ? `
                                     <div>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Last Updated</p>
-                                        <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(category.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                        <p class="text-sm text-gray-500">Last Updated</p>
+                                        <p class="text-gray-800 font-medium">${new Date(category.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                     </div>
                                 ` : ''}
                             </div>
                         </div>
                     ` : ''}
 
-                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-                        <button onclick="closeModal('categoryShowModal'); editCategory('${category.category_id}');" 
-                                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <div class="border-t border-gray-200 pt-4 mt-4">
+                        <button onclick="closeModal('categoryShowModal'); editCategory('${category.category_id}');"
+                                class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
                             Edit Category
                         </button>
                     </div>
@@ -384,54 +424,65 @@
                 confirmButtonColor: '#dc2626',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel'
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    confirmButton: 'swal-confirm-btn',
+                    cancelButton: 'swal-cancel-btn'
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = actionUrl;
-                    
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = '_token';
-                    csrfInput.value = csrfToken;
-                    
-                    const methodInput = document.createElement('input');
-                    methodInput.type = 'hidden';
-                    methodInput.name = '_method';
-                    methodInput.value = 'DELETE';
-                    
-                    form.appendChild(csrfInput);
-                    form.appendChild(methodInput);
-                    document.body.appendChild(form);
-                    form.submit();
+                    submitDeleteForm(actionUrl);
                 }
             });
         } else {
             if (confirm('Are you sure you want to delete this category?')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = actionUrl;
-                
-                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_token';
-                csrfInput.value = csrfToken;
-                
-                const methodInput = document.createElement('input');
-                methodInput.type = 'hidden';
-                methodInput.name = '_method';
-                methodInput.value = 'DELETE';
-                
-                form.appendChild(csrfInput);
-                form.appendChild(methodInput);
-                document.body.appendChild(form);
-                form.submit();
+                submitDeleteForm(actionUrl);
             }
         }
     }
+
+    function submitDeleteForm(actionUrl) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = actionUrl;
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+        }
+
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // Initialize on DOM Ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toastr Configuration
+        if (typeof toastr !== 'undefined') {
+            toastr.options = {
+                "closeButton": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "timeOut": "3000",
+                "extendedTimeOut": "1000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut"
+            };
+        }
+    });
 
     // Handle Escape key to close modals
     document.addEventListener('keydown', function(e) {
