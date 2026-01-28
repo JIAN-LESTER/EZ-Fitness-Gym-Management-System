@@ -17,11 +17,17 @@ class MembershipPlan extends Model
     protected $primaryKey = 'plan_id';
     protected $fillable = [
         'name',
+        'branch_id',
         'details',
         'price',
         'duration_days',
 
     ];
+
+    public function branch()
+    {
+        return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
+    }
 
     public function members()
     {

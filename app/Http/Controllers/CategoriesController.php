@@ -39,9 +39,13 @@ class CategoriesController extends Controller
         ]);
 
         $category = Categories::create($validated);
+          $branchId = $currentUser->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $currentUser->branch_id;
 
         Logs::create([
             'user_id' => $currentUser->user_id,
+            'branch_id' => $branchId,
             'action' => "{$currentUser->last_name} created a category: {$category->name}.",
             'timestamp' => now(),
         ]);
@@ -81,6 +85,9 @@ class CategoriesController extends Controller
     public function update(Request $request, string $id)
     {
         $currentUser = Auth::user();
+          $branchId = $currentUser->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $currentUser->branch_id;
         $category = Categories::where('category_id', $id)->firstOrFail();
 
         $validated = $request->validate([
@@ -92,6 +99,7 @@ class CategoriesController extends Controller
 
         Logs::create([
             'user_id' => $currentUser->user_id,
+            'branch_id' => $branchId,
             'action' => "{$currentUser->last_name} updated category from '{$oldName}' to '{$category->name}'.",
             'timestamp' => now(),
         ]);
@@ -106,12 +114,16 @@ class CategoriesController extends Controller
     public function destroy(string $id)
     {
         $currentUser = Auth::user();
+          $branchId = $currentUser->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $currentUser->branch_id;
         $category = Categories::where('category_id', $id)->firstOrFail();
 
         $categoryName = $category->name;
 
         Logs::create([
             'user_id' => $currentUser->user_id,
+            'branch_id' => $branchId,
             'action' => "{$currentUser->last_name} deleted category: {$categoryName}.",
             'timestamp' => now(),
         ]);

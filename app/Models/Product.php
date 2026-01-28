@@ -17,6 +17,7 @@ class Product extends Model
     protected $primaryKey = 'product_id';
     protected $fillable = [
         'category_id',
+        'branch_id',
         'name',
         'description',
         'price',
@@ -45,5 +46,10 @@ class Product extends Model
     public function cartItems()
     {
         return $this->hasMany(CartItem::class, 'product_id', 'product_id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
     }
 }

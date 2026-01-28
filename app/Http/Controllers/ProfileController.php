@@ -24,6 +24,10 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
+             $branchId = $user->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $user->branch_id;
+
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -101,6 +105,7 @@ class ProfileController extends Controller
         // Log the update
         Logs::create([
             'user_id' => $user->user_id,
+            'branch_id' => $branchId,
             'action' => "Updated profile for user: {$user->first_name} {$user->last_name}",
             'timestamp' => now(),
         ]);

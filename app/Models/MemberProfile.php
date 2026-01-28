@@ -22,6 +22,7 @@ class MemberProfile extends Model
     protected $fillable = [
         'user_id',
         'plan_id',
+        'subscription_id',
         'sex',
         'birthday',
         'height',
@@ -29,12 +30,28 @@ class MemberProfile extends Model
         'mobile_number',
         'qr_code',
         'status',
+        'subscription_status',
+
         'isApproved',
+        'isApprovedForSubscription',
+
+    
         'isDisabled',
+        'isDisabledForSubscription',
+
+
         'approved_at',
+        'approved_at_for_subscription',
+
         'start_date',
+        'start_date_for_subscription',
+
         'end_date',
-        'renewal_pending'
+        'end_date_for_subscription',
+
+        'renewal_pending',
+        'suspended_at',
+        'days_remaining_before_suspend'
     ];
 
     public function user()
@@ -45,6 +62,11 @@ class MemberProfile extends Model
     public function plan()
     {
         return $this->belongsTo(MembershipPlan::class, 'plan_id', 'plan_id');
+    }
+
+        public function subscription()
+    {
+        return $this->belongsTo(Subscriptions::class, 'subscription_id', 'subscription_id');
     }
 
     // Fixed relationship

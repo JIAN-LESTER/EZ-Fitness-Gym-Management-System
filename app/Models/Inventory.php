@@ -17,11 +17,16 @@ class Inventory extends Model
 
     protected $fillable = [
         'product_id',
+        'branch_id',
         'quantity',
     ];
 
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
+    }
+
+        public function branch(){
+        return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
     }
 }

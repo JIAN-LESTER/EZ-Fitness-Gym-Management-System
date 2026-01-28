@@ -27,6 +27,7 @@ class User extends Authenticatable
     protected $keyType = 'int';       
     protected $fillable = [
         'user_id',
+        'branch_id',
         'first_name',
         'last_name',
         'username',
@@ -79,9 +80,9 @@ class User extends Authenticatable
     return $this->hasMany(Cart::class, 'user_id', 'user_id');
 }
 
-// public function orders() {
-//     return $this->hasMany(Orders::class, 'user_id', 'user_id');
-// }
-
+   public function branch()
+    {
+        return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
+    }
 
 }

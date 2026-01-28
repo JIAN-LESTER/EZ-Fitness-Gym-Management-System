@@ -6,6 +6,7 @@ use App\Models\Inventory;
 use App\Models\Logs;
 use App\Models\Product;
 use App\Models\Categories;
+use App\Models\Branches;
 use App\Models\Transactions;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,16 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Inventory::with(['product.category']);
+        $currentUser = Auth::user();
+        
+        $branchId = null;
+        if ($currentUser->role === 'super_admin') {
+            $branchId = session('selected_branch_id');
+        } else {
+            $branchId = $currentUser->branch_id;
+        }
+
+        $query = Inventory::with(['product.category', 'product.branch']);
 
         // Search functionality - name or description
         if ($request->has('search') && $request->search != '') {
@@ -44,10 +54,18 @@ class ProductController extends Controller
             });
         }
 
+        // Filter by branch
+        if ($branchId) {
+            $query->whereHas('product', function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+
         $products = $query->paginate(10);
         $categories = Categories::all();
+        $branches = Branches::orderBy('name')->get();
 
-        return view('admin.inventory', compact('products', 'categories'));
+        return view('admin.inventory', compact('products', 'categories', 'branches'));
     }
 
     /**
@@ -55,8 +73,12 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        $currentUser = Auth::user();
+                $branchId = $currentUser->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $currentUser->branch_id;
 
-        $validated = $request->validate([
+        $rules = [
             'category_id' => 'required|integer|exists:categories,category_id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -64,52 +86,59 @@ class ProductController extends Controller
             'status' => 'required|in:available,unavailable',
             'quantity' => 'required|numeric|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        ];
 
-        // Handle image upload - FIXED PATH
+        // Add branch_id validation for super_admin
+        if ($currentUser->role === 'super_admin') {
+            $rules['branch_id'] = 'required|exists:branches,branch_id';
+        }
+
+        $validated = $request->validate($rules);
+
+        // Set branch_id based on user role
+        if ($currentUser->role !== 'super_admin') {
+            $validated['branch_id'] = $currentUser->branch_id;
+        }
+
+        // Handle image upload
         $imagePath = null;
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $fileName = 'product_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-
-            // Store in storage/app/public/products
             $path = $file->storeAs('products', $fileName, 'public');
-
-            // Save only the relative path (products/filename.jpg)
             $imagePath = $path;
         }
 
         // Create product
         $product = Product::create([
+            'branch_id' => $validated['branch_id'],
             'category_id' => $validated['category_id'],
             'name' => $validated['name'],
             'description' => $validated['description'],
             'price' => $validated['price'],
             'status' => $validated['status'],
-            'image' => $imagePath  // This will save as "products/product_xxx.jpg"
+            'image' => $imagePath
         ]);
-
-
 
         // Create inventory
         Inventory::create([
             'product_id' => $product->product_id,
+            'branch_id' => $branchId,
             'quantity' => $validated['quantity'],
         ]);
 
-        $currentUser = Auth::user();
-
         Transactions::create([
             'product_id' => $product->product_id,
+             'branch_id' => $branchId,
             'performed_by' => $currentUser->user_id,
             'quantity' => $validated['quantity'],
             'type' => 'stock_in',
             'timestamp' => now(),
         ]);
 
-
         Logs::create([
             'user_id' => $currentUser->user_id,
+             'branch_id' => $branchId,
             'action' => "{$currentUser->last_name} added a new product: {$product->name}.",
             'timestamp' => now(),
         ]);
@@ -124,7 +153,7 @@ class ProductController extends Controller
     public function show(string $id)
     {
         try {
-            $product = Product::with(['category', 'inventory'])
+            $product = Product::with(['category', 'inventory', 'branch'])
                 ->where('product_id', $id)
                 ->firstOrFail();
 
@@ -142,7 +171,7 @@ class ProductController extends Controller
      */
     public function edit(string $id)
     {
-        $product = Product::with(['category', 'inventory'])
+        $product = Product::with(['category', 'inventory', 'branch'])
             ->findOrFail($id);
 
         return response()->json($product);
@@ -157,14 +186,26 @@ class ProductController extends Controller
         $inventory = Inventory::where('product_id', $id)->firstOrFail();
         $currentUser = Auth::user();
 
-        $validated = $request->validate([
+        $rules = [
             'category_id' => 'sometimes|integer|exists:categories,category_id',
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'price' => 'sometimes|numeric|min:0',
             'status' => 'sometimes|in:available,unavailable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        ];
+
+        // Add branch_id validation for super_admin
+        if ($currentUser->role === 'super_admin') {
+            $rules['branch_id'] = 'sometimes|exists:branches,branch_id';
+        }
+
+        $validated = $request->validate($rules);
+
+        // Set branch_id based on user role
+        if ($currentUser->role !== 'super_admin' && !isset($validated['branch_id'])) {
+            $validated['branch_id'] = $currentUser->branch_id;
+        }
 
         $inventoryValidated = $request->validate([
             'quantity' => 'sometimes|numeric|min:0',
@@ -172,18 +213,13 @@ class ProductController extends Controller
 
         // Handle image upload
         if ($request->hasFile('image')) {
-            // Delete old image if exists
             if ($product->image && Storage::disk('public')->exists($product->image)) {
                 Storage::disk('public')->delete($product->image);
             }
 
             $file = $request->file('image');
             $fileName = 'product_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-
-            // Store in storage/app/public/products
             $path = $file->storeAs('products', $fileName, 'public');
-
-            // Save only the relative path
             $validated['image'] = $path;
         }
 
@@ -221,8 +257,6 @@ class ProductController extends Controller
             ]);
         }
 
-        $currentUser = Auth::user();
-
         // Enhanced logging with quantity change details
         $logAction = "{$currentUser->last_name} updated product: {$product->name}";
 
@@ -243,6 +277,7 @@ class ProductController extends Controller
         return redirect()->route('products.index')
             ->with('success', 'Product updated successfully!');
     }
+
     /**
      * Delete a product
      */

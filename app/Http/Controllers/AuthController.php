@@ -52,9 +52,7 @@ class AuthController extends Controller
             'password.confirmed' => 'Password confirmation does not match',
         ]);
 
-
         $user = User::create([
-
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'username' => $validated['username'],
@@ -62,6 +60,7 @@ class AuthController extends Controller
             'password' => bcrypt($validated['password']),
             'role' => 'member',
             'status' => 'active',
+            'branch_id' => null, // **NEW: No branch assigned yet for self-registration**
         ]);
 
         $user->sendEmailVerificationNotification();
@@ -73,12 +72,12 @@ class AuthController extends Controller
             ]);
         }
 
+        // **UPDATED: Remove branch_id from logs (will be fetched from user relationship)**
         Logs::create([
             'user_id' => $user->user_id,
             'action' => "{$user->last_name} created his own account.",
             'timestamp' => now(),
         ]);
-
 
         return redirect()
             ->route('loginForm')
@@ -94,60 +93,60 @@ class AuthController extends Controller
         ], [
             'username.required' => 'Username is required',
             'password.required' => 'Password is required',
-
             'password.min' => 'Password must be at least 6 characters',
-
         ]);
 
         $user = User::whereRaw('LOWER(username) = ?', [strtolower($request->username)])->first();
+
+        
+        
         if (!$user) {
             return back()->with('error', 'No account found')->withInput();
         }
 
         if (!Hash::check($request->password, $user->password)) {
-
-
             return back()
                 ->with('error', 'Incorrect username or password.')
                 ->withInput();
         }
 
         if (!$user->hasVerifiedEmail()) {
-
             return back()->withInput()
                 ->with('error', 'Your email is not verified.')
                 ->with('resend_user_id', $user->user_id);
         }
 
+        Auth::login($user);
+
+           $currentUser = Auth::user();
+              $branchId = $currentUser->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $currentUser->branch_id;
+
+                        // **UPDATED: Remove branch_id from logs**
         Logs::create([
             'user_id' => $user->user_id,
+            'branch_id' => $branchId,
             'action' => "{$user->last_name} has logged in successfully.",
             'timestamp' => now(),
         ]);
 
-        Auth::login($user);
-
-
-
         // Role-based dashboard redirection
-        if ($user->role === 'admin' || $user->role === 'staff') {
+        if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
             return redirect()->route('admin.dashboard')->with('success', 'Logged in successfully');
         }
 
-        if ($user->role === 'staff') {
-            return redirect()->route('staff.dashboard')->with('success', 'Logged in successfully');
-        }
-
         if ($user->role === 'member') {
-
             $profile = MemberProfile::where('user_id', $user->user_id)->first();
 
-            if ($profile->status === 'inactive') {
+            if ($profile && $profile->status === 'inactive') {
                 return redirect()->route('member.dashboard')->with('completeMembershipModal', true);
             }
 
             return redirect()->route('member.dashboard')->with('success', 'Login successful!');
         }
+
+        return redirect()->route('admin.dashboard')->with('success', 'Logged in successfully');
     }
 
     public function checkUsername(Request $request)
@@ -166,23 +165,28 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $user = Auth::user();
+        
         if ($user) {
-            Logs::create([
-                'user_id' => $user->user_id,
-                'action' => "{$user->last_name} has logged out",
-                'timestamp' => now(),
-            ]);
+       
+         $branchId = $user->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $user->branch_id;
+
+
+               Logs::create([
+            'user_id' => $user->user_id,
+            'branch_id' => $branchId,
+            'action' => "{$user->last_name} has logged out successfully.",
+            'timestamp' => now(),
+        ]);
         }
 
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-
-
         return redirect('/login')->with('success', 'Logged out successfully.');
     }
-
 
 
     /**
@@ -205,9 +209,9 @@ class AuthController extends Controller
             return back()->with('success', 'Email already verified.');
         }
 
-
         $user->sendEmailVerificationNotification();
 
+        // **UPDATED: Remove branch_id from logs**
         Logs::create([
             'user_id' => $user->user_id,
             'action' => "{$user->last_name} has resent the verification email.",
@@ -224,7 +228,6 @@ class AuthController extends Controller
      */
     public function verify(Request $request, $id, $hash)
     {
-
         $user = User::findOrFail($id);
 
         if ($user->hasVerifiedEmail()) {
@@ -244,6 +247,7 @@ class AuthController extends Controller
         $user->markEmailAsVerified();
         event(new Verified($user));
 
+        // **UPDATED: Remove branch_id from logs**
         Logs::create([
             'user_id' => $user->user_id,
             'action' => "{$user->last_name} has been verified.",
@@ -283,12 +287,20 @@ class AuthController extends Controller
         if ($status === Password::RESET_LINK_SENT) {
             // Log the action
             $user = User::where('email', $request->email)->first();
+            
             if ($user) {
-                Logs::create([
-                    'user_id' => $user->user_id,
-                    'action' => "{$user->last_name} requested a password reset link.",
-                    'timestamp' => now(),
-                ]);
+
+              $branchId = $user->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $user->branch_id;
+
+
+               Logs::create([
+            'user_id' => $user->user_id,
+            'branch_id' => $branchId,
+            'action' => "{$user->last_name} has requested password reset.",
+            'timestamp' => now(),
+        ]);
             }
 
             return back()->with('status', 'Password reset link sent! Please check your email.');
@@ -332,12 +344,17 @@ class AuthController extends Controller
                     'password' => Hash::make($password)
                 ])->save();
 
-                // Log the password reset
-                Logs::create([
-                    'user_id' => $user->user_id,
-                    'action' => "{$user->last_name} has reset their password.",
-                    'timestamp' => now(),
-                ]);
+                          $branchId = $user->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $user->branch_id;
+
+
+               Logs::create([
+            'user_id' => $user->user_id,
+            'branch_id' => $branchId,
+            'action' => "{$user->last_name} has reset password successfully.",
+            'timestamp' => now(),
+        ]);
 
                 event(new PasswordReset($user));
             }

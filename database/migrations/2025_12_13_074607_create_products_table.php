@@ -12,6 +12,7 @@ return new class extends Migration {
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id('product_id');
+            $table->foreignId('branch_id')->nullable()->references('branch_id')->on('branches')->onDelete('cascade');
             $table->foreignId('category_id')->references('category_id')->on('categories')->onDelete('cascade');
             $table->string('name');
             $table->text('image')->nullable();

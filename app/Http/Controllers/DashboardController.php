@@ -11,6 +11,8 @@ use App\Models\StockIn;
 use App\Models\StockOut;
 use App\Models\SalesItem;
 use App\Models\Transactions;
+use App\Models\Subscriptions;
+use App\Models\Branches;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Routing\Controller;
@@ -20,70 +22,147 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        // Get selected branch from session (null means "All Branches")
+        $selectedBranchId = session('selected_branch_id');
+        
         // Get separate period filters for each chart
         $salesPeriod = $request->input('sales_period', 'month');
         $membershipPeriod = $request->input('membership_period', 'month');
 
-        // Membership Overview
-        $totalActiveMembers = MemberProfile::where('status', 'active')->count();
+        // === BRANCH STATISTICS ===
+        if (auth()->user()->role === 'super_admin') {
+            $totalBranches = Branches::count();
+            $activeBranches = Branches::
+                whereHas('users', function($query) {
+                    $query->where('created_at', '>=', Carbon::now()->subDays(30));
+                })
+                ->count();
+        } else {
+            $totalBranches = null;
+            $activeBranches = null;
+        }
+
+        // === MEMBERSHIP OVERVIEW (with branch filter) ===
+        $totalActiveMembers = MemberProfile::where('status', 'active')
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
+            ->count();
+            
         $newMembersThisMonth = MemberProfile::whereMonth('start_date', Carbon::now()->month)
             ->whereYear('start_date', Carbon::now()->year)
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
             ->count();
 
         // Calculate monthly revenue from memberships via sales_items
-        $monthlyMembershipRevenue = SalesItem::whereHas('sale', function ($query) {
+        $monthlyMembershipRevenue = SalesItem::whereHas('sale', function ($query) use ($selectedBranchId) {
             $query->whereMonth('created_at', Carbon::now()->month)
                 ->whereYear('created_at', Carbon::now()->year)
-                ->where('status', 'paid');
+                ->where('status', 'paid')
+                ->when($selectedBranchId, function($q) use ($selectedBranchId) {
+                    $q->where('branch_id', $selectedBranchId);
+                });
         })
             ->whereNotNull('plan_id')
             ->sum('sub_total');
 
-        // Inventory Overview
-        $totalItemsInStock = Inventory::sum('quantity');
+        // === INVENTORY OVERVIEW (with branch filter) ===
+        $totalItemsInStock = Inventory::when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
+            ->sum('quantity');
+            
         $lowStockThreshold = 10;
-        $lowStockItems = Inventory::where('quantity', '<=', $lowStockThreshold)->count();
-
-        // Gym Occupancy
-        $currentOccupancy = Attendance::whereDate('check_in_time', Carbon::today())
-            ->where('status', 'checked_in')
+        $lowStockItems = Inventory::where('quantity', '<=', $lowStockThreshold)
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
             ->count();
 
-        // Sales Overview (Today)
-        $todaySales = Sales::whereDate('created_at', Carbon::today())->count();
+        // === GYM OCCUPANCY (with branch filter) ===
+        $currentOccupancy = Attendance::whereDate('check_in_time', Carbon::today())
+            ->where('status', 'checked_in')
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
+            ->count();
+
+        // === SALES OVERVIEW (with branch filter) ===
+        $todaySales = Sales::whereDate('created_at', Carbon::today())
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
+            ->count();
+            
         $todayRevenue = Sales::whereDate('created_at', Carbon::today())
             ->where('status', 'paid')
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
             ->sum('total_amount');
 
-        // Monthly Sales Statistics
+        // === MONTHLY SALES STATISTICS (with branch filter) ===
         $monthlySales = Sales::whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->where('status', 'paid')
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
             ->sum('total_amount');
 
         // Product sales only (excluding memberships)
-        $monthlyProductSales = SalesItem::whereHas('sale', function ($query) {
+        $monthlyProductSales = SalesItem::whereHas('sale', function ($query) use ($selectedBranchId) {
             $query->whereMonth('created_at', Carbon::now()->month)
                 ->whereYear('created_at', Carbon::now()->year)
-                ->where('status', 'paid');
+                ->where('status', 'paid')
+                ->when($selectedBranchId, function($q) use ($selectedBranchId) {
+                    $q->where('branch_id', $selectedBranchId);
+                });
         })
             ->whereNotNull('product_id')
             ->whereNull('plan_id')
             ->sum('sub_total');
 
-        // Transaction Breakdown
-        $stockInCount = Transactions::where('type', 'stock_in')->whereMonth('created_at', Carbon::now()->month)
+        // === SUBSCRIPTION STATISTICS (with branch filter) ===
+        $totalSubscriptions = Subscriptions::when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
+            ->count();
+            
+        $activeSubscriptions = MemberProfile::where('status', 'active')
+            ->whereNotNull('subscription_id')
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
+            ->count();
+
+        // === TRANSACTION BREAKDOWN (with branch filter) ===
+        $stockInCount = Transactions::where('type', 'stock_in')
+            ->whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
             ->count();
 
         $stockOutCount = Transactions::whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
             ->count();
 
-        // Product Performance
+        // === PRODUCT PERFORMANCE (with branch filter) ===
         $highestSellingProduct = SalesItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
             ->whereNotNull('product_id')
             ->whereNull('plan_id')
+            ->whereHas('sale', function($query) use ($selectedBranchId) {
+                $query->when($selectedBranchId, function($q) use ($selectedBranchId) {
+                    $q->where('branch_id', $selectedBranchId);
+                });
+            })
             ->groupBy('product_id')
             ->orderBy('total_sold', 'desc')
             ->first();
@@ -95,6 +174,11 @@ class DashboardController extends Controller
         $lowestSellingProduct = SalesItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
             ->whereNotNull('product_id')
             ->whereNull('plan_id')
+            ->whereHas('sale', function($query) use ($selectedBranchId) {
+                $query->when($selectedBranchId, function($q) use ($selectedBranchId) {
+                    $q->where('branch_id', $selectedBranchId);
+                });
+            })
             ->groupBy('product_id')
             ->orderBy('total_sold', 'asc')
             ->first();
@@ -103,11 +187,14 @@ class DashboardController extends Controller
             $lowestSellingProduct->load('product');
         }
 
-        // Most Popular Membership Plan
+        // === MOST POPULAR PLAN (with branch filter) ===
         $mostPopularPlan = SalesItem::select('plan_id', DB::raw('COUNT(*) as total_sales'))
             ->whereNotNull('plan_id')
-            ->whereHas('sale', function ($query) {
-                $query->where('status', 'paid');
+            ->whereHas('sale', function ($query) use ($selectedBranchId) {
+                $query->where('status', 'paid')
+                    ->when($selectedBranchId, function($q) use ($selectedBranchId) {
+                        $q->where('branch_id', $selectedBranchId);
+                    });
             })
             ->groupBy('plan_id')
             ->orderBy('total_sales', 'desc')
@@ -117,46 +204,66 @@ class DashboardController extends Controller
             $mostPopularPlan->load('plan');
         }
 
-        // Sales Trend Chart Data - Based on its own period
-        $salesTrend = $this->getSalesTrend($salesPeriod);
+        // === MOST POPULAR SUBSCRIPTION (with branch filter) ===
+        $mostPopularSubscription = Subscriptions::select('subscriptions.*', DB::raw('COUNT(member_profiles.member_id) as member_count'))
+            ->leftJoin('member_profiles', 'subscriptions.subscription_id', '=', 'member_profiles.subscription_id')
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('subscriptions.branch_id', $selectedBranchId);
+            })
+            ->groupBy('subscriptions.subscription_id', 'subscriptions.branch_id', 'subscriptions.name', 'subscriptions.details', 'subscriptions.price', 'subscriptions.duration_days', 'subscriptions.created_at', 'subscriptions.updated_at')
+            ->orderBy('member_count', 'desc')
+            ->first();
 
-        // Membership Trend Chart Data - Based on its own period
-        $membershipTrend = $this->getMembershipTrend($membershipPeriod);
+        // === CHART DATA (with branch filter) ===
+        $salesTrend = $this->getSalesTrend($salesPeriod, $selectedBranchId);
+        $membershipTrend = $this->getMembershipTrend($membershipPeriod, $selectedBranchId);
 
-        // Revenue Breakdown (This Month)
+        // === REVENUE BREAKDOWN (with branch filter) ===
         $revenueBreakdown = [
             'products' => $monthlyProductSales,
             'memberships' => $monthlyMembershipRevenue,
             'total' => $monthlySales
         ];
 
-        // Recent Activities
-        $recentSales = Sales::with(['user', 'items.product', 'items.plan'])
+        // === RECENT SALES (with branch filter) ===
+        $recentSales = Sales::with(['user', 'items.product', 'items.plan', 'branch'])
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
-        // Sales by Type
-        $productSalesCount = SalesItem::whereHas('sale', function ($query) {
+        // === SALES BY TYPE (with branch filter) ===
+        $productSalesCount = SalesItem::whereHas('sale', function ($query) use ($selectedBranchId) {
             $query->whereMonth('created_at', Carbon::now()->month)
                 ->whereYear('created_at', Carbon::now()->year)
-                ->where('status', 'paid');
+                ->where('status', 'paid')
+                ->when($selectedBranchId, function($q) use ($selectedBranchId) {
+                    $q->where('branch_id', $selectedBranchId);
+                });
         })
             ->whereNotNull('product_id')
             ->whereNull('plan_id')
             ->count();
 
-        $membershipSalesCount = SalesItem::whereHas('sale', function ($query) {
+        $membershipSalesCount = SalesItem::whereHas('sale', function ($query) use ($selectedBranchId) {
             $query->whereMonth('created_at', Carbon::now()->month)
                 ->whereYear('created_at', Carbon::now()->year)
-                ->where('status', 'paid');
+                ->where('status', 'paid')
+                ->when($selectedBranchId, function($q) use ($selectedBranchId) {
+                    $q->where('branch_id', $selectedBranchId);
+                });
         })
             ->whereNotNull('plan_id')
             ->count();
 
-        // Active Members by Plan
+        // === MEMBERS BY PLAN (with branch filter) ===
         $membersByPlan = MemberProfile::with('plan')
             ->where('status', 'active')
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
             ->get()
             ->groupBy('plan_id')
             ->map(function ($members) {
@@ -166,10 +273,56 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Expiring Memberships
+        // === SUBSCRIPTIONS BY TYPE (with branch filter) ===
+        $subscriptionsByType = Subscriptions::select('subscriptions.*', DB::raw('COUNT(member_profiles.member_id) as member_count'))
+            ->leftJoin('member_profiles', 'subscriptions.subscription_id', '=', 'member_profiles.subscription_id')
+            ->where('member_profiles.status', 'active')
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('subscriptions.branch_id', $selectedBranchId);
+            })
+            ->groupBy('subscriptions.subscription_id', 'subscriptions.branch_id', 'subscriptions.name', 'subscriptions.details', 'subscriptions.price', 'subscriptions.duration_days', 'subscriptions.created_at', 'subscriptions.updated_at')
+            ->orderBy('member_count', 'desc')
+            ->get()
+            ->map(function($subscription) {
+                return [
+                    'subscription_name' => $subscription->name,
+                    'count' => $subscription->member_count
+                ];
+            });
+
+        // === EXPIRING MEMBERSHIPS (with branch filter) ===
         $expiringMemberships = MemberProfile::where('status', 'active')
             ->whereBetween('end_date', [Carbon::now(), Carbon::now()->addDays(7)])
+            ->when($selectedBranchId, function($query) use ($selectedBranchId) {
+                $query->where('branch_id', $selectedBranchId);
+            })
             ->count();
+
+        // === BRANCH PERFORMANCE (only for super_admin) ===
+        $branchPerformance = [];
+        if (auth()->user()->role === 'super_admin' && !$selectedBranchId) {
+            $branchPerformance = Branches::select('branches.*')
+                ->withCount(['users as member_count' => function($query) {
+                    $query->whereHas('member', function($q) {
+                        $q->where('status', 'active');
+                    });
+                }])
+                ->with(['sales' => function($query) {
+                    $query->whereMonth('created_at', Carbon::now()->month)
+                          ->whereYear('created_at', Carbon::now()->year)
+                          ->where('status', 'paid');
+                }])
+             
+                ->get()
+                ->map(function($branch) {
+                    return [
+                        'branch_id' => $branch->branch_id,
+                        'name' => $branch->name,
+                        'member_count' => $branch->member_count,
+                        'monthly_revenue' => $branch->sales->sum('total_amount'),
+                    ];
+                });
+        }
 
         // Check if this is an AJAX request
         if ($request->ajax() || $request->get('ajax')) {
@@ -195,20 +348,28 @@ class DashboardController extends Controller
             'highestSellingProduct',
             'lowestSellingProduct',
             'mostPopularPlan',
+            'mostPopularSubscription',
             'membershipTrend',
             'salesTrend',
             'revenueBreakdown',
             'recentSales',
             'membersByPlan',
+            'subscriptionsByType',
             'expiringMemberships',
             'productSalesCount',
             'membershipSalesCount',
             'salesPeriod',
-            'membershipPeriod'
+            'membershipPeriod',
+            'totalBranches',
+            'activeBranches',
+            'totalSubscriptions',
+            'activeSubscriptions',
+            'branchPerformance',
+            'selectedBranchId'
         ));
     }
 
-    private function getSalesTrend($period)
+    private function getSalesTrend($period, $branchId = null)
     {
         switch ($period) {
             case 'today':
@@ -219,6 +380,9 @@ class DashboardController extends Controller
                 )
                     ->whereDate('created_at', Carbon::today())
                     ->where('status', 'paid')
+                    ->when($branchId, function($query) use ($branchId) {
+                        $query->where('branch_id', $branchId);
+                    })
                     ->groupBy('hour')
                     ->orderBy('hour', 'asc')
                     ->get()
@@ -235,6 +399,9 @@ class DashboardController extends Controller
                 )
                     ->where('created_at', '>=', Carbon::now()->subDays(7))
                     ->where('status', 'paid')
+                    ->when($branchId, function($query) use ($branchId) {
+                        $query->where('branch_id', $branchId);
+                    })
                     ->groupBy('date')
                     ->orderBy('date', 'asc')
                     ->get()
@@ -253,6 +420,9 @@ class DashboardController extends Controller
                 )
                     ->where('created_at', '>=', Carbon::now()->subWeeks(4))
                     ->where('status', 'paid')
+                    ->when($branchId, function($query) use ($branchId) {
+                        $query->where('branch_id', $branchId);
+                    })
                     ->groupBy('week')
                     ->orderBy('week', 'asc')
                     ->get()
@@ -265,7 +435,7 @@ class DashboardController extends Controller
         }
     }
 
-    private function getMembershipTrend($period)
+    private function getMembershipTrend($period, $branchId = null)
     {
         switch ($period) {
             case 'today':
@@ -275,6 +445,9 @@ class DashboardController extends Controller
                 )
                     ->whereDate('start_date', Carbon::today())
                     ->whereNotNull('start_date')
+                    ->when($branchId, function($query) use ($branchId) {
+                        $query->where('branch_id', $branchId);
+                    })
                     ->groupBy('hour')
                     ->orderBy('hour', 'asc')
                     ->get()
@@ -290,6 +463,9 @@ class DashboardController extends Controller
                 )
                     ->where('start_date', '>=', Carbon::now()->subDays(7))
                     ->whereNotNull('start_date')
+                    ->when($branchId, function($query) use ($branchId) {
+                        $query->where('branch_id', $branchId);
+                    })
                     ->groupBy('date')
                     ->orderBy('date', 'asc')
                     ->get()
@@ -307,6 +483,9 @@ class DashboardController extends Controller
                 )
                     ->where('start_date', '>=', Carbon::now()->subWeeks(4))
                     ->whereNotNull('start_date')
+                    ->when($branchId, function($query) use ($branchId) {
+                        $query->where('branch_id', $branchId);
+                    })
                     ->groupBy('week')
                     ->orderBy('week', 'asc')
                     ->get()

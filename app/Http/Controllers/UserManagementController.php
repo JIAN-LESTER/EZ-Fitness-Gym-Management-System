@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateMemberQRCode;
 use App\Mail\MemberQRCodeMail;
 use App\Models\Logs;
 use App\Models\MemberProfile;
 use App\Models\Sales;
 use App\Models\Transactions;
 use App\Models\User;
+use App\Models\Branches;
 use Carbon\Traits\Timestamp;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
@@ -20,64 +22,128 @@ use Storage;
 
 class UserManagementController extends Controller
 {
-    public function viewUsers(Request $request)
-    {
-        $search = $request->get('search');
-        $roles = $request->get('roles', []);
-        $statuses = $request->get('user_status', []);
+   public function viewUsers(Request $request)
+{
+    $search = $request->get('search');
+    $roles = $request->get('roles', []);
+    $statuses = $request->get('user_status', []);
+    $currentUser = Auth::user();
 
-        $users = User::query()
-            ->with('member.plan')
-            ->when($search, function ($query, $search) {
-                return $query->where(function ($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('username', 'like', "%{$search}%");
-                });
-            })
-            ->when(!empty($roles), function ($query) use ($roles) {
-                return $query->whereIn('role', $roles);
-            })
-            ->when(!empty($statuses), function ($query) use ($statuses) {
-                return $query->whereIn('status', $statuses);
-            })
-            ->orderByRaw("
-                CASE 
-                    WHEN role = 'member' AND EXISTS (
-                        SELECT 1 FROM member_profiles 
-                        WHERE member_profiles.user_id = users.user_id 
-                        AND member_profiles.isApproved = 0
-                    ) THEN 1
-                    WHEN role = 'member' THEN 2
-                    WHEN role = 'staff' THEN 3
-                    WHEN role = 'admin' THEN 4
-                    ELSE 5
-                END
-            ")
-            ->orderBy('created_at', 'desc')
-            ->paginate(12)
-            ->appends($request->query());
+    $branchId = null;
 
-        $plans = \App\Models\MembershipPlan::all();
-
-        return view('admin.user-management', compact(
-            'users',
-            'search',
-            'roles',
-            'statuses',
-            'plans'
-        ));
+    if ($currentUser->role === 'super_admin') {
+        $branchId = session('selected_branch_id');
+    } else {
+        $branchId = $currentUser->branch_id;
     }
+
+    // Build the base query without the join first
+    $query = User::query()
+        ->with(['member' => function($query) {
+            $query->select('member_id', 'user_id', 'plan_id', 'subscription_id', 'isApprovedForSubscription', 'isDisabledForSubscription');
+        }, 'member.plan:plan_id,name,price', 'member.subscription:subscription_id,name,price', 'branch:branch_id,name'])
+        ->when($search, function ($query, $search) {
+            return $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%");
+            });
+        })
+        ->when(!empty($roles), function ($query) use ($roles) {
+            return $query->whereIn('role', $roles);
+        })
+        ->when(!empty($statuses), function ($query) use ($statuses) {
+            return $query->whereIn('status', $statuses);
+        })
+        ->when($branchId, function ($query) use ($branchId) {
+            return $query->where('branch_id', $branchId);
+        });
+
+    // Get all users first
+    $allUsers = $query->get();
+
+    // Sort them with custom logic
+    $sortedUsers = $allUsers->sort(function($a, $b) {
+        // Priority 1: Members with pending approval (plan + subscription but not approved)
+        $aPending = $a->role === 'member' 
+            && $a->member 
+            && $a->member->plan_id 
+            && $a->member->subscription_id
+            && !$a->member->isApprovedForSubscription
+            && !$a->member->isDisabledForSubscription;
+            
+        $bPending = $b->role === 'member' 
+            && $b->member 
+            && $b->member->plan_id 
+            && $b->member->subscription_id
+            && !$b->member->isApprovedForSubscription
+            && !$b->member->isDisabledForSubscription;
+
+        if ($aPending && !$bPending) return -1;
+        if (!$aPending && $bPending) return 1;
+
+        // Priority by role
+        $roleOrder = ['member' => 2, 'staff' => 3, 'admin' => 4, 'super_admin' => 5];
+        $aOrder = $roleOrder[$a->role] ?? 6;
+        $bOrder = $roleOrder[$b->role] ?? 6;
+
+        if ($aOrder !== $bOrder) {
+            return $aOrder - $bOrder;
+        }
+
+        // If same priority, sort by created_at desc
+        return $b->created_at <=> $a->created_at;
+    })->values();
+
+    // Manually paginate the sorted collection
+    $perPage = 12;
+    $currentPage = $request->get('page', 1);
+    $offset = ($currentPage - 1) * $perPage;
+    
+    $paginatedItems = $sortedUsers->slice($offset, $perPage)->values();
+    
+    $users = new \Illuminate\Pagination\LengthAwarePaginator(
+        $paginatedItems,
+        $sortedUsers->count(),
+        $perPage,
+        $currentPage,
+        ['path' => $request->url(), 'query' => $request->query()]
+    );
+
+    $plans = \App\Models\MembershipPlan::select('plan_id', 'name', 'price')->get();
+    $branches = Branches::select('branch_id', 'name')->orderBy('name')->get();
+
+    // Optimized pending approvals count
+    $pendingApprovalsCount = 0;
+    if ($currentUser->role === 'admin') {
+        $pendingApprovalsCount = MemberProfile::where('isApprovedForSubscription', false)
+            ->where('isDisabledForSubscription', false)
+            ->whereNotNull('plan_id')
+            ->whereNotNull('subscription_id')
+            ->count();
+    }
+
+    return view('admin.user-management', compact(
+        'users',
+        'search',
+        'roles',
+        'statuses',
+        'plans',
+        'branches'
+    ));
+}
 
     // Staff view - only shows members
     public function viewMembersForStaff(Request $request)
     {
         $search = $request->get('search');
         $statuses = $request->get('user_status', []);
+        $currentUser = Auth::user();
 
         $users = User::query()
-            ->with('member.plan')
+            ->with('member.plan', 'branch')
             ->where('role', 'member') // Only show members
+            ->where('branch_id', $currentUser->branch_id) // Only from staff's branch
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
                     $q->where('first_name', 'like', "%{$search}%")
@@ -103,12 +169,14 @@ class UserManagementController extends Controller
             ->appends($request->query());
 
         $plans = \App\Models\MembershipPlan::all();
+        $branches = Branches::orderBy('name')->get();
 
         return view('staff.user-management', compact(
             'users',
             'search',
             'statuses',
-            'plans'
+            'plans',
+            'branches'
         ));
     }
 
@@ -118,90 +186,186 @@ class UserManagementController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6|confirmed',
-            'role' => 'nullable|in:member,admin,staff',
-            'plan_id' => 'nullable|exists:membership_plans,plan_id',
-            'sex' => 'nullable|in:male,female',
-            'birthday' => 'nullable|date',
-            'height' => 'nullable|numeric',
-            'weight' => 'nullable|numeric',
-            'mobile_number' => 'nullable|string|max:20',
-        ], [
-            'first_name.required' => 'First name is required',
-            'last_name.required' => 'Last name is required',
-            'username.required' => 'Username is required',
-            'email.required' => 'Email is required',
-            'username.unique' => 'The username has already been taken',
-            'email.unique' => 'The email has already been taken',
-            'password.required' => 'Password is required',
-            'password.min' => 'Password must be at least 6 characters',
-            'password.confirmed' => 'Password confirmation does not match',
+{
+    $currentUser = Auth::user();
+    $branchId = $currentUser->role === 'super_admin'
+        ? session('selected_branch_id')
+        : $currentUser->branch_id;
+
+    $validationRules = [
+        'first_name' => 'required|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'username' => 'required|string|max:255|unique:users',
+        'email' => 'required|email|unique:users',
+        'password' => 'required|min:6|confirmed',
+        'role' => 'nullable|in:member,admin,staff,super_admin',
+        'plan_id' => 'nullable|exists:membership_plans,plan_id',
+        'subscription_id' => 'nullable|exists:subscriptions,subscription_id',
+        'sex' => 'nullable|in:male,female',
+        'birthday' => 'nullable|date',
+        'height' => 'nullable|numeric',
+        'weight' => 'nullable|numeric',
+        'mobile_number' => 'nullable|string|max:20',
+        'payment_method' => 'nullable|in:cash,gcash',
+        'reference_code' => 'nullable|string|max:255',
+    ];
+
+    if ($currentUser->role === 'super_admin') {
+        $validationRules['branch_id'] = 'required|exists:branches,branch_id';
+    }
+
+    $validated = $request->validate($validationRules, [
+        'first_name.required' => 'First name is required',
+        'last_name.required' => 'Last name is required',
+        'username.required' => 'Username is required',
+        'email.required' => 'Email is required',
+        'username.unique' => 'The username has already been taken',
+        'email.unique' => 'The email has already been taken',
+        'password.required' => 'Password is required',
+        'password.min' => 'Password must be at least 6 characters',
+        'password.confirmed' => 'Password confirmation does not match',
+        'branch_id.required' => 'Branch is required',
+        'branch_id.exists' => 'Selected branch does not exist',
+    ]);
+
+    if ($currentUser->role === 'super_admin') {
+        $branchId = $validated['branch_id'];
+    } else {
+        $branchId = $currentUser->branch_id;
+    }
+
+    // Create user with auto-verified email
+    $user = User::create([
+        'first_name' => $validated['first_name'],
+        'last_name' => $validated['last_name'],
+        'username' => $validated['username'],
+        'email' => $validated['email'],
+        'password' => bcrypt($validated['password']),
+        'role' => $validated['role'] ?? 'member',
+        'status' => 'active',
+        'branch_id' => $branchId,
+        'email_verified_at' => now(),
+    ]);
+
+    // Create member profile if applicable
+    if ($user->role === 'member' && ($request->has('plan_id') || $request->has('sex'))) {
+        $plan = $request->has('plan_id') ? \App\Models\MembershipPlan::find($validated['plan_id']) : null;
+        $subscription = $request->has('subscription_id') ? \App\Models\Subscriptions::find($validated['subscription_id']) : null;
+        $paymentMethod = $validated['payment_method'] ?? 'cash';
+        $referenceCode = $validated['reference_code'] ?? null;
+
+        $memberProfile = MemberProfile::create([
+            'user_id' => $user->user_id,
+            'plan_id' => $validated['plan_id'] ?? null,
+            'subscription_id' => $validated['subscription_id'] ?? null,
+            'sex' => $validated['sex'] ?? null,
+            'birthday' => $validated['birthday'] ?? null,
+            'height' => $validated['height'] ?? null,
+            'weight' => $validated['weight'] ?? null,
+            'mobile_number' => $validated['mobile_number'] ?? null,
+            'status' => ($plan && $subscription) ? 'active' : 'inactive',
+            'subscription_status' => ($plan && $subscription) ? 'active' : 'pending_selection',
+            'isApproved' => ($plan && $subscription) ? true : false,
+            'isApprovedForSubscription' => ($plan && $subscription) ? true : false,
+            'start_date' => $plan ? now() : null,
+            'end_date' => $plan ? now()->addDays($plan->duration_days) : null,
+            'start_date_for_subscription' => $subscription ? now() : null,
+            'end_date_for_subscription' => $subscription ? now()->addDays($subscription->duration_days) : null,
         ]);
 
-        $authUser = Auth::user();
-
-        // Create user with auto-verified email (accounts created by admin/staff are trusted)
-        $user = User::create([
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'username' => $validated['username'],
-            'email' => $validated['email'],
-            'password' => bcrypt($validated['password']),
-            'role' => $validated['role'] ?? 'member',
-            'status' => 'active',
-            'email_verified_at' => now(), // Auto-verify accounts created by admin/staff
-        ]);
-
-        // Create member profile if applicable
-        if ($user->role === 'member' && ($request->has('plan_id') || $request->has('sex'))) {
-            $plan = \App\Models\MembershipPlan::find($validated['plan_id']);
-
-            $memberProfile = MemberProfile::create([
-                'user_id' => $user->user_id,
-                'plan_id' => $validated['plan_id'] ?? null,
-                'sex' => $validated['sex'] ?? null,
-                'birthday' => $validated['birthday'] ?? null,
-                'height' => $validated['height'] ?? null,
-                'weight' => $validated['weight'] ?? null,
-                'mobile_number' => $validated['mobile_number'] ?? null,
-                'status' => 'active',
-                'isApproved' => true,
-                'start_date' => now(),
-                'end_date' => $plan ? now()->addDays($plan->duration_days) : null,
+        // Process payments if both plan and subscription are selected
+        if ($plan && $subscription) {
+            // Create sale for plan
+            $planSale = Sales::create([
+                'user_id' => $currentUser->user_id,
+                'branch_id' => $user->branch_id,
+                'total_amount' => $plan->price,
+                'tax' => 0,
+                'discount' => 0,
+                'payment_method' => $paymentMethod,
+                'reference_code' => $referenceCode,
+                'status' => 'paid',
+                'type' => 'memberships',
             ]);
 
-            // Generate and send QR code if plan exists
-            if ($plan) {
-                $this->generateAndSendQRCode($user, $memberProfile, $plan);
-            }
+            $planSale->items()->create([
+                'plan_id' => $plan->plan_id,
+                'product_id' => null,
+                'subscription_id' => null,
+                'quantity' => 1,
+                'price' => $plan->price,
+                'sub_total' => $plan->price,
+            ]);
+
+            Transactions::create([
+                'sales_id' => $planSale->sales_id,
+                'type' => 'memberships',
+                'performed_by' => $currentUser->user_id,
+                'quantity' => 1,
+                'timestamp' => now(),
+            ]);
+
+            // Create sale for subscription
+            $subscriptionSale = Sales::create([
+                'user_id' => $currentUser->user_id,
+                'branch_id' => $user->branch_id,
+                'total_amount' => $subscription->price,
+                'tax' => 0,
+                'discount' => 0,
+                'payment_method' => $paymentMethod,
+                'reference_code' => $referenceCode,
+                'status' => 'paid',
+                'type' => 'subscriptions',
+            ]);
+
+            $subscriptionSale->items()->create([
+                'plan_id' => null,
+                'product_id' => null,
+                'subscription_id' => $subscription->subscription_id,
+                'quantity' => 1,
+                'price' => $subscription->price,
+                'sub_total' => $subscription->price,
+            ]);
+
+            Transactions::create([
+                'sales_id' => $subscriptionSale->sales_id,
+                'type' => 'subscriptions',
+                'performed_by' => $currentUser->user_id,
+                'quantity' => 1,
+                'timestamp' => now(),
+            ]);
+
+            // Generate and send QR code
+            $this->generateAndSendQRCode($user, $memberProfile, $plan, $subscription);
         }
-
-        Logs::create([
-            'user_id' => $authUser->user_id,
-            'action' => "{$authUser->last_name} added a new user: {$validated['last_name']}.",
-            'timestamp' => now(),
-        ]);
-
-        $successMessage = 'User created successfully.';
-        if ($user->role === 'member' && $request->has('plan_id')) {
-            $successMessage .= ' QR code sent to ' . $user->email;
-        }
-
-        return redirect()->back()->with('success', $successMessage);
     }
+
+    Logs::create([
+        'user_id' => $currentUser->user_id,
+        'branch_id' => $branchId,
+        'action' => "{$currentUser->last_name} added a new user: {$validated['last_name']}.",
+        'timestamp' => now(),
+    ]);
+
+    $successMessage = 'User created successfully.';
+    if ($user->role === 'member' && $request->has('plan_id') && $request->has('subscription_id')) {
+        $successMessage .= ' QR code sent to ' . $user->email;
+    }
+
+    return redirect()->back()->with('success', $successMessage);
+}
 
     public function show(string $id)
     {
-        $user = User::with(['member.plan', 'logs'])->findOrFail($id);
+        $currentUser = Auth::user();
+        $user = User::with(['member.plan', 'logs', 'branch'])->findOrFail($id);
 
-        // Authorization check for staff
-        if (Auth::user()->role === 'staff' && $user->role !== 'member') {
+        // Authorization check for staff and admin
+        if ($currentUser->role === 'staff' && $user->role !== 'member') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -210,11 +374,17 @@ class UserManagementController extends Controller
 
     public function edit($id)
     {
-        $user = User::with('member')->findOrFail($id);
+        $currentUser = Auth::user();
+        $user = User::with('member', 'branch')->findOrFail($id);
 
         // Authorization check for staff
-        if (Auth::user()->role === 'staff' && $user->role !== 'member') {
+        if ($currentUser->role === 'staff' && $user->role !== 'member') {
             return response()->json(['error' => 'You can only edit members'], 403);
+        }
+
+        // Authorization check for admin
+        if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+            return response()->json(['error' => 'You can only edit users from your branch'], 403);
         }
 
         $response = [
@@ -225,6 +395,7 @@ class UserManagementController extends Controller
             'email' => $user->email,
             'role' => $user->role,
             'status' => $user->status,
+            'branch_id' => $user->branch_id,
         ];
 
         if ($user->member) {
@@ -242,167 +413,197 @@ class UserManagementController extends Controller
     }
 
     public function update(Request $request, string $id)
-    {
-        $user = User::findOrFail($id);
-        $previousRole = $user->role;
+{
+    $currentUser = Auth::user();
+    $branchId = $currentUser->role === 'super_admin'
+        ? session('selected_branch_id')
+        : $currentUser->branch_id;
 
-        // Authorization check for staff
-        if (Auth::user()->role === 'staff' && $user->role !== 'member') {
-            return redirect()->back()->with('error', 'You can only edit members');
-        }
+    $user = User::findOrFail($id);
+    $previousRole = $user->role;
 
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $id . ',user_id',
-            'email' => 'required|email|unique:users,email,' . $id . ',user_id',
-            'password' => 'nullable|min:6',
-            'role' => 'required|in:member,admin,staff',
-            'status' => 'nullable|in:active,inactive',
-            'plan_id' => 'nullable|exists:membership_plans,plan_id',
-            'sex' => 'nullable|in:male,female',
-            'birthday' => 'nullable|date',
-            'height' => 'nullable|numeric',
-            'weight' => 'nullable|numeric',
-            'mobile_number' => 'nullable|string|max:20',
-        ]);
+    // Authorization checks
+    if ($currentUser->role === 'staff' && $user->role !== 'member') {
+        return redirect()->back()->with('error', 'You can only edit members');
+    }
 
-        $user->first_name = $validated['first_name'];
-        $user->last_name = $validated['last_name'];
-        $user->username = $validated['username'];
-        $user->email = $validated['email'];
+    if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+        return redirect()->back()->with('error', 'You can only edit users from your branch');
+    }
 
-        if (!empty($validated['password'])) {
-            $user->password = bcrypt($validated['password']);
-        }
+    $validationRules = [
+        'first_name' => 'required|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'username' => 'required|string|max:255|unique:users,username,' . $id . ',user_id',
+        'email' => 'required|email|unique:users,email,' . $id . ',user_id',
+        'password' => 'nullable|min:6',
+        'role' => 'required|in:member,admin,staff,super_admin',
+        'status' => 'nullable|in:active,inactive',
+        'plan_id' => 'nullable|exists:membership_plans,plan_id',
+        'subscription_id' => 'nullable|exists:subscriptions,subscription_id',
+        'sex' => 'nullable|in:male,female',
+        'birthday' => 'nullable|date',
+        'height' => 'nullable|numeric',
+        'weight' => 'nullable|numeric',
+        'mobile_number' => 'nullable|string|max:20',
+        'payment_method' => 'nullable|in:cash,gcash',
+        'reference_code' => 'nullable|string|max:255',
+    ];
 
-        $user->role = $validated['role'];
-        $user->status = $validated['status'];
+    if ($currentUser->role === 'super_admin') {
+        $validationRules['branch_id'] = 'required|exists:branches,branch_id';
+    }
 
-        // Ensure email_verified_at is set for updated accounts
-        if (!$user->email_verified_at) {
-            $user->email_verified_at = now();
-        }
+    $validated = $request->validate($validationRules);
 
-        $user->save();
+    $user->first_name = $validated['first_name'];
+    $user->last_name = $validated['last_name'];
+    $user->username = $validated['username'];
+    $user->email = $validated['email'];
 
-        if ($user->role === 'member') {
-            $memberData = [
-                'plan_id' => $validated['plan_id'] ?? null,
-                'sex' => $validated['sex'] ?? null,
-                'birthday' => $validated['birthday'] ?? null,
-                'height' => $validated['height'] ?? null,
-                'weight' => $validated['weight'] ?? null,
-                'mobile_number' => $validated['mobile_number'] ?? null,
-            ];
+    if (!empty($validated['password'])) {
+        $user->password = bcrypt($validated['password']);
+    }
 
-            if ($user->member) {
-                $user->member->update($memberData);
-            } else if ($request->has('plan_id') || $request->has('sex')) {
+    $user->role = $validated['role'];
+    $user->status = $validated['status'];
+
+    if ($currentUser->role === 'super_admin' && isset($validated['branch_id'])) {
+        $user->branch_id = $validated['branch_id'];
+    }
+
+    if (!$user->email_verified_at) {
+        $user->email_verified_at = now();
+    }
+
+    $user->save();
+
+    if ($user->role === 'member') {
+        $memberData = [
+            'plan_id' => $validated['plan_id'] ?? null,
+            'subscription_id' => $validated['subscription_id'] ?? null,
+            'sex' => $validated['sex'] ?? null,
+            'birthday' => $validated['birthday'] ?? null,
+            'height' => $validated['height'] ?? null,
+            'weight' => $validated['weight'] ?? null,
+            'mobile_number' => $validated['mobile_number'] ?? null,
+        ];
+
+        if ($user->member) {
+            $oldPlanId = $user->member->plan_id;
+            $oldSubscriptionId = $user->member->subscription_id;
+            
+            $user->member->update($memberData);
+
+            // If plan or subscription changed and both are now set, process payment and regenerate QR
+            if (($oldPlanId != $validated['plan_id'] || $oldSubscriptionId != $validated['subscription_id']) 
+                && $validated['plan_id'] && $validated['subscription_id']) {
+                
                 $plan = \App\Models\MembershipPlan::find($validated['plan_id']);
+                $subscription = \App\Models\Subscriptions::find($validated['subscription_id']);
+                $paymentMethod = $validated['payment_method'] ?? 'cash';
+                $referenceCode = $validated['reference_code'] ?? null;
 
-                $memberProfile = MemberProfile::create(array_merge($memberData, [
-                    'user_id' => $user->user_id,
-                    'status' => 'active',
-                    'isApproved' => true,
-                    'start_date' => now(),
-                    'end_date' => $plan ? now()->addDays($plan->duration_days) : null,
-                ]));
+                // Process new payments if changed
+                if ($oldPlanId != $validated['plan_id']) {
+                    $planSale = Sales::create([
+                        'user_id' => $currentUser->user_id,
+                        'branch_id' => $user->branch_id,
+                        'total_amount' => $plan->price,
+                        'tax' => 0,
+                        'discount' => 0,
+                        'payment_method' => $paymentMethod,
+                        'reference_code' => $referenceCode,
+                        'status' => 'paid',
+                        'type' => 'memberships',
+                    ]);
 
-                if ($previousRole !== 'member' && $plan) {
-                    $this->generateAndSendQRCode($user, $memberProfile, $plan);
+                    $planSale->items()->create([
+                        'plan_id' => $plan->plan_id,
+                        'product_id' => null,
+                        'subscription_id' => null,
+                        'quantity' => 1,
+                        'price' => $plan->price,
+                        'sub_total' => $plan->price,
+                    ]);
+
+                    Transactions::create([
+                        'sales_id' => $planSale->sales_id,
+                        'type' => 'memberships',
+                        'performed_by' => $currentUser->user_id,
+                        'quantity' => 1,
+                        'timestamp' => now(),
+                    ]);
                 }
+
+                if ($oldSubscriptionId != $validated['subscription_id']) {
+                    $subscriptionSale = Sales::create([
+                        'user_id' => $currentUser->user_id,
+                        'branch_id' => $user->branch_id,
+                        'total_amount' => $subscription->price,
+                        'tax' => 0,
+                        'discount' => 0,
+                        'payment_method' => $paymentMethod,
+                        'reference_code' => $referenceCode,
+                        'status' => 'paid',
+                        'type' => 'subscriptions',
+                    ]);
+
+                    $subscriptionSale->items()->create([
+                        'plan_id' => null,
+                        'product_id' => null,
+                        'subscription_id' => $subscription->subscription_id,
+                        'quantity' => 1,
+                        'price' => $subscription->price,
+                        'sub_total' => $subscription->price,
+                    ]);
+
+                    Transactions::create([
+                        'sales_id' => $subscriptionSale->sales_id,
+                        'type' => 'subscriptions',
+                        'performed_by' => $currentUser->user_id,
+                        'quantity' => 1,
+                        'timestamp' => now(),
+                    ]);
+                }
+
+                // Update dates and status
+                $user->member->update([
+                    'start_date' => now(),
+                    'end_date' => now()->addDays($plan->duration_days),
+                    'start_date_for_subscription' => now(),
+                    'end_date_for_subscription' => now()->addDays($subscription->duration_days),
+                    'status' => 'active',
+                    'subscription_status' => 'active',
+                    'isApproved' => true,
+                    'isApprovedForSubscription' => true,
+                ]);
+
+                // Regenerate QR code
+                $this->generateAndSendQRCode($user, $user->member, $plan, $subscription);
             }
-        } else {
-            if ($user->member) {
-                $user->member->delete();
-            }
-        }
+        } else if ($request->has('plan_id') && $request->has('subscription_id')) {
+            $plan = \App\Models\MembershipPlan::find($validated['plan_id']);
+            $subscription = \App\Models\Subscriptions::find($validated['subscription_id']);
+            $paymentMethod = $validated['payment_method'] ?? 'cash';
+            $referenceCode = $validated['reference_code'] ?? null;
 
-        $authUser = Auth::user();
-
-        Logs::create([
-            'user_id' => $authUser->user_id,
-            'action' => "{$authUser->last_name} updated user: {$validated['last_name']}.",
-            'timestamp' => now(),
-        ]);
-
-        return redirect()->back()->with('success', 'User updated successfully');
-    }
-
-    public function destroy(string $id)
-    {
-        $currentUser = Auth::user();
-        $userToDelete = User::where('user_id', $id)->firstOrFail();
-
-        // Authorization check for staff
-        if ($currentUser->role === 'staff' && $userToDelete->role !== 'member') {
-            return redirect()->back()->with('error', 'You can only delete members');
-        }
-
-        if ($userToDelete->role === 'admin') {
-            return redirect()->back()
-                ->with('error', 'Admin cannot be deleted.');
-        }
-
-        if ($userToDelete->user_id === $currentUser->user_id) {
-            return redirect()->back()
-                ->with('error', 'You cannot delete your own account.');
-        }
-
-        Logs::create([
-            'user_id' => $currentUser->user_id,
-            'action' => "{$currentUser->last_name} deleted user: {$userToDelete->last_name}.",
-            'timestamp' => now(),
-        ]);
-
-        $userToDelete->delete();
-
-        return redirect()->back()
-            ->with('success', 'User deleted successfully');
-    }
-
-    public function approve($memberId)
-    {
-        try {
-            $member = MemberProfile::findOrFail($memberId);
-            $currentUser = Auth::user();
-            $user = $member->user;
-            $plan = $member->plan;
-
-            if (!$plan) {
-                return redirect()->back()
-                    ->with('error', 'Cannot approve: Member has no membership plan assigned.');
-            }
-
-            $paymentMethod = request()->query('payment', 'cash');
-            $referenceCode = request()->query('reference', null);
-            $isRenewal = $member->renewal_pending;
-
-            // Validate reference code for GCash payments
-            if ($paymentMethod === 'gcash' && empty($referenceCode)) {
-                return redirect()->back()
-                    ->with('error', 'GCash reference code is required for GCash payments.');
-            }
-
-            $member->update([
-                'isApproved' => true,
-                'isDisabled' => false,
+            $memberProfile = MemberProfile::create(array_merge($memberData, [
+                'user_id' => $user->user_id,
                 'status' => 'active',
-                'approved_at' => now(),
-                'renewal_pending' => false,
+                'subscription_status' => 'active',
+                'isApproved' => true,
+                'isApprovedForSubscription' => true,
                 'start_date' => now(),
                 'end_date' => now()->addDays($plan->duration_days),
-                'suspended_at' => null,
-                'days_remaining_before_suspend' => null,
-            ]);
+                'start_date_for_subscription' => now(),
+                'end_date_for_subscription' => now()->addDays($subscription->duration_days),
+            ]));
 
-            $member->refresh();
-
-            $this->generateAndSendQRCode($user, $member, $plan);
-
-            $sale = Sales::create([
+            // Process payments for new member
+            $planSale = Sales::create([
                 'user_id' => $currentUser->user_id,
+                'branch_id' => $user->branch_id,
                 'total_amount' => $plan->price,
                 'tax' => 0,
                 'discount' => 0,
@@ -412,199 +613,525 @@ class UserManagementController extends Controller
                 'type' => 'memberships',
             ]);
 
-            $sale->items()->create([
+            $planSale->items()->create([
                 'plan_id' => $plan->plan_id,
                 'product_id' => null,
+                'subscription_id' => null,
                 'quantity' => 1,
                 'price' => $plan->price,
                 'sub_total' => $plan->price,
             ]);
 
-            $actionType = $isRenewal ? 'Approved renewal' : 'Approved membership';
-
             Transactions::create([
-                'sales_id' => $sale->sales_id,
+                'sales_id' => $planSale->sales_id,
                 'type' => 'memberships',
                 'performed_by' => $currentUser->user_id,
                 'quantity' => 1,
                 'timestamp' => now(),
             ]);
 
-            Logs::create([
+            $subscriptionSale = Sales::create([
                 'user_id' => $currentUser->user_id,
-                'action' => "{$actionType} for: {$user->first_name} {$user->last_name} - Plan: {$plan->name} - Payment: {$paymentMethod}",
+                'branch_id' => $user->branch_id,
+                'total_amount' => $subscription->price,
+                'tax' => 0,
+                'discount' => 0,
+                'payment_method' => $paymentMethod,
+                'reference_code' => $referenceCode,
+                'status' => 'paid',
+                'type' => 'subscriptions',
+            ]);
+
+            $subscriptionSale->items()->create([
+                'plan_id' => null,
+                'product_id' => null,
+                'subscription_id' => $subscription->subscription_id,
+                'quantity' => 1,
+                'price' => $subscription->price,
+                'sub_total' => $subscription->price,
+            ]);
+
+            Transactions::create([
+                'sales_id' => $subscriptionSale->sales_id,
+                'type' => 'subscriptions',
+                'performed_by' => $currentUser->user_id,
+                'quantity' => 1,
                 'timestamp' => now(),
             ]);
 
-            $message = $isRenewal
-                ? "Renewal approved! QR code sent to {$user->email}."
-                : "Member approved! QR code sent to {$user->email}.";
-
-            return redirect()->back()
-                ->with('success', $message . " Sale recorded.");
-        } catch (\Exception $e) {
-            \Log::error("Error during approval", [
-                'member_id' => $memberId,
-                'error' => $e->getMessage()
-            ]);
-
-            return redirect()->back()
-                ->with('error', 'Error approving member: ' . $e->getMessage());
+            if ($previousRole !== 'member') {
+                $this->generateAndSendQRCode($user, $memberProfile, $plan, $subscription);
+            }
+        }
+    } else {
+        if ($user->member) {
+            $user->member->delete();
         }
     }
 
-    public function deny($memberId)
-    {
-        $member = MemberProfile::findOrFail($memberId);
+    Logs::create([
+        'user_id' => $currentUser->user_id,
+        'branch_id' => $branchId,
+        'action' => "{$currentUser->last_name} updated user: {$validated['last_name']}.",
+        'timestamp' => now(),
+    ]);
 
-        $member->update([
-            'isApproved' => false,
-            'isDisabled' => true,
+    return redirect()->back()->with('success', 'User updated successfully');
+}
+    public function destroy(string $id)
+    {
+        $currentUser = Auth::user();
+
+                     $branchId = $currentUser->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $currentUser->branch_id;
+        $userToDelete = User::where('user_id', $id)->firstOrFail();
+
+        // Authorization checks
+        if ($currentUser->role === 'staff' && $userToDelete->role !== 'member') {
+            return redirect()->back()->with('error', 'You can only delete members');
+        }
+
+        if ($currentUser->role === 'admin' && $userToDelete->branch_id !== $currentUser->branch_id) {
+            return redirect()->back()->with('error', 'You can only delete users from your branch');
+        }
+
+        if ($userToDelete->role === 'super_admin') {
+            return redirect()->back()->with('error', 'Super Admin cannot be deleted.');
+        }
+
+        if ($userToDelete->role === 'admin' && $currentUser->role !== 'super_admin') {
+            return redirect()->back()->with('error', 'Only Super Admin can delete Admin users.');
+        }
+
+        if ($userToDelete->user_id === $currentUser->user_id) {
+            return redirect()->back()->with('error', 'You cannot delete your own account.');
+        }
+
+        Logs::create([
+            'user_id' => $currentUser->user_id,
+            'branch_id' => $branchId,
+            'action' => "{$currentUser->last_name} deleted user: {$userToDelete->last_name}.",
+            'timestamp' => now(),
         ]);
 
-        return redirect()->back()
-            ->with('success', 'Member access denied.');
+        $userToDelete->delete();
+
+        return redirect()->back()->with('success', 'User deleted successfully');
     }
 
-    private function generateAndSendQRCode($user, $memberProfile, $plan)
-    {
-        if (!$plan) {
-            throw new \Exception("QR Code generation failed: No plan provided");
+public function approveSubscription(Request $request, $memberId)
+{
+    try {
+        $member = MemberProfile::with(['user:user_id,first_name,last_name,email,branch_id', 'plan:plan_id,name,price,duration_days', 'subscription:subscription_id,name,price,duration_days'])
+            ->findOrFail($memberId);
+        
+        $currentUser = Auth::user();
+        $branchId = $currentUser->role === 'super_admin'
+            ? session('selected_branch_id')
+            : $currentUser->branch_id;
+        
+        $user = $member->user;
+        $plan = $member->plan;
+        $subscription = $member->subscription;
+
+        // Authorization check
+        if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+            return redirect()->back()->with('error', 'You can only approve members from your branch.');
         }
 
+        // Validation
+        if (!$plan) {
+            return redirect()->back()->with('error', 'Cannot approve: Member has no plan selected.');
+        }
+
+        if (!$subscription) {
+            return redirect()->back()->with('error', 'Cannot approve: Member has no subscription selected.');
+        }
+
+        // Get payment details from request
+        $paymentMethod = $request->input('payment_method', 'cash');
+        $referenceCode = $request->input('reference_code');
+        $isRenewal = $member->renewal_pending;
+
+        if ($paymentMethod === 'gcash' && empty($referenceCode)) {
+            return redirect()->back()->with('error', 'GCash reference code is required for GCash payments.');
+        }
+
+        // Use database transaction for consistency
+        \DB::beginTransaction();
+        
         try {
-            $qrData = [
-                'member_id' => $memberProfile->member_id,
-                'name' => "{$user->first_name} {$user->last_name}",
-                'email' => $user->email,
-                'plan' => $plan->name,
-                'price' => $plan->price,
-                'start_date' => $memberProfile->start_date,
-                'end_date' => $memberProfile->end_date,
-            ];
-
-            $qrText = json_encode($qrData);
-            $qrRelativePath = "qr/member_{$user->user_id}.png";
-            $fullPath = storage_path("app/public/{$qrRelativePath}");
-
-            $directory = dirname($fullPath);
-            if (!file_exists($directory)) {
-                mkdir($directory, 0755, true);
-            }
-
-            if (file_exists($fullPath)) {
-                unlink($fullPath);
-            }
-
-            $result = Builder::create()
-                ->writer(new PngWriter())
-                ->data($qrText)
-                ->encoding(new Encoding('UTF-8'))
-                ->size(300)
-                ->margin(10)
-                ->build();
-
-            $result->saveToFile($fullPath);
-
-            if (!file_exists($fullPath)) {
-                throw new \Exception("QR code file was not created");
-            }
-
-            $fileSize = filesize($fullPath);
-            if ($fileSize === 0) {
-                throw new \Exception("QR code file is empty");
-            }
-
-            $memberProfile->qr_code = $qrRelativePath;
-            $memberProfile->save();
-
-            \Log::info("QR Code generated successfully", [
-                'path' => $qrRelativePath,
-                'file_size' => $fileSize
+            // Create sale for SUBSCRIPTION
+            $subscriptionSale = Sales::create([
+                'user_id' => $currentUser->user_id,
+                'branch_id' => $user->branch_id,
+                'total_amount' => $subscription->price,
+                'tax' => 0,
+                'discount' => 0,
+                'payment_method' => $paymentMethod,
+                'reference_code' => $referenceCode,
+                'status' => 'paid',
+                'type' => 'subscriptions',
             ]);
 
-            try {
-                Mail::to($user->email)->send(new MemberQRCodeMail($memberProfile, $fullPath));
-                \Log::info("QR Code email sent to: {$user->email}");
-            } catch (\Exception $e) {
-                \Log::error("Failed to send QR code email: " . $e->getMessage());
-            }
+            $subscriptionSale->items()->create([
+                'plan_id' => null,
+                'product_id' => null,
+                'subscription_id' => $subscription->subscription_id,
+                'quantity' => 1,
+                'price' => $subscription->price,
+                'sub_total' => $subscription->price,
+            ]);
+
+            Transactions::create([
+                'sales_id' => $subscriptionSale->sales_id,
+                'type' => 'subscriptions',
+                'performed_by' => $currentUser->user_id,
+                'quantity' => 1,
+                'timestamp' => now(),
+            ]);
+
+            // Update member profile to ACTIVE
+            $member->update([
+                'isApproved' => true,
+                'isApprovedForSubscription' => true,
+                'isDisabled' => false,
+                'isDisabledForSubscription' => false,
+                'subscription_status' => 'active',
+                'status' => 'active',
+                'renewal_pending' => false,
+                'approved_at' => now(),
+                'approved_at_for_subscription' => now(),
+                'start_date_for_subscription' => now(),
+                'end_date_for_subscription' => now()->addDays($subscription->duration_days),
+                'suspended_at' => null,
+                'days_remaining_before_suspend' => null,
+            ]);
+
+            Logs::create([
+                'user_id' => $currentUser->user_id,
+                'branch_id' => $branchId,
+                'action' => ($isRenewal ? 'Approved renewal' : 'Approved subscription') . " for: {$user->first_name} {$user->last_name} - Subscription: {$subscription->name} (₱{$subscription->price}) - Payment: {$paymentMethod}",
+                'timestamp' => now(),
+            ]);
+
+            \DB::commit();
+
+            // OPTIMIZATION: Queue QR code generation instead of doing it synchronously
+            // This prevents timeout issues
+            GenerateMemberQRCode::dispatch($user->user_id, $member->member_id, $plan->plan_id, $subscription->subscription_id);
+
+            $message = $isRenewal
+                ? "Renewal approved! QR code will be sent to {$user->email} shortly."
+                : "Subscription approved! QR code will be sent to {$user->email} shortly.";
+
+            return redirect()->back()->with('success', $message);
+
         } catch (\Exception $e) {
-            \Log::error("QR Code generation failed", [
-                'error' => $e->getMessage()
-            ]);
+            \DB::rollBack();
             throw $e;
         }
+
+    } catch (\Exception $e) {
+        \Log::error("Error during subscription approval", [
+            'member_id' => $memberId,
+            'error' => $e->getMessage()
+        ]);
+
+        return redirect()->back()->with('error', 'Error approving subscription: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Optimized profile approval - also queue QR if needed
+ */
+public function approveProfile(Request $request, $memberId)
+{
+    try {
+        $member = MemberProfile::with(['user:user_id,first_name,last_name,email,branch_id', 'plan:plan_id,name,price,duration_days'])
+            ->findOrFail($memberId);
+        
+        $currentUser = Auth::user();
+        $branchId = $currentUser->role === 'super_admin'
+            ? session('selected_branch_id')
+            : $currentUser->branch_id;
+        $user = $member->user;
+        $plan = $member->plan;
+
+        // Authorization check
+        if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+            return redirect()->back()->with('error', 'You can only approve members from your branch.');
+        }
+
+        // Validation
+        if (!$plan) {
+            return redirect()->back()->with('error', 'Cannot approve: Member has no plan selected.');
+        }
+
+        // Get payment details from request
+        $paymentMethod = $request->input('payment_method', 'cash');
+        $referenceCode = $request->input('reference_code');
+
+        if ($paymentMethod === 'gcash' && empty($referenceCode)) {
+            return redirect()->back()->with('error', 'GCash reference code is required for GCash payments.');
+        }
+
+        \DB::beginTransaction();
+        
+        try {
+            // Create sale for MEMBERSHIP PLAN
+            $planSale = Sales::create([
+                'user_id' => $currentUser->user_id,
+                'branch_id' => $user->branch_id,
+                'total_amount' => $plan->price,
+                'tax' => 0,
+                'discount' => 0,
+                'payment_method' => $paymentMethod,
+                'reference_code' => $referenceCode,
+                'status' => 'paid',
+                'type' => 'memberships',
+            ]);
+
+            $planSale->items()->create([
+                'plan_id' => $plan->plan_id,
+                'product_id' => null,
+                'subscription_id' => null,
+                'quantity' => 1,
+                'price' => $plan->price,
+                'sub_total' => $plan->price,
+            ]);
+
+            Transactions::create([
+                'sales_id' => $planSale->sales_id,
+                'type' => 'memberships',
+                'performed_by' => $currentUser->user_id,
+                'quantity' => 1,
+                'timestamp' => now(),
+            ]);
+
+            // Update member profile - approved but waiting for subscription
+            $member->update([
+                'isApproved' => true,
+                'isDisabled' => false,
+                'status' => 'approved',
+                'subscription_status' => 'pending_selection',
+                'approved_at' => now(),
+                'start_date' => now(),
+                'end_date' => now()->addDays($plan->duration_days),
+            ]);
+
+            Logs::create([
+                'user_id' => $currentUser->user_id,
+                'branch_id' => $branchId,
+                'action' => "Approved profile & processed plan payment for: {$user->first_name} {$user->last_name} - Plan: {$plan->name} (₱{$plan->price}) - Payment: {$paymentMethod}",
+                'timestamp' => now(),
+            ]);
+
+            \DB::commit();
+
+            return redirect()->route('admin.user_management')->with('success', "Profile approved and plan payment processed! Member can now select a subscription.");
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            throw $e;
+        }
+
+    } catch (\Exception $e) {
+        \Log::error("Error during profile approval", [
+            'member_id' => $memberId,
+            'error' => $e->getMessage()
+        ]);
+
+        return redirect()->back()->with('error', 'Error approving profile: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Optimized QR generation - now synchronous but faster
+ * Use this if you don't want to set up queues
+ */
+private function generateAndSendQRCode($user, $memberProfile, $plan, $subscription)
+{
+    if (!$plan || !$subscription) {
+        throw new \Exception("QR Code generation failed: Both plan and subscription are required");
     }
 
+    try {
+        // Simplified QR data
+        $qrData = json_encode([
+            'id' => $memberProfile->member_id,
+            'name' => "{$user->first_name} {$user->last_name}",
+            'plan' => $plan->name,
+            'sub' => $subscription->name,
+            'exp' => $memberProfile->end_date_for_subscription,
+        ]);
+
+        $qrRelativePath = "qr/member_{$user->user_id}.png";
+        $fullPath = storage_path("app/public/{$qrRelativePath}");
+
+        $directory = dirname($fullPath);
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
+
+        // Generate QR with smaller size for faster generation
+        $result = Builder::create()
+            ->writer(new PngWriter())
+            ->data($qrData)
+            ->encoding(new Encoding('UTF-8'))
+            ->size(250) // Reduced from 300
+            ->margin(5)  // Reduced from 10
+            ->build();
+
+        $result->saveToFile($fullPath);
+
+        if (!file_exists($fullPath) || filesize($fullPath) === 0) {
+            throw new \Exception("QR code file creation failed");
+        }
+
+        $memberProfile->qr_code = $qrRelativePath;
+        $memberProfile->save();
+
+        // Send email asynchronously using queue
+        \Mail::to($user->email)->queue(new MemberQRCodeMail($memberProfile, $fullPath));
+
+        \Log::info("QR Code generated and queued for email", [
+            'user_id' => $user->user_id,
+            'path' => $qrRelativePath
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error("QR Code generation failed", [
+            'user_id' => $user->user_id,
+            'error' => $e->getMessage()
+        ]);
+        // Don't throw - allow approval to succeed even if QR fails
+    }
+}
+
+    /**
+     * Deny member access
+     */
+    public function deny($memberId)
+{
+    $member = MemberProfile::findOrFail($memberId);
+    $currentUser = Auth::user();
+    $user = $member->user;
+
+    if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+        return redirect()->back()->with('error', 'You can only deny members from your branch.');
+    }
+
+    $member->update([
+        'isApproved' => false,
+        'isDisabled' => true,
+        'isApprovedForSubscription' => false,
+        'isDisabledForSubscription' => true,
+    ]);
+
+    Logs::create([
+        'user_id' => $currentUser->user_id,
+        'branch_id' => $currentUser->role === 'super_admin'
+            ? session('selected_branch_id')
+            : $currentUser->branch_id,
+        'action' => "Denied membership for: {$user->first_name} {$user->last_name}",
+        'timestamp' => now(),
+    ]);
+
+    return redirect()->back()->with('success', 'Member access denied.');
+}
+
+    /**
+     * Suspend member
+     */
     public function suspendMember($memberId)
     {
         try {
             $member = MemberProfile::findOrFail($memberId);
             $user = $member->user;
+            $currentUser = Auth::user();
+
+            if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+                return redirect()->back()->with('error', 'You can only suspend members from your branch.');
+            }
 
             $member->update([
-                'status' => 'expired',
+                'subscription_status' => 'expired',
                 'suspended_at' => now(),
-                'days_remaining_before_suspend' => $member->end_date
-                    ? max(0, now()->diffInDays($member->end_date, false))
+                'days_remaining_before_suspend' => $member->end_date_for_subscription
+                    ? max(0, now()->diffInDays($member->end_date_for_subscription, false))
                     : 0,
             ]);
 
             Logs::create([
                 'user_id' => Auth::id(),
+                'branch_id' => $currentUser->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $currentUser->branch_id,
                 'action' => "Suspended membership for: {$user->first_name} {$user->last_name}",
                 'timestamp' => now(),
             ]);
 
-            return redirect()->back()
-                ->with('success', "Member {$user->first_name} {$user->last_name} has been suspended.");
+            return redirect()->back()->with('success', "Member {$user->first_name} {$user->last_name} has been suspended.");
         } catch (\Exception $e) {
             \Log::error("Error suspending member", [
                 'member_id' => $memberId,
                 'error' => $e->getMessage()
             ]);
 
-            return redirect()->back()
-                ->with('error', 'Error suspending member: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error suspending member: ' . $e->getMessage());
         }
     }
 
+    /**
+     * Reactivate member
+     */
     public function reactivateMember($memberId)
     {
         try {
             $member = MemberProfile::findOrFail($memberId);
             $user = $member->user;
+            $currentUser = Auth::user();
+
+            if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+                return redirect()->back()->with('error', 'You can only reactivate members from your branch.');
+            }
 
             if ($member->days_remaining_before_suspend > 0) {
                 $newEndDate = now()->addDays($member->days_remaining_before_suspend);
             } else {
-                $newEndDate = $member->end_date;
+                $newEndDate = $member->end_date_for_subscription;
             }
 
             $member->update([
-                'status' => 'active',
+                'subscription_status' => 'active',
                 'suspended_at' => null,
-                'end_date' => $newEndDate,
+                'end_date_for_subscription' => $newEndDate,
                 'days_remaining_before_suspend' => null,
             ]);
 
             Logs::create([
                 'user_id' => Auth::id(),
+                'branch_id' => $currentUser->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $currentUser->branch_id,
                 'action' => "Reactivated membership for: {$user->first_name} {$user->last_name}",
                 'timestamp' => now(),
             ]);
 
-            return redirect()->back()
-                ->with('success', "Member {$user->first_name} {$user->last_name} has been reactivated.");
+            return redirect()->back()->with('success', "Member {$user->first_name} {$user->last_name} has been reactivated.");
         } catch (\Exception $e) {
             \Log::error("Error reactivating member", [
                 'member_id' => $memberId,
                 'error' => $e->getMessage()
             ]);
 
-            return redirect()->back()
-                ->with('error', 'Error reactivating member: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error reactivating member: ' . $e->getMessage());
         }
     }
 }

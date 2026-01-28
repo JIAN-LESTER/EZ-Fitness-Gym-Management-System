@@ -116,6 +116,67 @@
                 htmlElement.classList.remove('sidebar-init-open');
             }
         })();
+
+       (function() {
+            'use strict';
+            
+            // Get saved state (default to open if not set)
+            const sidebarOpen = localStorage.getItem('sidebarOpen') !== 'false';
+            
+            // Apply class to HTML element immediately
+            const htmlElement = document.documentElement;
+            if (sidebarOpen) {
+                htmlElement.classList.add('sidebar-init-open');
+                htmlElement.classList.remove('sidebar-init-closed');
+            } else {
+                htmlElement.classList.add('sidebar-init-closed');
+                htmlElement.classList.remove('sidebar-init-open');
+            }
+        })();
+
+        // Modal functions - defined early so they're available everywhere
+        function openProfileModal() {
+            const modal = document.getElementById('profileModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profileModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function openEditProfileModal() {
+            const modal = document.getElementById('editProfileModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeEditProfileModal() {
+            const modal = document.getElementById('editProfileModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function opencompleteMembershipModal() {
+            const modal = document.getElementById('completeMembershipModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeQRApprovedModal() {
+            const modal = document.getElementById('qrApprovedModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            window.location.reload();
+        }
     </script>
 </head>
 
@@ -191,7 +252,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
             </div>
         </div>
         <nav class="flex-1 px-2 py-2 space-y-1">
-           @if(auth()->user()->role === 'admin')
+           @if(auth()->user()->role === 'admin' || auth()->user()->role === 'super_admin')
     <!-- Dashboard -->
     <a href="{{ route('admin.dashboard') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.dashboard') ? 'bg-white/20 text-white' : '' }}">
@@ -200,6 +261,17 @@ if (in_array($user->role, ['admin', 'staff'])) {
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Dashboard</span>
     </a>
+
+       @if(auth()->user()->role === 'super_admin')
+ <a href="{{ route('admin.branch_management') }}" @click="profileOpen = false"
+       class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.branch_management') ? 'bg-white/20 text-white' : '' }}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
+        </svg>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Branches</span>
+    </a>
+
+       @endif
 
     <!-- MEMBERSHIP SECTION -->
     <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3 sidebar-content">
@@ -227,6 +299,14 @@ if (in_array($user->role, ['admin', 'staff'])) {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Membership Plans</span>
+    </a>
+
+        <a href="{{ route('admin.subscription_management') }}" @click="profileOpen = false"  
+       class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.subscription_management') ? 'bg-white/20 text-white' : '' }}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+        </svg>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Subscriptions</span>
     </a>
 
     <!-- ATTENDANCE SECTION -->
@@ -338,8 +418,8 @@ if (in_array($user->role, ['admin', 'staff'])) {
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
 
-    <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  
-       class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
+    <a href="{{ route('staff.user_management') }}" @click="profileOpen = false"  
+       class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('staff.user_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
         </svg>
@@ -427,112 +507,207 @@ if (in_array($user->role, ['admin', 'staff'])) {
 
     <div class="flex-1 @yield('fullscreen', 'flex flex-col')">
         <!-- Header - conditionally positioned for fullscreen pages -->
-        <header
-            class="@yield('header-class', 'relative') h-16 bg-white text-white p-4 flex justify-between items-center shadow-sm dark:bg-white dark:text-gray-800 z-30">
-            <div class="flex items-center space-x-3">
-                <button @click="sidebarOpen = !sidebarOpen"
-                    class="p-2 rounded hover:bg-white hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white focus:outline-none transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16" />
+    <!-- Header Section - Extract and Replace in your layouts/app.blade.php -->
+<header
+    class="@yield('header-class', 'relative') h-16 bg-white text-white p-4 flex justify-between items-center shadow-sm dark:bg-white dark:text-gray-800 z-30">
+    <div class="flex items-center space-x-3">
+        <button @click="sidebarOpen = !sidebarOpen"
+            class="p-2 rounded hover:bg-gray-100 hover:text-white hover:text-gray-800 text-gray-800 dark:hover:bg-gray-800 dark:hover:text-white focus:outline-none transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+        <h1 class="text-lg font-semibold text-gray-800">@yield('header', 'Page')</h1>
+        
+        @if(auth()->user()->role === 'super_admin')
+            {{-- Super Admin: Branch Selector Dropdown --}}
+            <div x-data="{ branchOpen: false }" class="relative ml-4">
+                <button @click="branchOpen = !branchOpen" 
+                    class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                </button>
-                <h1 class="text-lg font-semibold">@yield('header', 'Page')</h1>
-            </div>
-
-            <div x-data="{ profileOpen: false }" class="relative">
-                <button @click="profileOpen = !profileOpen" class="flex items-center space-x-2 focus:outline-none px-3 py-2 rounded transition-colors hover:bg-gray-200 hover:text-gray-800">
-                    <div class="flex items-center space-x-2">
-                        <div class="relative">
-                            <div
-                                class="w-8 h-8 bg-gray-800 text-white dark:bg-white dark:text-gray-800 rounded-full flex items-center justify-center font-semibold transition-colors duration-200">
-                                {{ strtoupper(substr($user->first_name ?? 'U', 0, 1)) }}{{ strtoupper(substr($user->last_name ?? '', 0, 1)) }}
-                            </div>
-                        </div>
-                        <span class="hidden md:block">{{ $user->first_name ?? $user->username }}</span>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform"
-                        :class="profileOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200">
+                        {{ session('selected_branch_name', 'All Branches') }}
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-700 dark:text-gray-300 transition-transform" 
+                        :class="branchOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
 
-                <div x-show="profileOpen" x-cloak @click.away="profileOpen = false"
-                    x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
-                    x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150"
-                    x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                    class="translate-y-4 absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg z-50 border border-gray-200">
-
-                    <div class="px-4 py-3 border-b border-gray-200">
-                        <p class="text-sm font-medium text-gray-900">
-                            {{ $user->first_name }} {{ $user->last_name }}
-                        </p>
-                        <p class="text-sm text-gray-500 truncate">
-                            {{ $user->email }}
-                        </p>
-                        @if($user->role === 'member' && $member && $member->status === 'inactive')
-                            <p class="text-xs text-red-600 mt-1">
-                                Profile incomplete
-                            </p>
-                        @endif
-                    </div>
-
-                    <div class="py-1">
-                    @if($user->role === 'member' && $member && $member->status === 'inactive' && $member->isApproved == true)
-    <button
-        onclick="opencompleteMembershipModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
-        class="flex items-center w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-        </svg>
-        Complete Profile
-    </button>
-@endif
-
-                        <button
-                            onclick="openProfileModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
-                            class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            View Profile
-                        </button>
-
-                        <button
-                            onclick="openEditProfileModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
-                            class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Edit Profile
-                        </button>
-
-                        <div class="border-t border-gray-200 my-1"></div>
-
-                        <form method="POST" action="{{ route('logout') }}">
+                <div x-show="branchOpen" x-cloak @click.away="branchOpen = false"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95"
+                    class="absolute left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50 border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto">
+                    
+                    <div class="p-2">
+                        <form method="POST" action="{{ route('admin.select-branch') }}">
                             @csrf
-                            <button type="submit"
-                                class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                                Logout
+                            <button type="submit" name="branch_id" value="all"
+                                class="w-full text-left px-4 py-2 text-sm rounded-md transition-colors
+                                {{ !session('selected_branch_id') ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                                <div class="flex items-center space-x-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                    </svg>
+                                    <span>All Branches</span>
+                                </div>
                             </button>
                         </form>
                     </div>
+
+                    <div class="border-t border-gray-200 dark:border-gray-700"></div>
+
+                    <div class="p-2">
+                        @php
+                            $branches = \App\Models\Branches::orderBy('name')->get();
+                        @endphp
+
+                        @forelse($branches as $branch)
+                            <form method="POST" action="{{ route('admin.select-branch') }}">
+                                @csrf
+                                <button type="submit" name="branch_id" value="{{ $branch->branch_id }}"
+                                    class="w-full text-left px-4 py-2 text-sm rounded-md transition-colors
+                                    {{ session('selected_branch_id') == $branch->branch_id ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            </svg>
+                                            <div>
+                                                <div class="font-medium">{{ $branch->name }}</div>
+                                                @if($branch->address)
+                                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ Str::limit($branch->address, 30) }}</div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        @if(session('selected_branch_id') == $branch->branch_id)
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        @endif
+                                    </div>
+                                </button>
+                            </form>
+                        @empty
+                            <div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                                No branches available
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
-        </header>
+        @elseif(auth()->user()->branch)
+            {{-- Admin/Staff/Members: Display Current Branch (Read-only) --}}
+            <div class="ml-4 flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    {{ auth()->user()->branch->name }}
+                </span>
+            </div>
+        @endif
+    </div>
 
+    <div x-data="{ profileOpen: false }" class="relative">
+        <button @click="profileOpen = !profileOpen" class="flex items-center space-x-2 focus:outline-none px-3 py-2 rounded transition-colors hover:bg-gray-200 hover:text-gray-800">
+            <div class="flex items-center space-x-2">
+                <div class="relative">
+                    <div
+                        class="w-8 h-8 bg-gray-800 text-white dark:bg-white dark:text-gray-800 rounded-full flex items-center justify-center font-semibold transition-colors duration-200">
+                        {{ strtoupper(substr($user->first_name ?? 'U', 0, 1)) }}{{ strtoupper(substr($user->last_name ?? '', 0, 1)) }}
+                    </div>
+                </div>
+                <span class="hidden md:block text-gray-800">{{ $user->first_name ?? $user->username }}</span>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform text-gray-800"
+                :class="profileOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+
+        <div x-show="profileOpen" x-cloak @click.away="profileOpen = false"
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+            class="translate-y-4 absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg z-50 border border-gray-200">
+
+            <div class="px-4 py-3 border-b border-gray-200">
+                <p class="text-sm font-medium text-gray-900">
+                    {{ $user->first_name }} {{ $user->last_name }}
+                </p>
+                <p class="text-sm text-gray-500 truncate">
+                    {{ $user->email }}
+                </p>
+                @if($user->role === 'member' && $member && $member->status === 'inactive')
+                    <p class="text-xs text-red-600 mt-1">
+                        Profile incomplete
+                    </p>
+                @endif
+            </div>
+
+            <div class="py-1">
+            @if($user->role === 'member' && $member && $member->status === 'inactive' && $member->isApproved == true)
+                <button
+                    onclick="opencompleteMembershipModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
+                    class="flex items-center w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    Complete Profile
+                </button>
+            @endif
+
+               <button
+    onclick="openProfileModal()"
+    class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+    View Profile
+</button>
+
+<button
+    onclick="openEditProfileModal()"
+    class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+    Edit Profile
+</button>
+
+                <div class="border-t border-gray-200 my-1"></div>
+
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit"
+                        class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</header>
 
         <main class="@yield('main-class', 'flex-1 overflow-y-auto p-4 dark:bg-gray-200')">
             @yield('content')
@@ -540,7 +715,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
     </div>
 
 
-@if($user->role === 'member' && $member)
+<!-- @if($user->role === 'member' && $member)
    
     {{-- STATE 1: Profile incomplete - needs to fill out form --}}
     @if(!$member->plan_id || !$member->sex || !$member->birthday || !$member->mobile_number)
@@ -816,7 +991,381 @@ if (in_array($user->role, ['admin', 'staff'])) {
         </div>
     @endif
 
+@endif -->
+
+@if($user->role === 'member')
+    @php
+        $member = $user->member;
+        $branches = \App\Models\Branches::orderBy('name')->get();
+        $membershipPlans = \App\Models\MembershipPlan::where('branch_id', $user->branch_id ?? null)->get();
+        $subscriptions = \App\Models\Subscriptions::where('branch_id', $user->branch_id ?? null)->get();
+    @endphp
+
+    {{-- STEP 1: Complete Profile + Select Branch --}}
+    @if(!$member || !$member->sex || !$member->birthday || !$member->mobile_number || !$user->branch_id)
+        <div id="completeMembershipModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh]">
+                <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold">Complete Your Profile</h2>
+                    </div>
+                    <p class="text-gray-100 text-sm mt-1">Step 1 of 3: Fill in your personal details and select a branch</p>
+                </div>
+
+                <form action="{{ route('profile.complete-member-profile') }}" method="POST" class="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+                    @csrf
+                    @method('PUT')
+
+                    {{-- Branch Selection --}}
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            Select Your Branch <span class="text-red-500">*</span>
+                        </h3>
+
+                        <select name="branch_id" required class="w-full rounded-xl border-2 border-gray-300 bg-gray-50 px-4 py-3 focus:border-gray-800 transition-colors">
+                            <option value="">Choose a branch</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->branch_id }}">{{ $branch->name }} - {{ $branch->address }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Personal Information --}}
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            Personal Information
+                        </h3>
+
+                        <div class="mb-4">
+                            <span class="block text-sm font-medium text-gray-700 mb-2">
+                                Sex <span class="text-red-500">*</span>
+                            </span>
+                            <div class="flex items-center space-x-6">
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="sex" value="male" required class="peer sr-only">
+                                    <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800 flex items-center justify-center bg-gray-100 hover:bg-gray-200">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/921/921106.png" alt="Male" class="w-10 h-10 object-contain">
+                                    </div>
+                                    <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Male</span>
+                                </label>
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="sex" value="female" required class="peer sr-only">
+                                    <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800 flex items-center justify-center bg-gray-100 hover:bg-gray-200">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/921/921124.png" alt="Female" class="w-10 h-10 object-contain">
+                                    </div>
+                                    <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Female</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="birthday" class="block text-sm font-medium text-gray-700">Birthday <span class="text-red-500">*</span></label>
+                            <input type="date" name="birthday" id="birthday" required class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 px-4 py-3">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="height" class="block text-sm font-medium text-gray-700">Height (cm)</label>
+                                <input type="number" step="0.1" name="height" id="height" class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 px-4 py-3">
+                            </div>
+                            <div>
+                                <label for="weight" class="block text-sm font-medium text-gray-700">Weight (kg)</label>
+                                <input type="number" step="0.1" name="weight" id="weight" class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 px-4 py-3">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="mobile_number" class="block text-sm font-medium text-gray-700">Mobile Number <span class="text-red-500">*</span></label>
+                            <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789" pattern="[0-9]{11}" required 
+                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 px-4 py-3">
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-semibold mb-1">Next Steps:</p>
+                                <p>After submitting, you'll select a membership plan and subscription.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-6 border-t border-gray-200">
+                        <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors shadow-lg">
+                            Continue to Plan Selection
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    {{-- STEP 2: Select Membership Plan --}}
+    @if($member && $member->sex && $member->birthday && $member->mobile_number && $user->branch_id && !$member->plan_id)
+        <div id="selectPlanModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh]">
+                <div class="bg-green-500 text-white p-5 rounded-t-2xl">
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold">Profile Complete!</h2>
+                    </div>
+                    <p class="text-white text-sm mt-1">Step 2 of 3: Select your membership plan</p>
+                </div>
+
+                <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+                    <div class="mb-6">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div>
+                                    <p class="font-semibold text-green-800">Profile Completed</p>
+                                    <p class="text-sm text-green-700">Branch: {{ $user->branch->name ?? 'N/A' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-gray-700 mb-6 font-medium">Choose a membership plan:</p>
+
+                    <form action="{{ route('member.select-plan') }}" method="POST" class="space-y-4">
+                        @csrf
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @forelse($membershipPlans as $plan)
+                                <label class="relative cursor-pointer group">
+                                    <input type="radio" name="plan_id" value="{{ $plan->plan_id }}" required class="peer sr-only">
+                                    <div class="border-2 border-gray-300 peer-checked:border-green-500 peer-checked:bg-green-50 rounded-xl p-6 hover:shadow-lg transition-all">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <h4 class="text-xl font-bold text-gray-800">{{ $plan->name }}</h4>
+                                            <div class="peer-checked:block hidden">
+                                                <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        @if($plan->details)
+                                            <p class="text-sm text-gray-600 mb-3">{{ $plan->details }}</p>
+                                        @endif
+                                        <div class="flex items-baseline gap-1">
+                                            <span class="text-3xl font-bold text-gray-900">₱{{ number_format($plan->price, 2) }}</span>
+                                        </div>
+                                        <p class="text-sm text-gray-500">
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                            {{ $plan->duration_days }} days
+                                        </p>
+                                    </div>
+                                </label>
+                            @empty
+                                <div class="col-span-2 text-center py-8 text-gray-500">
+                                    No membership plans available.
+                                </div>
+                            @endforelse
+                        </div>
+
+                        @if(count($membershipPlans ?? []) > 0)
+                            <div class="flex justify-end pt-6 border-t border-gray-200">
+                                <button type="submit" class="px-8 py-3 rounded-xl bg-green-500 text-white hover:bg-green-600 font-medium">
+                                    Continue to Subscription
+                                </button>
+                            </div>
+                        @endif
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- STEP 3: Select Subscription --}}
+    @if($member && $member->plan_id && !$member->subscription_id && $member->subscription_status === 'pending_selection')
+        <div id="selectSubscriptionModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh]">
+                <div class="bg-blue-500 text-white p-5 rounded-t-2xl">
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold">Plan Selected!</h2>
+                    </div>
+                    <p class="text-white text-sm mt-1">Step 3 of 3: Select your subscription</p>
+                </div>
+
+                <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+                    <div class="mb-6">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div>
+                                    <p class="font-semibold text-blue-800">Membership Plan Selected</p>
+                                    <p class="text-sm text-blue-700">{{ $member->plan->name }} - ₱{{ number_format($member->plan->price, 2) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-gray-700 mb-6 font-medium">Choose your subscription:</p>
+
+                    <form action="{{ route('member.select-subscription') }}" method="POST" class="space-y-4">
+                        @csrf
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @forelse($subscriptions as $subscription)
+                                <label class="relative cursor-pointer group">
+                                    <input type="radio" name="subscription_id" value="{{ $subscription->subscription_id }}" required class="peer sr-only">
+                                    <div class="border-2 border-gray-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 rounded-xl p-6 hover:shadow-lg transition-all">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <h4 class="text-xl font-bold text-gray-800">{{ $subscription->name }}</h4>
+                                            <div class="peer-checked:block hidden">
+                                                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        @if($subscription->details)
+                                            <p class="text-sm text-gray-600 mb-3">{{ $subscription->details }}</p>
+                                        @endif
+                                        <div class="flex items-baseline gap-1">
+                                            <span class="text-3xl font-bold text-gray-900">₱{{ number_format($subscription->price, 2) }}</span>
+                                        </div>
+                                        <p class="text-sm text-gray-500">{{ $subscription->duration_days }} days</p>
+                                    </div>
+                                </label>
+                            @empty
+                                <div class="col-span-2 text-center py-8 text-gray-500">
+                                    No subscriptions available.
+                                </div>
+                            @endforelse
+                        </div>
+
+                        @if(count($subscriptions ?? []) > 0)
+                            <div class="flex justify-end pt-6 border-t border-gray-200">
+                                <button type="submit" class="px-8 py-3 rounded-xl bg-blue-500 text-white hover:bg-blue-600 font-medium">
+                                    Submit for Approval
+                                </button>
+                            </div>
+                        @endif
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- STEP 4: Waiting for Approval --}}
+    @if($member && $member->subscription_id && !$member->isApprovedForSubscription && $member->subscription_status === 'pending_subscription_approval')
+        <div id="waitingSubscriptionApprovalModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <div class="bg-yellow-500 text-white p-5 rounded-t-2xl">
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold">Pending Approval</h2>
+                    </div>
+                </div>
+
+                <div class="p-8 text-center">
+                    <div class="mb-6">
+                        <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Awaiting Admin Approval</h3>
+                        <p class="text-gray-600 text-lg mb-4">Your selections are being reviewed.</p>
+                        
+                        <div class="mt-4 p-4 bg-gray-50 rounded-lg text-left space-y-2">
+                            <div>
+                                <p class="text-sm text-gray-600">Membership Plan:</p>
+                                <p class="font-bold text-gray-800">{{ $member->plan->name }}</p>
+                                <p class="text-sm text-gray-500">₱{{ number_format($member->plan->price, 2) }}</p>
+                            </div>
+                            <div class="border-t pt-2">
+                                <p class="text-sm text-gray-600">Subscription:</p>
+                                <p class="font-bold text-gray-800">{{ $member->subscription->name }}</p>
+                                <p class="text-sm text-gray-500">₱{{ number_format($member->subscription->price, 2) }}</p>
+                            </div>
+                        </div>
+                        
+                        <p class="text-gray-500 text-sm mt-4">You'll receive your QR code via email once approved.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <button onclick="checkApprovalStatus()" 
+                            class="w-full px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 font-medium transition-colors flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Check Status
+                        </button>
+
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors">
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- FINAL: QR Code Approved --}}
+    <div id="qrApprovedModal" class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+        <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div class="bg-green-500 text-white p-5 rounded-t-2xl">
+                <div class="flex items-center space-x-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h2 class="text-xl font-semibold">Membership Activated!</h2>
+                </div>
+            </div>
+
+            <div class="p-8 text-center">
+                <div class="mb-6">
+                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Welcome to EZ Fitness!</h3>
+                    <p class="text-gray-600 text-lg mb-4">Your membership is now active.</p>
+                    <p class="text-gray-500 text-sm mb-4">Your QR code has been sent to your email.</p>
+                    
+                    <div id="qrCodeDisplay" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+                        <img id="qrCodeImage" src="" alt="QR Code" class="mx-auto w-48 h-48">
+                    </div>
+                </div>
+
+                <button onclick="closeQRApprovedModal()" 
+                    class="w-full px-6 py-3 rounded-xl bg-green-500 text-white hover:bg-green-600 font-medium transition-colors">
+                    Continue to Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
 @endif
+
 
 
 
@@ -1350,40 +1899,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
     <script src="//unpkg.com/alpinejs" defer></script>
 
 <script>
-function openProfileModal() {
-    const modal = document.getElementById('profileModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-    }
-}
 
-function closeProfileModal() {
-    const modal = document.getElementById('profileModal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-}
-
-function openEditProfileModal() {
-    const modal = document.getElementById('editProfileModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-    }
-}
-
-function closeEditProfileModal() {
-    const modal = document.getElementById('editProfileModal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-}
-
-function opencompleteMembershipModal() {
-    const modal = document.getElementById('completeMembershipModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-    }
-}
 
 // Validation Utility Functions
 const showError = (element, message) => {
@@ -1760,7 +2276,6 @@ function checkApprovalStatus() {
     const button = event.target;
     const originalContent = button.innerHTML;
     
-    // Show loading state
     button.disabled = true;
     button.innerHTML = `
         <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1769,11 +2284,9 @@ function checkApprovalStatus() {
         </svg>
     `;
 
-    // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
     
     if (!csrfToken) {
-        console.error('CSRF token not found');
         Toastify({
             text: 'Security token not found. Please refresh the page.',
             duration: 3000,
@@ -1797,24 +2310,15 @@ function checkApprovalStatus() {
         credentials: 'same-origin'
     })
     .then(response => {
-        console.log('Response status:', response.status);
-        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
         return response.json();
     })
     .then(data => {
-        console.log('Approval status data:', data);
-        
         if (data.status === 'approved') {
-            // Hide waiting/pending modals
-            const waitingModal = document.getElementById('waitingApprovalModal');
-            const renewalPendingModal = document.getElementById('renewalPendingModal');
-            
+            const waitingModal = document.getElementById('waitingSubscriptionApprovalModal');
             if (waitingModal) waitingModal.classList.add('hidden');
-            if (renewalPendingModal) renewalPendingModal.classList.add('hidden');
             
             // Show approved modal
             const approvedModal = document.getElementById('qrApprovedModal');
@@ -1827,33 +2331,16 @@ function checkApprovalStatus() {
                     const qrImage = document.getElementById('qrCodeImage');
                     
                     if (qrDisplay && qrImage) {
-                        // Add timestamp to prevent caching
                         qrImage.src = data.qr_code_url + '?t=' + new Date().getTime();
                         qrDisplay.classList.remove('hidden');
                         
-                        // Handle image load errors
                         qrImage.onerror = function() {
-                            console.error('Failed to load QR code image:', data.qr_code_url);
                             qrDisplay.innerHTML = `
                                 <div class="text-center py-4">
                                     <p class="text-sm text-gray-600">QR code has been sent to your email</p>
                                 </div>
                             `;
                         };
-                        
-                        qrImage.onload = function() {
-                            console.log('QR code loaded successfully');
-                        };
-                    }
-                } else {
-                    const qrDisplay = document.getElementById('qrCodeDisplay');
-                    if (qrDisplay) {
-                        qrDisplay.innerHTML = `
-                            <div class="text-center py-4">
-                                <p class="text-sm text-gray-600">QR code has been sent to your email</p>
-                            </div>
-                        `;
-                        qrDisplay.classList.remove('hidden');
                     }
                 }
             }
@@ -1864,34 +2351,24 @@ function checkApprovalStatus() {
                 gravity: "top",
                 position: "right",
                 backgroundColor: "linear-gradient(to right, #10b981, #059669)",
-                stopOnFocus: true,
             }).showToast();
             
         } else if (data.status === 'rejected') {
-            const statusMessage = document.getElementById('approvalStatusMessage');
-            if (statusMessage) {
-                statusMessage.innerHTML = 
-                    '<span class="text-red-600 font-semibold">Your application was not approved. Please contact support for more information.</span>';
-            }
-            
             Toastify({
                 text: data.message || 'Application was not approved',
                 duration: 5000,
                 gravity: "top",
                 position: "right",
                 backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-                stopOnFocus: true,
             }).showToast();
             
         } else {
-            // Still pending
             Toastify({
-                text: data.message || 'Still pending approval. Please check back later.',
+                text: data.message || 'Still pending approval',
                 duration: 3000,
                 gravity: "top",
                 position: "right",
                 backgroundColor: "linear-gradient(to right, #f59e0b, #d97706)",
-                stopOnFocus: true,
             }).showToast();
         }
     })
@@ -1904,7 +2381,6 @@ function checkApprovalStatus() {
             gravity: "top",
             position: "right",
             backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-            stopOnFocus: true,
         }).showToast();
     })
     .finally(() => {
@@ -1918,7 +2394,6 @@ function closeQRApprovedModal() {
     if (modal) {
         modal.classList.add('hidden');
     }
-    // Reload to show updated dashboard
     window.location.reload();
 }
 
