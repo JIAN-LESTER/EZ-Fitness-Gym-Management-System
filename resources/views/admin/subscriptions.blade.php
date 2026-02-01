@@ -1,9 +1,8 @@
 @extends('layouts.app')
-@section('title', 'Plans')
-@section('header', 'Plans')
+@section('title', 'Subscriptions')
+@section('header', 'Subscriptions')
 
 <style>
-    /* Custom Scrollbar for Modals */
     .modal-scrollbar::-webkit-scrollbar {
         width: 8px;
     }
@@ -22,14 +21,12 @@
         background: #6B7280;
     }
 
-    /* Firefox */
     .modal-scrollbar {
         scrollbar-width: thin;
         scrollbar-color: #9CA3AF #F3F4F6;
         scroll-behavior: smooth;
     }
 
-    /* Fix for input text visibility */
     input[type="text"],
     input[type="number"],
     select,
@@ -47,22 +44,20 @@
     <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
 
         <!-- Header & Add Button -->
-        <div
-            class="flex justify-between items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-800">Membership Plans</h2>
-            <button onclick="openModal('addPlanModal')"
+        <div class="flex justify-between items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800">Subscription Management</h2>
+            <button onclick="openModal('addSubscriptionModal')"
                 class="flex items-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
-                Add Plan
+                Add Subscription
             </button>
         </div>
 
         <!-- Search Section -->
         <div class="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
-            <form method="GET" action="{{ route('admin.plan_management') }}"
+            <form method="GET" action="{{ route('admin.subscription_management') }}"
                 class="flex flex-wrap lg:flex-nowrap items-end gap-3">
                 <div class="flex-1 min-w-[200px]">
                     <div class="relative">
@@ -73,9 +68,20 @@
                             </svg>
                         </div>
                         <input type="text" name="search" id="search" value="{{ $search ?? '' }}"
-                            placeholder="Search by plan name or price..."
+                            placeholder="Search by subscription name or price..."
                             class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all">
                     </div>
+                </div>
+                <div class="w-full sm:w-auto min-w-[200px]">
+                    <select name="branch_id" id="branch_filter"
+                        class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 shadow-sm transition-all">
+                        <option value="">All Branches</option>
+                        @foreach($branches as $branch)
+                            <option value="{{ $branch->branch_id }}" {{ ($branch_filter ?? '') == $branch->branch_id ? 'selected' : '' }}>
+                                {{ $branch->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
                 <button type="submit"
                     class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
@@ -86,7 +92,7 @@
                     Search
                 </button>
                 @if(request()->query())
-                    <a href="{{ route('admin.plan_management') }}"
+                    <a href="{{ route('admin.subscription_management') }}"
                         class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-all duration-300 font-semibold shadow-md whitespace-nowrap">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -99,95 +105,88 @@
 
         <!-- Cards Grid -->
         <div class="p-6">
-            @forelse($plans as $plan)
+            @forelse($subscriptions as $subscription)
                 @if($loop->first)
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @endif
 
-                    <div
-                        class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200">
-                        <!-- Plan Header -->
-           
-                          <div class="mb-4">
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $plan->name }}</h3>
+                <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200">
+                    <!-- Subscription Header -->
+                    <div class="mb-4">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $subscription->name }}</h3>
                         <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full mb-2">
-                            {{ $plan->branch->name ?? 'N/A' }}
+                            {{ $subscription->branch->name ?? 'N/A' }}
                         </span>
-                        <p class="text-sm text-gray-600 line-clamp-2">{{ $plan->details }}</p>
+                        <p class="text-sm text-gray-600 line-clamp-2">{{ $subscription->details }}</p>
                     </div>
 
-                        <!-- Plan Details -->
-                        <div class="space-y-3 mb-6">
-                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span class="text-sm text-gray-600 font-medium">Price</span>
-                                <span class="text-lg font-bold text-gray-900">₱{{ number_format($plan->price) }}</span>
-                            </div>
-                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span class="text-sm text-gray-600 font-medium">Duration</span>
-                                <span class="text-sm font-semibold text-gray-700">{{ $plan->duration_days }} days</span>
-                            </div>
-                            <!-- <div class="flex items-center justify-between py-2">
-                                <span class="text-sm text-gray-600 font-medium">Branch</span>
-                                <span class="text-sm font-semibold text-gray-700">{{ $plan->branch->name ?? 'N/A' }}</span>
-                            </div> -->
-                            <div class="flex items-center justify-between py-2">
-                                <span class="text-sm text-gray-600 font-medium">Members</span>
-                                <span class="text-sm font-semibold text-gray-700">{{ $plan->members_count }}</span>
-                            </div>
+                    <!-- Subscription Details -->
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-600 font-medium">Price</span>
+                            <span class="text-lg font-bold text-gray-900">₱{{ number_format($subscription->price) }}</span>
                         </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex gap-2">
-                            <button onclick='editPlan(@json($plan))'
-                                class="flex-1 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-all text-sm shadow-md">
-                                Edit
-                            </button>
-                            <button onclick='openDeleteModal(@json($plan))'
-                                class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all text-sm shadow-md">
-                                Delete
-                            </button>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="text-sm text-gray-600 font-medium">Duration</span>
+                            <span class="text-sm font-semibold text-gray-700">{{ $subscription->duration_days }} days</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2">
+                            <span class="text-sm text-gray-600 font-medium">Members</span>
+                            <span class="text-sm font-semibold text-gray-700">{{ $subscription->members_count ?? 0 }}</span>
                         </div>
                     </div>
 
-                    @if($loop->last)
-                        </div>
-                    @endif
+                    <!-- Action Buttons -->
+                    <div class="flex gap-2">
+                        <button onclick='editSubscription(@json($subscription))'
+                            class="flex-1 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-all text-sm shadow-md">
+                            Edit
+                        </button>
+                        <button onclick='openDeleteModal(@json($subscription))'
+                            class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all text-sm shadow-md">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+
+                @if($loop->last)
+                    </div>
+                @endif
             @empty
                 <div class="flex flex-col items-center justify-center py-16">
                     <svg class="w-20 h-20 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <p class="text-lg font-medium text-gray-500">No plans found</p>
+                    <p class="text-lg font-medium text-gray-500">No subscriptions found</p>
                     <p class="text-sm mt-1 text-gray-400">Try adjusting your search criteria</p>
                 </div>
             @endforelse
         </div>
 
         <!-- Pagination -->
-        @if($plans->hasPages())
-            <div
-                class="flex flex-col sm:flex-row items-center justify-between p-4 sm:p-6 bg-gray-50 border-t border-gray-200 gap-4">
+        @if($subscriptions->hasPages())
+            <div class="flex flex-col sm:flex-row items-center justify-between p-4 sm:p-6 bg-gray-50 border-t border-gray-200 gap-4">
                 <div class="text-sm text-gray-600">
-                    Showing <span class="font-semibold text-gray-900">{{ $plans->firstItem() }}</span> to
-                    <span class="font-semibold text-gray-900">{{ $plans->lastItem() }}</span> of
-                    <span class="font-semibold text-gray-900">{{ $plans->total() }}</span> plans
+                    Showing <span class="font-semibold text-gray-900">{{ $subscriptions->firstItem() }}</span> to
+                    <span class="font-semibold text-gray-900">{{ $subscriptions->lastItem() }}</span> of
+                    <span class="font-semibold text-gray-900">{{ $subscriptions->total() }}</span> subscriptions
                 </div>
 
                 <div class="flex gap-2">
-                    @if($plans->onFirstPage())
+                    @if($subscriptions->onFirstPage())
                         <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Prev</span>
                     @else
-                        <a href="{{ $plans->previousPageUrl() }}"
+                        <a href="{{ $subscriptions->previousPageUrl() }}"
                             class="px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-gray-700 shadow-md transition-all duration-200 font-medium">Prev</a>
                     @endif
 
                     <span class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium sm:hidden">
-                        {{ $plans->currentPage() }} / {{ $plans->lastPage() }}
+                        {{ $subscriptions->currentPage() }} / {{ $subscriptions->lastPage() }}
                     </span>
 
-                    @if($plans->hasMorePages())
-                        <a href="{{ $plans->nextPageUrl() }}"
+                    @if($subscriptions->hasMorePages())
+                        <a href="{{ $subscriptions->nextPageUrl() }}"
                             class="px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-gray-700 shadow-md transition-all duration-200 font-medium">Next</a>
                     @else
                         <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Next</span>
@@ -197,30 +196,27 @@
         @endif
     </div>
 
-    <!-- Add Plan Modal -->
-    <div id="addPlanModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
-        <div class="absolute inset-0" onclick="closeModal('addPlanModal')"></div>
+    <!-- Add Subscription Modal -->
+    <div id="addSubscriptionModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+        <div class="absolute inset-0" onclick="closeModal('addSubscriptionModal')"></div>
 
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
             <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
-                <h2 class="text-xl font-semibold">Add New Plan</h2>
+                <h2 class="text-xl font-semibold">Add New Subscription</h2>
             </header>
 
             <div class="overflow-y-auto flex-1 modal-scrollbar">
-                <form method="POST" action="{{ route('plans.store') }}" class="p-6 md:p-8 space-y-6">
+                <form method="POST" action="{{ route('subscriptions.store') }}" class="p-6 md:p-8 space-y-6">
                     @csrf
                     <div>
-                        <label for="add_name" class="block text-sm font-medium text-gray-700 mb-2">Plan Name</label>
+                        <label for="add_name" class="block text-sm font-medium text-gray-700 mb-2">Subscription Name</label>
                         <input type="text" name="name" id="add_name"
                             class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
-                            placeholder="e.g., Basic Plan">
-                        @error('add_name')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
+                            placeholder="e.g., Basic Subscription">
                     </div>
-                    <div>
+       <div>
                         <label for="add_branch" class="block text-sm font-medium text-gray-700 mb-2">
-                            Branch <span class="text-red-500">*</span>
+                            Branch
                         </label>
                         @if(auth()->user()->role === 'super_admin')
                             <select name="branch_id" id="add_branch" required
@@ -239,41 +235,32 @@
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                         @enderror
                     </div>
-
                     <div>
                         <label for="add_details" class="block text-sm font-medium text-gray-700 mb-2">Details</label>
                         <input type="text" name="details" id="add_details"
                             class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
-                            placeholder="e.g., This plan is good for 1 year">
+                            placeholder="e.g., This subscription is good for 1 year">
                     </div>
                     <div>
                         <label for="add_price" class="block text-sm font-medium text-gray-700 mb-2">Price (₱)</label>
                         <input type="number" name="price" id="add_price" step="0.01" min="0"
                             class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
                             placeholder="0.00">
-                        @error('add_price')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
                     </div>
                     <div>
-                        <label for="add_duration" class="block text-sm font-medium text-gray-700 mb-2">Duration
-                            (Days)</label>
+                        <label for="add_duration" class="block text-sm font-medium text-gray-700 mb-2">Duration (Days)</label>
                         <input type="number" name="duration_days" id="add_duration" min="1"
                             class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
                             placeholder="30">
-                        @error('add_duration')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
                     </div>
-                    <div
-                        class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
-                        <button type="button" onclick="closeModal('addPlanModal')"
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
+                        <button type="button" onclick="closeModal('addSubscriptionModal')"
                             class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">
                             Cancel
                         </button>
                         <button type="submit"
                             class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">
-                            Add Plan
+                            Add Subscription
                         </button>
                     </div>
                 </form>
@@ -281,28 +268,25 @@
         </div>
     </div>
 
-    <!-- Edit Plan Modal -->
-    <div id="editPlanModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
-        <div class="absolute inset-0" onclick="closeModal('editPlanModal')"></div>
+    <!-- Edit Subscription Modal -->
+    <div id="editSubscriptionModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+        <div class="absolute inset-0" onclick="closeModal('editSubscriptionModal')"></div>
 
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
             <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
-                <h2 class="text-xl font-semibold">Edit Plan</h2>
+                <h2 class="text-xl font-semibold">Edit Subscription</h2>
             </header>
 
             <div class="overflow-y-auto flex-1 modal-scrollbar">
-                <form id="editPlanForm" method="POST" class="p-6 md:p-8 space-y-6">
+                <form id="editSubscriptionForm" method="POST" class="p-6 md:p-8 space-y-6">
                     @csrf
                     @method('PUT')
                     <div>
-                        <label for="edit_name" class="block text-sm font-medium text-gray-700 mb-2">Plan Name</label>
+                        <label for="edit_name" class="block text-sm font-medium text-gray-700 mb-2">Subscription Name</label>
                         <input type="text" name="name" id="edit_name"
                             class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
-                        @error('edit_name')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
                     </div>
-                    <div>
+     <div>
                         <label for="edit_branch" class="block text-sm font-medium text-gray-700 mb-2">
                             Branch <span class="text-red-500">*</span>
                         </label>
@@ -320,7 +304,6 @@
                             <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
                         @endif
                     </div>
-
                     <div>
                         <label for="edit_details" class="block text-sm font-medium text-gray-700 mb-2">Details</label>
                         <input type="text" name="details" id="edit_details"
@@ -330,28 +313,20 @@
                         <label for="edit_price" class="block text-sm font-medium text-gray-700 mb-2">Price (₱)</label>
                         <input type="number" name="price" id="edit_price" step="0.01" min="0"
                             class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
-                        @error('edit_price')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
                     </div>
                     <div>
-                        <label for="edit_duration" class="block text-sm font-medium text-gray-700 mb-2">Duration
-                            (Days)</label>
+                        <label for="edit_duration" class="block text-sm font-medium text-gray-700 mb-2">Duration (Days)</label>
                         <input type="number" name="duration_days" id="edit_duration" min="1"
                             class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
-                        @error('edit_duration')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
                     </div>
-                    <div
-                        class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
-                        <button type="button" onclick="closeModal('editPlanModal')"
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
+                        <button type="button" onclick="closeModal('editSubscriptionModal')"
                             class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">
                             Cancel
                         </button>
                         <button type="submit"
                             class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">
-                            Update Plan
+                            Update Subscription
                         </button>
                     </div>
                 </form>
@@ -360,7 +335,6 @@
     </div>
 
     <script>
-        // Validation Utility Functions
         const showError = (element, message) => {
             element.classList.remove('border-gray-300');
             element.classList.add('border-red-500');
@@ -424,166 +398,98 @@
             }
         }
 
-        function validatePlanForm(form) {
+        function validateSubscriptionForm(form) {
             let valid = true;
             clearAllErrors(form);
 
             const name = form.querySelector('[name="name"]');
+            const branch = form.querySelector('[name="branch_id"]');
             const price = form.querySelector('[name="price"]');
             const duration = form.querySelector('[name="duration_days"]');
 
-            // Validate Plan Name
             if (!name.value.trim()) {
-                showError(name, 'Plan name is required');
+                showError(name, 'Subscription name is required');
                 valid = false;
             } else if (name.value.trim().length < 3) {
-                showError(name, 'Plan name must be at least 3 characters');
-                valid = false;
-            } else if (name.value.trim().length > 100) {
-                showError(name, 'Plan name must not exceed 100 characters');
+                showError(name, 'Subscription name must be at least 3 characters');
                 valid = false;
             }
 
-            // Validate Price
+            if (!branch.value) {
+                showError(branch, 'Branch is required');
+                valid = false;
+            }
+
             if (!price.value || price.value === '') {
                 showError(price, 'Price is required');
                 valid = false;
-            } else if (parseFloat(price.value) < 0) {
-                showError(price, 'Price cannot be negative');
-                valid = false;
-            } else if (parseFloat(price.value) === 0) {
+            } else if (parseFloat(price.value) <= 0) {
                 showError(price, 'Price must be greater than 0');
-                valid = false;
-            } else if (parseFloat(price.value) > 999999.99) {
-                showError(price, 'Price is too large');
                 valid = false;
             }
 
-            // Validate Duration
             if (!duration.value || duration.value === '') {
                 showError(duration, 'Duration is required');
                 valid = false;
             } else if (parseInt(duration.value) < 1) {
                 showError(duration, 'Duration must be at least 1 day');
                 valid = false;
-            } else if (parseInt(duration.value) > 3650) {
-                showError(duration, 'Duration cannot exceed 3650 days (10 years)');
-                valid = false;
-            }
-
-            if (!valid && typeof toastr !== 'undefined') {
-                toastr.error('Please fix the errors in the form');
             }
 
             return valid;
         }
 
-        function setupLiveValidation(form) {
-            const name = form.querySelector('[name="name"]');
-            const price = form.querySelector('[name="price"]');
-            const duration = form.querySelector('[name="duration_days"]');
-
-            // Name validation
-            name.addEventListener('blur', function () {
-                if (this.value.trim() && this.value.trim().length >= 3 && this.value.trim().length <= 100) {
-                    clearError(this);
-                }
-            });
-
-            name.addEventListener('input', function () {
-                if (this.value.trim() && this.value.trim().length >= 3) {
-                    clearError(this);
-                }
-            });
-
-            // Price validation
-            price.addEventListener('blur', function () {
-                if (this.value && parseFloat(this.value) > 0 && parseFloat(this.value) <= 999999.99) {
-                    clearError(this);
-                }
-            });
-
-            price.addEventListener('input', function () {
-                if (this.value && parseFloat(this.value) > 0) {
-                    clearError(this);
-                }
-            });
-
-            // Duration validation
-            duration.addEventListener('blur', function () {
-                if (this.value && parseInt(this.value) >= 1 && parseInt(this.value) <= 3650) {
-                    clearError(this);
-                }
-            });
-
-            duration.addEventListener('input', function () {
-                if (this.value && parseInt(this.value) >= 1) {
-                    clearError(this);
-                }
-            });
+        function editSubscription(subscription) {
+            document.getElementById('edit_name').value = subscription.name;
+            document.getElementById('edit_branch').value = subscription.branch_id;
+            document.getElementById('edit_details').value = subscription.details || '';
+            document.getElementById('edit_price').value = subscription.price;
+            document.getElementById('edit_duration').value = subscription.duration_days;
+            document.getElementById('editSubscriptionForm').action = `/admin/subscriptions/${subscription.id}`;
+            openModal('editSubscriptionModal');
         }
 
-        function editPlan(plan) {
-            document.getElementById('edit_name').value = plan.name;
-            document.getElementById('edit_details').value = plan.details || '';
-            document.getElementById('edit_price').value = plan.price;
-            document.getElementById('edit_duration').value = plan.duration_days;
-
-            // Set branch value if super_admin
-            @if(auth()->user()->role === 'super_admin')
-                document.getElementById('edit_branch').value = plan.branch_id;
-            @endif
-
-            document.getElementById('editPlanForm').action = `/admin/plans/${plan.plan_id}`;
-            openModal('editPlanModal');
-        }
-
-        function openDeleteModal(plan) {
+        function openDeleteModal(subscription) {
             if (typeof Swal === 'undefined') {
-                if (confirm('Are you sure you want to delete this plan?')) {
-                    submitDeleteForm(plan.plan_id);
+                if (confirm('Are you sure you want to delete this subscription?')) {
+                    submitDeleteForm(subscription.id);
                 }
                 return;
             }
 
             Swal.fire({
-                title: 'Delete Membership Plan?',
+                title: 'Delete Subscription?',
                 html: `
-                            <div class="text-left space-y-2">
-                                <p class="text-gray-700">You are about to delete:</p>
-                                <div class="bg-gray-50 p-4 rounded-lg">
-                                    <p class="font-semibold text-gray-900">${plan.name}</p>
-                                    <p class="text-sm text-gray-600">${plan.details || 'No description'}</p>
-                                    <p class="text-sm text-gray-600 mt-2">Price: ₱${parseFloat(plan.price).toFixed(2)}</p>
-                                    <p class="text-sm text-gray-600">Duration: ${plan.duration_days} days</p>
-                                    ${plan.members_count > 0 ? `<p class="text-sm text-red-600 mt-2 font-medium">⚠️ ${plan.members_count} member(s) are using this plan</p>` : ''}
-                                </div>
-                                <p class="text-red-600 font-medium mt-4">This action cannot be undone!</p>
-                            </div>
-                        `,
+                    <div class="text-left space-y-2">
+                        <p class="text-gray-700">You are about to delete:</p>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="font-semibold text-gray-900">${subscription.name}</p>
+                            <p class="text-sm text-gray-600">${subscription.details || 'No description'}</p>
+                            <p class="text-sm text-gray-600 mt-2">Branch: ${subscription.branch?.name || 'N/A'}</p>
+                            <p class="text-sm text-gray-600">Price: ₱${parseFloat(subscription.price).toFixed(2)}</p>
+                            ${(subscription.members_count ?? 0) > 0 ? `<p class="text-sm text-red-600 mt-2 font-medium">⚠️ ${subscription.members_count} member(s) are using this subscription</p>` : ''}
+                        </div>
+                        <p class="text-red-600 font-medium mt-4">This action cannot be undone!</p>
+                    </div>
+                `,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc2626',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Yes, delete it!',
                 cancelButtonText: 'Cancel',
-                width: '600px',
-                customClass: {
-                    popup: 'swal-custom-popup',
-                    confirmButton: 'swal-confirm-btn',
-                    cancelButton: 'swal-cancel-btn'
-                }
+                width: '600px'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    submitDeleteForm(plan.plan_id);
+                    submitDeleteForm(subscription.id);
                 }
             });
         }
 
-        function submitDeleteForm(planId) {
+        function submitDeleteForm(subscriptionId) {
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `/admin/plans/${planId}`;
+            form.action = `/admin/subscriptions/${subscriptionId}`;
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             if (csrfToken) {
@@ -604,47 +510,26 @@
             form.submit();
         }
 
-        // Initialize on DOM Ready
-        document.addEventListener('DOMContentLoaded', function () {
-            // Setup Add Plan Form Validation
-            const addPlanForm = document.querySelector('#addPlanModal form');
-            if (addPlanForm) {
-                addPlanForm.addEventListener('submit', function (e) {
-                    if (!validatePlanForm(this)) {
+        document.addEventListener('DOMContentLoaded', function() {
+            const addForm = document.querySelector('#addSubscriptionModal form');
+            if (addForm) {
+                addForm.addEventListener('submit', function(e) {
+                    if (!validateSubscriptionForm(this)) {
                         e.preventDefault();
                     }
                 });
-                setupLiveValidation(addPlanForm);
             }
 
-            // Setup Edit Plan Form Validation
-            const editPlanForm = document.querySelector('#editPlanForm');
-            if (editPlanForm) {
-                editPlanForm.addEventListener('submit', function (e) {
-                    if (!validatePlanForm(this)) {
+            const editForm = document.querySelector('#editSubscriptionForm');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    if (!validateSubscriptionForm(this)) {
                         e.preventDefault();
                     }
                 });
-                setupLiveValidation(editPlanForm);
-            }
-
-            // Toastr Configuration
-            if (typeof toastr !== 'undefined') {
-                toastr.options = {
-                    "closeButton": true,
-                    "progressBar": true,
-                    "positionClass": "toast-top-right",
-                    "timeOut": "3000",
-                    "extendedTimeOut": "1000",
-                    "showEasing": "swing",
-                    "hideEasing": "linear",
-                    "showMethod": "fadeIn",
-                    "hideMethod": "fadeOut"
-                };
             }
         });
 
-        // Close modals on Escape key
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 document.querySelectorAll('[id$="Modal"]').forEach(modal => {

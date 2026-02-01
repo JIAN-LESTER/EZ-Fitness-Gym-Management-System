@@ -106,8 +106,7 @@
                                         @foreach($categories as $category)
                                             <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
                                                 <input type="checkbox" name="categories[]" value="{{ $category->category_id }}"
-                                                    {{ in_array($category->category_id, request('categories', [])) ? 'checked' : '' }}
-                                                    onchange="updateFilterCount()"
+                                                    {{ in_array($category->category_id, request('categories', [])) ? 'checked' : '' }} onchange="updateFilterCount()"
                                                     class="w-4 h-4 text-gray-600 rounded focus:ring-2 focus:ring-gray-500">
                                                 <span class="ml-3 text-sm font-medium text-gray-700">{{ $category->name }}</span>
                                             </label>
@@ -122,8 +121,7 @@
                                     <label class="block text-sm font-semibold text-gray-700 mb-3">Filter by Status</label>
                                     <div class="space-y-2">
                                         <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-                                            <input type="checkbox" name="product_status[]" value="available"
-                                                {{ in_array('available', request('product_status', [])) ? 'checked' : '' }}
+                                            <input type="checkbox" name="product_status[]" value="available" {{ in_array('available', request('product_status', [])) ? 'checked' : '' }}
                                                 onchange="updateFilterCount()"
                                                 class="w-4 h-4 text-green-600 rounded focus:ring-2 focus:ring-green-500">
                                             <span class="ml-3 text-sm font-medium text-gray-700">Available</span>
@@ -186,17 +184,16 @@
         <!-- Products Table -->
         <div class="overflow-x-auto">
             <table class="min-w-full">
-                <thead>
-
-
-                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
-                        <th class="hidden md:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
-                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Price</th>
-                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Quantity</th>
-                        <th class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
+          <thead>
+    <tr class="bg-gray-50 border-b border-gray-200">
+        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
+        <th class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Branch</th>
+        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Price</th>
+        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Quantity</th>
+        <th class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+    </tr>
+</thead>
 
                 <tbody class="divide-y divide-gray-100">
                     @forelse($products as $inventory)
@@ -204,34 +201,35 @@
 
                             <td class="px-3 sm:px-6 py-3 sm:py-4">
     <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shadow flex-shrink-0">
+            @if($inventory->product && $inventory->product->image)
+                <img
+                    src="{{ asset('storage/' . $inventory->product->image) }}"
+                    alt="{{ $inventory->product->name }}"
+                    class="w-full h-full object-cover"
+                >
+            @else
+                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                </svg>
+            @endif
+        </div>
 
-
-    <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shadow">
-    @if($inventory->product && $inventory->product->image)
-        <img
-            src="{{ asset('storage/' . $inventory->product->image) }}"
-            alt="{{ $inventory->product->name }}"
-            class="w-full h-full object-cover"
-        >
-    @else
-        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-        </svg>
-    @endif
-</div>
-
-
-
-        <div>
+        <div class="min-w-0 flex-1">
             @if($inventory->product)
                 <button onclick="showProduct('{{ $inventory->product->product_id }}')"
                         class="hover:text-gray-900 transition-colors text-left w-full">
                     <p class="font-semibold text-gray-900 truncate max-w-[180px] sm:max-w-[250px]">
                         {{ $inventory->product->name }}
                     </p>
-                    <p class="text-gray-500 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-[280px]">
+                    <!-- Category below product name -->
+                    <p class="text-xs text-gray-500 mt-0.5">
+                        {{ $inventory->product && $inventory->product->category ? $inventory->product->category->name : 'No Category' }}
+                    </p>
+                    <!-- Description -->
+                    <p class="text-gray-500 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-[280px] mt-0.5">
                         {{ Str::limit($inventory->product->description, 60) }}
                     </p>
                 </button>
@@ -239,15 +237,14 @@
                 <p class="text-gray-500">No Product</p>
             @endif
         </div>
-
     </div>
 </td>
 
 
 
-                            <td class="hidden md:table-cell px-3 sm:px-6 py-3 sm:py-4 text-gray-700 text-sm">
-                                {{ $inventory->product && $inventory->product->category ? $inventory->product->category->name : 'N/A' }}
-                            </td>
+                         <td class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-gray-700 text-sm">
+    {{ $inventory->product && $inventory->product->branch ? $inventory->product->branch->name : 'N/A' }}
+</td>
 
                             <td class="px-3 sm:px-6 py-3 sm:py-4 text-gray-700 font-semibold text-sm whitespace-nowrap">
                                 ₱{{ $inventory->product ? number_format($inventory->product->price, 2) : '0.00' }}
@@ -266,6 +263,7 @@
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap bg-gray-100 text-gray-700">N/A</span>
                                 @endif
                             </td>
+                          
 
                             <td class="px-3 sm:px-6 py-3 sm:py-4 text-center">
                                 @if($inventory->product)
@@ -391,6 +389,28 @@
                     </div>
 
                     <div>
+    <label for="add_branch_id" class="block text-sm font-medium text-gray-700 mb-2">
+        Branch <span class="text-red-500">*</span>
+    </label>
+    @if(auth()->user()->role === 'super_admin')
+        <select name="branch_id" id="add_branch_id" required
+            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-gray-800 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+            <option value="">Select Branch</option>
+            @foreach($branches as $branch)
+                <option value="{{ $branch->branch_id }}">{{ $branch->name }}</option>
+            @endforeach
+        </select>
+    @else
+        <input type="text" value="{{ auth()->user()->branch->name ?? 'N/A' }}" disabled
+            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-gray-100 px-4 py-2 text-gray-600">
+        <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
+    @endif
+    @error('branch_id')
+        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+    @enderror
+</div>
+
+                    <div>
                         <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
                         <textarea name="description" id="description" rows="3" placeholder="Description"
                             class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"></textarea>
@@ -506,6 +526,25 @@
                             @endforeach
                         </select>
                     </div>
+
+                    <div>
+    <label for="edit_branch_id" class="block text-sm font-medium text-gray-700 mb-2">
+        Branch <span class="text-red-500">*</span>
+    </label>
+    @if(auth()->user()->role === 'super_admin')
+        <select name="branch_id" id="edit_branch_id" required
+            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-gray-800 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+            <option value="">Select Branch</option>
+            @foreach($branches as $branch)
+                <option value="{{ $branch->branch_id }}">{{ $branch->name }}</option>
+            @endforeach
+        </select>
+    @else
+        <input type="text" value="{{ auth()->user()->branch->name ?? 'N/A' }}" disabled
+            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-gray-100 px-4 py-2 text-gray-600">
+        <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
+    @endif
+</div>
 
                     <div>
                         <label for="edit_description" class="block text-sm font-medium text-gray-700">Description</label>
@@ -627,38 +666,42 @@
     }
 
     // Edit Product Function
-    function editProduct(productId) {
-        fetch(`/products/${productId}/edit`)
-            .then(res => res.json())
-            .then(product => {
-                document.getElementById('edit_name').value = product.name;
-                document.getElementById('edit_category_id').value = product.category_id;
-                document.getElementById('edit_description').value = product.description || '';
-                document.getElementById('edit_price').value = product.price;
-                document.getElementById('edit_quantity').value = product.inventory ? product.inventory.quantity : 0;
-                document.getElementById('edit_status').value = product.status;
+ function editProduct(productId) {
+    fetch(`/products/${productId}/edit`)
+        .then(res => res.json())
+        .then(product => {
+            document.getElementById('edit_name').value = product.name;
+            document.getElementById('edit_category_id').value = product.category_id;
+            document.getElementById('edit_description').value = product.description || '';
+            document.getElementById('edit_price').value = product.price;
+            document.getElementById('edit_quantity').value = product.inventory ? product.inventory.quantity : 0;
+            document.getElementById('edit_status').value = product.status;
 
-                // Show current image if exists
-                const editImagePreview = document.getElementById('editImagePreview');
-                if (product.image) {
-                    editImagePreview.innerHTML = `<img src="/storage/${product.image}" alt="Current Image">`;
-                } else {
-                    editImagePreview.innerHTML = `
-                        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                    `;
-                }
+            // Set branch value if super_admin
+            @if(auth()->user()->role === 'super_admin')
+                document.getElementById('edit_branch_id').value = product.branch_id;
+            @endif
 
-                document.getElementById('editProductForm').action = `/products/${product.product_id}`;
-                openModal('editProductModal');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to load product data');
-            });
-    }
+            // Show current image if exists
+            const editImagePreview = document.getElementById('editImagePreview');
+            if (product.image) {
+                editImagePreview.innerHTML = `<img src="/storage/${product.image}" alt="Current Image">`;
+            } else {
+                editImagePreview.innerHTML = `
+                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                `;
+            }
 
+            document.getElementById('editProductForm').action = `/products/${product.product_id}`;
+            openModal('editProductModal');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load product data');
+        });
+}
     // Show Product Function
     function showProduct(productId) {
         openModal('productShowModal');
@@ -688,86 +731,91 @@
     }
 
     function renderProductDetails(product) {
-        const content = document.getElementById('productShowContent');
-        const statusColor = product.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+    const content = document.getElementById('productShowContent');
+    const statusColor = product.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
 
-        let html = `
-            <div class="space-y-6">
-                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-                    ${product.image ? `
-                        <div class="mb-6">
-                            <img src="/storage/${product.image}" alt="${product.name}" class="w-full h-64 object-cover rounded-lg">
-                        </div>
-                    ` : ''}
+    let html = `
+        <div class="space-y-6">
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                ${product.image ? `
+                    <div class="mb-6">
+                        <img src="/storage/${product.image}" alt="${product.name}" class="w-full h-64 object-cover rounded-lg">
+                    </div>
+                ` : ''}
 
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">${product.name}</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Product ID: #${product.product_id}</p>
-                        </div>
-                        <span class="px-3 py-1 text-sm rounded-full ${statusColor}">${product.status.charAt(0).toUpperCase() + product.status.slice(1)}</span>
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">${product.name}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Product ID: #${product.product_id}</p>
+                    </div>
+                    <span class="px-3 py-1 text-sm rounded-full ${statusColor}">${product.status.charAt(0).toUpperCase() + product.status.slice(1)}</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Branch</p>
+                        <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${product.branch ? product.branch.name : 'N/A'}</p>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Category</p>
+                        <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${product.category ? product.category.name : 'N/A'}</p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                        <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Category</p>
-                            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${product.category ? product.category.name : 'N/A'}</p>
-                        </div>
-
-                        <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Price</p>
-                            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">₱${parseFloat(product.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                        </div>
-                    </div>
-
-                    ${product.description ? `
-                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Description</h4>
-                            <p class="text-gray-600 dark:text-gray-400">${product.description}</p>
-                        </div>
-                    ` : ''}
-
-                    ${product.inventory ? `
-                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4">Inventory Information</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Quantity</p>
-                                    <p class="text-gray-800 dark:text-gray-200 font-medium text-lg">${product.inventory.quantity || 0}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    ${product.created_at ? `
-                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Created At</p>
-                                    <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(product.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                </div>
-                                ${product.updated_at ? `
-                                    <div>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Last Updated</p>
-                                        <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(product.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-                       <button onclick="closeModal('productShowModal'); editProduct('${product.product_id}');"
-        class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                            Edit Product
-                        </button>
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Price</p>
+                        <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">₱${parseFloat(product.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                     </div>
                 </div>
-            </div>
-        `;
 
-        content.innerHTML = html;
-    }
+                ${product.description ? `
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Description</h4>
+                        <p class="text-gray-600 dark:text-gray-400">${product.description}</p>
+                    </div>
+                ` : ''}
+
+                ${product.inventory ? `
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4">Inventory Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Quantity</p>
+                                <p class="text-gray-800 dark:text-gray-200 font-medium text-lg">${product.inventory.quantity || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${product.created_at ? `
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Created At</p>
+                                <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(product.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            </div>
+                            ${product.updated_at ? `
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Last Updated</p>
+                                    <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(product.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                    <button onclick="closeModal('productShowModal'); editProduct('${product.product_id}');"
+                        class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                        Edit Product
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    content.innerHTML = html;
+}
 
     // Delete Modal with SweetAlert
     function openDeleteModal(actionUrl) {

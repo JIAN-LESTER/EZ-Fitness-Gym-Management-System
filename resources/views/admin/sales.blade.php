@@ -696,6 +696,7 @@ function closeDeleteModal() {
             // Determine if it's a product or membership plan
             const isProduct = item.product !== null;
             const isPlan = item.plan !== null;
+            const isSubscription = item.subscription !== null;
 
             let itemName = '';
             let itemDescription = '';
@@ -715,7 +716,20 @@ function closeDeleteModal() {
                 }
                 itemType = 'Membership Plan';
                 itemTypeBadge = 'bg-purple-100 text-purple-800';
-            } else {
+
+                
+            } 
+            else if (isSubscription) {
+                itemName = item.subscription.name;
+                itemDescription = item.subscription.details || '';
+                if (item.subscription.duration_days) {
+                    itemDescription += ` (${item.subscription.duration_days} days)`;
+                }
+                itemType = 'Subscription';
+                itemTypeBadge = 'bg-red-100 text-red-800';
+
+                
+            }else {
                 itemName = 'Unknown Item';
                 itemDescription = '';
                 itemType = 'Unknown';

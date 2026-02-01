@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('sales_id')->references('sales_id')->on('sales')->onDelete('cascade');
             $table->foreignId('product_id')->nullable()->references('product_id')->on('products')->onDelete('cascade');
             $table->foreignId('plan_id')->nullable()->references('plan_id')->on('membership_plans')->onDelete('cascade');
+            $table->foreignId('subscription_id')->nullable()->references('subscription_id')->on('subscriptions')->onDelete('cascade');
             $table->integer('quantity');
             $table->decimal('price', 8, 2);
             $table->decimal('sub_total', 10, 2);

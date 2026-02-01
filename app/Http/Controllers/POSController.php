@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Categories;
 use App\Models\Inventory;
+use App\Models\Logs;
 use App\Models\Product;
 use App\Models\SalesItem;
 use App\Models\Sales;
@@ -20,10 +21,20 @@ class POSController extends Controller
 {
     public function index(Request $request)
     {
+        $currentUser = Auth::user();
+
+        // Determine branch filter
+        $branchId = null;
+        if ($currentUser->role === 'super_admin') {
+            $branchId = session('selected_branch_id');
+        } else {
+            $branchId = $currentUser->branch_id;
+        }
+
         $query = Inventory::with('product.category');
         $categories = Categories::all();
 
-
+        // Search filter
         if ($request->has('search') && $request->search !== '') {
             $query->whereHas('product', function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
@@ -31,17 +42,24 @@ class POSController extends Controller
             });
         }
 
+        // Category filter
         if ($request->has('category') && $request->category !== '') {
             $query->whereHas('product', function ($q) use ($request) {
                 $q->where('category_id', $request->category);
             });
         }
 
+        // Branch filter
+        if ($branchId) {
+            $query->whereHas('product', function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
 
+        // Only show available products with stock
         $query->whereHas('product', function ($q) {
             $q->where('status', 'available');
         })->where('quantity', '>', 0);
-
 
         $products = $query->paginate(12)->withQueryString();
 
@@ -54,7 +72,6 @@ class POSController extends Controller
             $productId = $request->product_id;
             $user = Auth::user();
 
-
             $inventory = Inventory::where('product_id', $productId)
                 ->with('product')
                 ->first();
@@ -66,6 +83,18 @@ class POSController extends Controller
                 ], 404);
             }
 
+            // Check branch access
+            $userBranchId = $user->role === 'super_admin'
+                ? session('selected_branch_id')
+                : $user->branch_id;
+
+            if ($userBranchId && $inventory->product->branch_id != $userBranchId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not available in your branch'
+                ], 403);
+            }
+
             if ($inventory->quantity <= 0) {
                 return response()->json([
                     'success' => false,
@@ -73,19 +102,16 @@ class POSController extends Controller
                 ], 400);
             }
 
-
             $cart = Cart::firstOrCreate([
                 'user_id' => $user->user_id,
                 'status' => 'active'
             ]);
-
 
             $cartItem = CartItem::where('cart_id', $cart->cart_id)
                 ->where('product_id', $productId)
                 ->first();
 
             if ($cartItem) {
-
                 if ($cartItem->quantity + 1 > $inventory->quantity) {
                     return response()->json([
                         'success' => false,
@@ -93,18 +119,16 @@ class POSController extends Controller
                     ], 400);
                 }
 
-
                 $cartItem->quantity += 1;
                 $cartItem->sub_total = $cartItem->quantity * $cartItem->price;
                 $cartItem->save();
             } else {
-
                 $cartItem = CartItem::create([
-                    'cart_id'    => $cart->cart_id,
+                    'cart_id' => $cart->cart_id,
                     'product_id' => $inventory->product_id,
-                    'quantity'   => 1,
-                    'price'      => $inventory->product->price,
-                    'sub_total'   => $inventory->product->price,
+                    'quantity' => 1,
+                    'price' => $inventory->product->price,
+                    'sub_total' => $inventory->product->price,
                 ]);
             }
 
@@ -176,7 +200,6 @@ class POSController extends Controller
 
             $cartItem = CartItem::findOrFail($request->cart_item_id);
 
-
             $inventory = Inventory::where('product_id', $cartItem->product_id)->firstOrFail();
 
             if ($request->quantity > $inventory->quantity) {
@@ -186,7 +209,6 @@ class POSController extends Controller
                 ], 400);
             }
 
-            // Update quantity and subtotal
             $cartItem->quantity = $request->quantity;
             $cartItem->sub_total = $cartItem->quantity * $cartItem->price;
             $cartItem->save();
@@ -229,11 +251,12 @@ class POSController extends Controller
 
     public function checkout(Request $request)
     {
-        $userId = Auth::id();
+        $user = Auth::user();
+        $userId = $user->user_id;
         $paymentMethod = $request->payment_method;
         $referenceCode = $request->reference_code;
+
         try {
-            // Validate reference code for GCash payments
             if ($paymentMethod === 'gcash' && empty($referenceCode)) {
                 return response()->json([
                     'success' => false,
@@ -241,7 +264,14 @@ class POSController extends Controller
                 ], 400);
             }
 
-            DB::transaction(function () use ($paymentMethod, $referenceCode, $userId) {
+            DB::transaction(function () use ($paymentMethod, $referenceCode, $userId, $user) {
+
+
+                
+                $branchId = $user->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $user->branch_id;
+
 
                 $cart = Cart::where('user_id', $userId)
                     ->where('status', 'active')
@@ -254,14 +284,12 @@ class POSController extends Controller
                     throw new \Exception('Cart is empty.');
                 }
 
-                // Calculate totals with discount
                 $finalTotal = $cartItems->sum('sub_total');
-
-                // Calculate total quantity BEFORE the loop
                 $totalQuantity = $cartItems->sum('quantity');
 
                 $saleData = [
                     'user_id' => $userId,
+                    'branch_id' => $branchId,
                     'total_amount' => $finalTotal,
                     'tax' => 0,
                     'discount' => 0,
@@ -270,7 +298,6 @@ class POSController extends Controller
                     'date' => now()
                 ];
 
-                // Add reference code only for GCash payments
                 if ($paymentMethod === 'gcash' && !empty($referenceCode)) {
                     $saleData['reference_code'] = $referenceCode;
                 }
@@ -286,26 +313,21 @@ class POSController extends Controller
                         throw new \Exception("Not enough stock for product ID: {$item->product_id}");
                     }
 
-                    // Deduct inventory
                     $inventory->decrement('quantity', $item->quantity);
 
-                    // Check if quantity of the product reached 0 after checkout
                     if ($inventory->fresh()->quantity == 0) {
-                        // Update product status to unavailable
                         Product::where('product_id', $item->product_id)
                             ->update(['status' => 'unavailable']);
                     }
 
-
                     SalesItem::create([
-                        'sales_id'   => $sale->sales_id,
+                        'sales_id' => $sale->sales_id,
                         'product_id' => $item->product_id,
-                        'quantity'   => $item->quantity,
+                        'quantity' => $item->quantity,
                         'price' => $item->price,
-                        'sub_total'  => $item->sub_total,
+                        'sub_total' => $item->sub_total,
                     ]);
                 }
-
 
                 $cart->items()->delete();
                 $cart->status = 'checked_out';
@@ -317,10 +339,18 @@ class POSController extends Controller
 
                 Transactions::create([
                     'sales_id' => $sale->sales_id,
-                    'quantity'   => $totalQuantity,
+                    'branch_id' => $branchId,
+                    'quantity' => $totalQuantity,
                     'type' => 'sales',
                     'timestamp' => now(),
                 ]);
+
+                        Logs::create([
+            'user_id' => $userId,
+            'branch_id' => $branchId,
+            'action' => "{$user->last_name} made a sale: {$sale->sales_id}.",
+            'timestamp' => now(),
+        ]);
             });
 
             return response()->json([

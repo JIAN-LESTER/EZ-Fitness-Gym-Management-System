@@ -15,40 +15,55 @@ use Illuminate\Support\Facades\Log;
 
 class TransactionController extends Controller
 {
-    public function index(Request $request)
-    {
-        $search = $request->get('search');
-        $statuses = $request->get('status', []);
+  public function index(Request $request)
+{
+    $currentUser = Auth::user();
+    $search = $request->get('search');
+    $statuses = $request->get('status', []);
 
-        $transactions = Transactions::query()
-            ->with(['sale.user.member.plan', 'sale.items.product', 'performer'])
-            ->when($search, function ($query, $search) {
-                return $query->where(function ($q) use ($search) {
-                    $q->where('transaction_id', 'like', "%{$search}%")
-                        ->orWhere('type', 'like', "%{$search}%")
-                        ->orWhereHas('sale', function ($q2) use ($search) {
-                            $q2->whereHas('user', function ($q3) use ($search) {
-                                $q3->where('first_name', 'like', "%{$search}%")
-                                    ->orWhere('last_name', 'like', "%{$search}%")
-                                    ->orWhere('username', 'like', "%{$search}%");
-                            });
-                        })
-                        ->orWhereHas('performer', function ($q2) use ($search) {
-                            $q2->where('first_name', 'like', "%{$search}%")
+    // Determine branch filter
+    $branchId = null;
+    if ($currentUser->role === 'super_admin') {
+        $branchId = session('selected_branch_id');
+    } else {
+        $branchId = $currentUser->branch_id;
+    }
+
+    $transactions = Transactions::query()
+        ->with(['sale.user.member.plan', 'sale.items.product', 'performer'])
+        ->when($search, function ($query, $search) {
+            return $query->where(function ($q) use ($search) {
+                $q->where('transaction_id', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%")
+                    ->orWhereHas('sale', function ($q2) use ($search) {
+                        $q2->whereHas('user', function ($q3) use ($search) {
+                            $q3->where('first_name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%")
                                 ->orWhere('username', 'like', "%{$search}%");
                         });
-                });
-            })
-            ->when(!empty($statuses), function ($query) use ($statuses) {
-                return $query->whereIn('type', $statuses);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(12)
-            ->appends($request->query());
+                    })
+                    ->orWhereHas('performer', function ($q2) use ($search) {
+                        $q2->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere('username', 'like', "%{$search}%");
+                    });
+            });
+        })
+        ->when(!empty($statuses), function ($query) use ($statuses) {
+            return $query->whereIn('type', $statuses);
+        })
+        // **ADD BRANCH FILTER HERE**
+        ->when($branchId, function ($query) use ($branchId) {
+            return $query->whereHas('sale', function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate(12)
+        ->appends($request->query());
 
-        return view('admin.transactions', compact('transactions', 'search', 'statuses'));
-    }
+    return view('admin.transactions', compact('transactions', 'search', 'statuses'));
+}
 
     public function show($id)
     {
@@ -77,6 +92,9 @@ class TransactionController extends Controller
     {
         try {
             $currentUser = Auth::user();
+                         $branchId = $currentUser->role === 'super_admin'
+                    ? session('selected_branch_id')
+                    : $currentUser->branch_id;
             
             // Only admin can delete transactions
             if ($currentUser->role !== 'admin') {
@@ -106,6 +124,7 @@ class TransactionController extends Controller
             // Log the deletion
             Logs::create([
                 'user_id' => $currentUser->user_id,
+                'branch_id' => $branchId,
                 'action' => "{$currentUser->last_name} deleted transaction #{$transactionId} - Type: {$transactionType}{$relatedInfo}",
                 'timestamp' => now(),
             ]);

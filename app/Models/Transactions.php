@@ -18,6 +18,9 @@ class Transactions extends Model
     protected $fillable = [
         'sales_id',
         'product_id',
+        'branch_id',
+        'plan_id',
+        'subscription_id',
         'type',
         'performed_by',
         'quantity'
@@ -73,5 +76,10 @@ class Transactions extends Model
     public function isStockMovement()
     {
         return in_array($this->type, ['stock_in', 'stock_out']);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
     }
 }

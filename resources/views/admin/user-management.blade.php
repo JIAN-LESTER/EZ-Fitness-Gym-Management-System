@@ -60,7 +60,11 @@
 
 @section('content')
     @php
+
         $isStaff = auth()->user()->role === 'staff';
+        $isSuperAdmin = auth()->user()->role === 'super_admin';
+        $isAdmin = auth()->user()->role === 'admin';
+
     @endphp
 
     <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
@@ -81,7 +85,12 @@
 
         <!-- Search & Filters -->
         <div class="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
-            <form method="GET" action="{{ route('admin.user_management') }}" class="space-y-4" role="search">
+            @if ($isStaff)
+                <form method="GET" action="{{ route('staff.user_management') }}" class="space-y-4" role="search"></form>
+
+            @else
+                <form method="GET" action="{{ route('admin.user_management') }}" class="space-y-4" role="search">
+            @endif
 
                 <div class="flex flex-wrap lg:flex-nowrap items-center gap-3">
 
@@ -148,6 +157,19 @@
                                             <span
                                                 class="ml-auto px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">Admin</span>
                                         </label>
+
+                                        @if($isSuperAdmin)
+                                            <label
+                                                class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                                <input type="checkbox" name="roles[]" value="super_admin" {{ in_array('super_admin', request('roles', [])) ? 'checked' : '' }}
+                                                    onchange="updateFilterCount()"
+                                                    class="w-4 h-4 text-red-600 rounded focus:ring-2 focus:ring-red-500">
+                                                <span class="ml-3 text-sm font-medium text-gray-700">Super Admin</span>
+                                                <span
+                                                    class="ml-auto px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">Super
+                                                    Admin</span>
+                                            </label>
+                                        @endif
                                     </div>
                                 </div>
 
@@ -239,41 +261,41 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @forelse($users as $user)
+                     @forelse($users as $user)
                         {{-- Skip non-members if user is staff --}}
                         @if($isStaff && $user->role !== 'member')
                             @continue
                         @endif
 
                         @php
-                            $pendingApproval = $user->member
-                                && $user->member->isApproved == false
-                                && $user->member->isDisabled == false
-                                && $user->member->plan_id !== null;
+                            // Determine member status
+                            $needsApproval = $user->member
+                                && $user->member->plan_id
+                                && $user->member->subscription_id
+                                && !$user->member->isApprovedForSubscription
+                                && !$user->member->isDisabledForSubscription;
 
-                            $isDenied = $user->member
-                                && $user->member->isDisabled == true
-                                && $user->member->isApproved == false;
-
-                            $incompleteProfile = $user->member
-                                && ($user->member->plan_id === null
-                                    || $user->member->sex === null
-                                    || $user->member->birthday === null
-                                    || $user->member->mobile_number === null);
-
-                            $isSuspended = $user->member && $user->member->status === 'expired';
+                            $isDenied = $user->member && $user->member->isDisabled;
+                            $isSuspended = $user->member && $user->member->subscription_status === 'expired' && $user->member->suspended_at;
                             $isRenewalPending = $user->member && $user->member->renewal_pending;
+
+                            // Check for incomplete profile - but DON'T skip, just mark it
+                            $incompleteProfile = $user->role === 'member'
+                                && (!$user->member
+                                    || !$user->member->sex
+                                    || !$user->member->birthday
+                                    || !$user->member->mobile_number
+                                    || !$user->branch_id);
                         @endphp
 
-                        @if($incompleteProfile)
-                            @continue
-                        @endif
+                        {{-- REMOVED: Don't skip incomplete profiles anymore --}}
+                        {{-- We'll show them with a warning badge instead --}}
 
                         <tr class="clickable-row hover:bg-gray-50 transition-colors group"
                             onclick="showUser('{{ $user->user_id }}')">
 
-                            @if($pendingApproval || $isRenewalPending)
-                                {{-- PENDING APPROVAL OR RENEWAL --}}
+                            @if($needsApproval)
+                                {{-- PENDING APPROVAL: Show member with plan & subscription waiting for payment approval --}}
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         <div
@@ -282,50 +304,65 @@
                                         </div>
                                         <div>
                                             <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }}
-                                                {{ $user->last_name }}
-                                            </p>
+                                                {{ $user->last_name }}</p>
                                             <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
                                         </div>
                                     </div>
                                 </td>
 
-                                <td colspan="4" class="px-6 py-4 text-center">
+                                <td class="px-6 py-4">
+                                    <div class="text-sm">
+                                        <p class="font-medium text-gray-900">{{ $user->member->plan->name ?? 'N/A' }}</p>
+                                        <p class="text-xs text-gray-500">₱{{ number_format($user->member->plan->price ?? 0, 2) }}
+                                        </p>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="text-sm">
+                                        <p class="font-medium text-gray-900">{{ $user->member->subscription->name ?? 'N/A' }}</p>
+                                        <p class="text-xs text-gray-500">
+                                            ₱{{ number_format($user->member->subscription->price ?? 0, 2) }}</p>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 text-center" colspan="2">
                                     <div class="flex items-center justify-center gap-2">
                                         <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         <span class="text-yellow-600 font-medium">
-                                            {{ $isRenewalPending ? 'Renewal pending' : 'Awaiting approval' }} -
-                                            {{ $user->member->plan->name ?? 'No Plan' }}
+                                            {{ $isRenewalPending ? 'Renewal' : 'Payment' }} pending
                                         </span>
                                     </div>
                                 </td>
 
                                 <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
                                     <div class="flex items-center justify-center gap-3">
-                                        <button onclick="approveMember('{{ $user->member->member_id }}')"
+                                        <button onclick="approveSubscription('{{ $user->member->member_id }}')"
                                             class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold text-sm transition-colors">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M5 13l4 4L19 7" />
                                             </svg>
-                                            {{ $isRenewalPending ? 'Approve Renewal' : 'Approve' }}
+                                            {{ $isRenewalPending ? 'Approve Renewal' : 'Approve Payment' }}
                                         </button>
 
-                                        <button onclick="denyMember('{{ $user->member->member_id }}')"
+                                        <a href="{{ route('admin.deny', $user->member->member_id) }}"
+                                            onclick="return confirm('Are you sure you want to deny this member?')"
                                             class="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold text-sm transition-colors">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M6 18L18 6M6 6l12 12" />
                                             </svg>
                                             Deny
-                                        </button>
+                                        </a>
                                     </div>
                                 </td>
 
                             @elseif($isDenied)
-                                {{-- DENIED --}}
+                                {{-- DENIED STATUS --}}
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         <div
@@ -334,8 +371,7 @@
                                         </div>
                                         <div>
                                             <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }}
-                                                {{ $user->last_name }}
-                                            </p>
+                                                {{ $user->last_name }}</p>
                                             <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
                                         </div>
                                     </div>
@@ -352,30 +388,103 @@
                                 </td>
 
                                 <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
-                                    <div class="flex items-center justify-center gap-3">
-                                        <button onclick="approveMember('{{ $user->member->member_id }}')"
-                                            class="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold text-sm transition-colors">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            Enable
-                                        </button>
+                                    <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')"
+                                        class="text-red-500 hover:text-red-700" title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor" class="w-5 h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                                        </svg>
+                                    </button>
+                                </td>
 
-                                        <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')"
-                                            class="text-red-500 hover:text-red-700" title="Delete">
+                            @elseif($incompleteProfile)
+                                {{-- INCOMPLETE PROFILE - Show with warning --}}
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-10 h-10 rounded-full bg-orange-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
+                                            {{ strtoupper(substr($user->first_name ?? 'U', 0, 1)) }}{{ strtoupper(substr($user->last_name ?? 'N', 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }}
+                                                {{ $user->last_name }}</p>
+                                            <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
+                                            <span class="inline-block mt-1 px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded-full font-semibold">
+                                                <svg class="w-3 h-3 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                                Incomplete Profile
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 text-gray-700 font-medium">{{ $user->username }}</td>
+
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="px-2 py-1 text-xs font-semibold rounded-full
+                                {{ $user->role === 'super_admin' ? 'bg-red-100 text-red-700' :
+                            ($user->role === 'admin' ? 'bg-orange-100 text-orange-700' :
+                                ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700')) }}">
+                                        {{ ucfirst(str_replace('_', ' ', $user->role)) }}
+                                    </span>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
+                                        {{ ucfirst($user->status) }}
+                                    </span>
+                                </td>
+
+                                <td class="px-6 py-4 text-gray-700">
+                                    <span class="text-orange-600 text-sm font-medium">Profile Incomplete</span>
+                                </td>
+
+                                <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
+                                    <div class="relative inline-block text-left">
+                                        <button onclick="toggleActionsMenu(event, '{{ $user->user_id }}')"
+                                            class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                 stroke="currentColor" class="w-5 h-5">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                                                    d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                                             </svg>
                                         </button>
+
+                                        <div id="actionsMenu-{{ $user->user_id }}"
+                                            class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                                            <div class="py-1">
+                                                <button onclick="editUser('{{ $user->user_id }}')"
+                                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                        stroke="currentColor" class="w-4 h-4">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                                                    </svg>
+                                                    Complete Profile
+                                                </button>
+
+                                                <button
+                                                    onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')"
+                                                    class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                        stroke="currentColor" class="w-4 h-4">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                                                    </svg>
+                                                    Delete User
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
 
                             @else
-                                {{-- ACTIVE/NORMAL USERS --}}
-                                @if($user->role !== 'member' || ($user->member && $user->member->status !== 'inactive' && $user->member->isApproved == true))
+                                {{-- NORMAL/ACTIVE USERS --}}
+                                @if($user->role !== 'member' || ($user->member && $user->member->isApprovedForSubscription))
                                         <td class="px-6 py-4">
                                             <div class="flex items-center gap-3">
                                                 <div
@@ -384,8 +493,7 @@
                                                 </div>
                                                 <div>
                                                     <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }}
-                                                        {{ $user->last_name }}
-                                                    </p>
+                                                        {{ $user->last_name }}</p>
                                                     <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
                                                 </div>
                                             </div>
@@ -396,16 +504,16 @@
                                         <td class="px-6 py-4">
                                             <span
                                                 class="px-2 py-1 text-xs font-semibold rounded-full
-                                                                    {{ $user->role === 'admin' ? 'bg-red-100 text-red-700' :
-                                    ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700') }}">
-                                                {{ ucfirst($user->role) }}
+                                        {{ $user->role === 'super_admin' ? 'bg-red-100 text-red-700' :
+                                    ($user->role === 'admin' ? 'bg-orange-100 text-orange-700' :
+                                        ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700')) }}">
+                                                {{ ucfirst(str_replace('_', ' ', $user->role)) }}
                                             </span>
                                         </td>
 
                                         <td class="px-6 py-4">
-                                            <span
-                                                class="px-2 py-1 text-xs font-semibold rounded-full
-                                                                    {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                        {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
                                                 {{ ucfirst($user->status) }}
                                             </span>
                                         </td>
@@ -415,27 +523,24 @@
                                                     <div class="text-sm">
                                                         <span
                                                             class="px-2 py-1 text-xs font-semibold rounded-full
-                                                                                            {{ $user->member->status === 'active' ? 'bg-green-100 text-green-700' :
-                                                ($user->member->status === 'expired' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700') }}">
-                                                            {{ $user->member->plan->name ?? 'No Plan' }}
+                                                        {{ $user->member->subscription_status === 'active' ? 'bg-green-100 text-green-700' :
+                                                ($user->member->subscription_status === 'expired' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700') }}">
+                                                            {{ $user->member->subscription->name ?? 'No Subscription' }}
                                                         </span>
-                                                        @if($user->member->status === 'expired')
+                                                        @if($user->member->subscription_status === 'expired')
                                                             <p class="text-xs text-red-600 mt-1 font-semibold">
-                                                                {{ $isSuspended && $user->member->suspended_at ? 'Suspended' : 'Expired' }}
+                                                                {{ $isSuspended ? 'Suspended' : 'Expired' }}
                                                             </p>
-                                                        @elseif($user->member->end_date)
+                                                        @elseif($user->member->end_date_for_subscription)
                                                             @php
                                                                 $now = now();
-                                                                $end = $user->member->end_date;
+                                                                $end = $user->member->end_date_for_subscription;
                                                                 $days = (int) $now->diffInDays($end, false);
-                                                                $hours = (int) $now->diffInHours($end, false);
                                                             @endphp
                                                             <p class="text-xs text-gray-500 mt-1">
                                                                 @if ($days >= 1)
                                                                     {{ $days }} {{ $days == 1 ? 'day' : 'days' }} left
-                                                                @elseif ($hours > 0)
-                                                                    {{ $hours }} {{ $hours == 1 ? 'hour' : 'hours' }} left
-                                                                @elseif ($hours === 0)
+                                                                @elseif ($days === 0)
                                                                     Expires today
                                                                 @else
                                                                     Expired
@@ -451,8 +556,7 @@
                                         <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
                                             <div class="relative inline-block text-left">
                                                 <button onclick="toggleActionsMenu(event, '{{ $user->user_id }}')"
-                                                    class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                                                    title="Actions">
+                                                    class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                         stroke="currentColor" class="w-5 h-5">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -474,7 +578,7 @@
                                                         </button>
 
                                                         @if($user->role === 'member' && $user->member)
-                                                            @if($user->member->status === 'expired')
+                                                            @if($user->member->subscription_status === 'expired')
                                                                 <button onclick="reactivateMember('{{ $user->member->member_id }}')"
                                                                     class="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-gray-100 flex items-center gap-2">
                                                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -570,8 +674,7 @@
     <div id="addUserModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
         <div class="absolute inset-0" onclick="closeModal('addUserModal')"></div>
 
-        <div
-            class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
             <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
                 <h2 class="text-xl font-semibold">Add New {{ $isStaff ? 'Member' : 'User' }}</h2>
             </header>
@@ -607,8 +710,7 @@
                     </div>
 
                     <div>
-                        <label for="username"
-                            class="block text-sm font-medium text-gray-700">Username</label>
+                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
                         <input type="text" name="username" id="username"
                             class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         @error('username')
@@ -627,8 +729,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="password"
-                                class="block text-sm font-medium text-gray-700">Password</label>
+                            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
                             <input type="password" name="password" id="password"
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('password')
@@ -636,8 +737,8 @@
                             @enderror
                         </div>
                         <div>
-                            <label for="password_confirmation"
-                                class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm
+                                Password</label>
                             <input type="password" name="password_confirmation" id="password_confirmation"
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>
@@ -652,9 +753,37 @@
                                 <option value="member">Member</option>
                                 <option value="staff">Staff</option>
                                 <option value="admin">Admin</option>
+                                @if($isSuperAdmin)
+                                    <option value="super_admin">Super Admin</option>
+                                @endif
                             </select>
                         </div>
                     @endif
+
+
+                    <div>
+                        <label for="add_branch" class="block text-sm font-medium text-gray-700 mb-2">
+                            Branch
+                        </label>
+                        @if(auth()->user()->role === 'super_admin')
+                            <select name="branch_id" id="add_branch" required
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-gray-800 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                                <option value="">Select Branch</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->branch_id }}">{{ $branch->name }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="text" value="{{ auth()->user()->branch->name ?? 'N/A' }}" disabled
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-gray-100 px-4 py-2 text-gray-600">
+                            <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
+                        @endif
+                        @error('branch_id')
+                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+
 
                     {{-- Member fields - always visible for staff --}}
                     <div id="addMemberFields" class="space-y-4 pt-4" style="{{ $isStaff ? 'display: block;' : '' }}">
@@ -730,11 +859,68 @@
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>
                     </div>
+                    <div>
+                        <label for="subscription_id" class="block text-sm font-medium text-gray-700">
+                            Subscription
+                            @if($isStaff)
+                                <span class="text-red-500">*</span>
+                            @endif
+                        </label>
+                        <select name="subscription_id" id="subscription_id" {{ $isStaff ? 'required' : '' }}
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            <option value="">Select a subscription{{ $isStaff ? '' : ' (optional)' }}</option>
+                            @php
+                                $subscriptions = \App\Models\Subscriptions::all();
+                            @endphp
+                            @foreach($subscriptions ?? [] as $subscription)
+                                <option value="{{ $subscription->subscription_id }}">{{ $subscription->name }} -
+                                    ₱{{ number_format($subscription->price, 2) }} / {{ $subscription->duration_days }} days
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Payment Method Selection (only shown if both plan and subscription are selected) --}}
+                    <div id="paymentSection" class="hidden space-y-4 pt-4 border-t border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-700">Payment Details</h3>
+
+                        <div>
+                            <label for="payment_method" class="block text-sm font-medium text-gray-700">
+                                Payment Method <span class="text-red-500">*</span>
+                            </label>
+                            <select name="payment_method" id="payment_method"
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                                <option value="cash">Cash</option>
+                                <option value="gcash">GCash</option>
+                            </select>
+                        </div>
+
+                        <div id="referenceCodeDiv" class="hidden">
+                            <label for="reference_code" class="block text-sm font-medium text-gray-700">
+                                GCash Reference Code <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="reference_code" id="reference_code" placeholder="e.g., 1234567890123"
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        </div>
+
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p class="text-sm text-blue-800">Payment will be recorded and QR code will be generated
+                                    automatically.</p>
+                            </div>
+                        </div>
+                    </div>
 
                     <div
                         class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
                         <button type="button" onclick="closeModal('addUserModal')"
-                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto"to">Cancel</button>
+                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto"
+                            to">Cancel</button>
                         <button type="submit"
                             class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">Add
                             {{ $isStaff ? 'Member' : 'User' }}</button>
@@ -748,8 +934,7 @@
     <div id="editUserModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
         <div class="absolute inset-0" onclick="closeModal('editUserModal')"></div>
 
-        <div
-            class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
             <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
                 <h2 class="text-xl font-semibold">Edit {{ $isStaff ? 'Member' : 'User' }}</h2>
             </header>
@@ -767,8 +952,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="edit_first_name"
-                                class="block text-sm font-medium text-gray-700">First Name</label>
+                            <label for="edit_first_name" class="block text-sm font-medium text-gray-700">First Name</label>
                             <input type="text" name="first_name" id="edit_first_name"
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('first_name')
@@ -776,8 +960,7 @@
                             @enderror
                         </div>
                         <div>
-                            <label for="edit_last_name"
-                                class="block text-sm font-medium text-gray-700">Last Name</label>
+                            <label for="edit_last_name" class="block text-sm font-medium text-gray-700">Last Name</label>
                             <input type="text" name="last_name" id="edit_last_name"
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             @error('last_name')
@@ -787,8 +970,7 @@
                     </div>
 
                     <div>
-                        <label for="edit_username"
-                            class="block text-sm font-medium text-gray-700">Username</label>
+                        <label for="edit_username" class="block text-sm font-medium text-gray-700">Username</label>
                         <input type="text" name="username" id="edit_username"
                             class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         @error('username')
@@ -797,8 +979,7 @@
                     </div>
 
                     <div>
-                        <label for="edit_email"
-                            class="block text-sm font-medium text-gray-700">Email</label>
+                        <label for="edit_email" class="block text-sm font-medium text-gray-700">Email</label>
                         <input type="email" name="email" id="edit_email"
                             class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         @error('email')
@@ -808,8 +989,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="edit_password"
-                                class="block text-sm font-medium text-gray-700">New Password
+                            <label for="edit_password" class="block text-sm font-medium text-gray-700">New Password
                                 (Optional)</label>
                             <input type="password" name="password" id="edit_password"
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
@@ -818,8 +998,8 @@
                             @enderror
                         </div>
                         <div>
-                            <label for="edit_password_confirmation"
-                                class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                            <label for="edit_password_confirmation" class="block text-sm font-medium text-gray-700">Confirm
+                                Password</label>
                             <input type="password" name="password_confirmation" id="edit_password_confirmation"
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>
@@ -827,19 +1007,20 @@
 
                     @if(!$isStaff)
                         <div>
-                            <label for="edit_role"
-                                class="block text-sm font-medium text-gray-700">Role</label>
+                            <label for="edit_role" class="block text-sm font-medium text-gray-700">Role</label>
                             <select name="role" id="edit_role" onchange="toggleMemberFields('edit')"
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="member">Member</option>
                                 <option value="staff">Staff</option>
                                 <option value="admin">Admin</option>
+                                @if($isSuperAdmin)
+                                    <option value="super_admin">Super Admin</option>
+                                @endif
                             </select>
                         </div>
 
                         <div>
-                            <label for="edit_status"
-                                class="block text-sm font-medium text-gray-700">Status</label>
+                            <label for="edit_status" class="block text-sm font-medium text-gray-700">Status</label>
                             <select name="status" id="edit_status"
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="active">Active</option>
@@ -848,16 +1029,35 @@
                         </div>
                     @endif
 
+                    <div>
+                        <label for="edit_branch" class="block text-sm font-medium text-gray-700 mb-2">
+                            Branch <span class="text-red-500">*</span>
+                        </label>
+                        @if(auth()->user()->role === 'super_admin')
+                            <select name="branch_id" id="edit_branch" required
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-gray-800 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                                <option value="">Select Branch</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->branch_id }}">{{ $branch->name }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="text" value="{{ auth()->user()->branch->name ?? 'N/A' }}" disabled
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-gray-100 px-4 py-2 text-gray-600">
+                            <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
+                        @endif
+                    </div>
                     {{-- Member fields - always visible for staff --}}
-                    <div id="editMemberFields" class="space-y-4 border-t border-2 border-gray-300 border-gray-700 (change to border-gray-200) pt-4"
+                    <div id="editMemberFields"
+                        class="space-y-4 border-t border-2 border-gray-300 border-gray-700 (change to border-gray-200) pt-4"
                         style="{{ $isStaff ? 'display: block;' : '' }}">
                         <h3 class="text-sm font-semibold text-gray-700">Member Profile
                             {{ $isStaff ? '(Required)' : '(Optional)' }}
                         </h3>
 
                         <div>
-                            <label for="edit_plan_id"
-                                class="block text-sm font-medium text-gray-700">Membership Plan</label>
+                            <label for="edit_plan_id" class="block text-sm font-medium text-gray-700">Membership
+                                Plan</label>
                             <select name="plan_id" id="edit_plan_id"
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="">Select a plan (optional)</option>
@@ -870,8 +1070,7 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="edit_sex"
-                                    class="block text-sm font-medium text-gray-700">Sex</label>
+                                <label for="edit_sex" class="block text-sm font-medium text-gray-700">Sex</label>
                                 <select name="sex" id="edit_sex"
                                     class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                     <option value="">Select...</option>
@@ -880,8 +1079,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label for="edit_birthday"
-                                    class="block text-sm font-medium text-gray-700">Birthday</label>
+                                <label for="edit_birthday" class="block text-sm font-medium text-gray-700">Birthday</label>
                                 <input type="date" name="birthday" id="edit_birthday"
                                     class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
@@ -889,31 +1087,86 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label for="edit_height"
-                                    class="block text-sm font-medium text-gray-700">Height (cm)</label>
+                                <label for="edit_height" class="block text-sm font-medium text-gray-700">Height (cm)</label>
                                 <input type="number" step="0.1" name="height" id="edit_height"
                                     class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
                             <div>
-                                <label for="edit_weight"
-                                    class="block text-sm font-medium text-gray-700">Weight (kg)</label>
+                                <label for="edit_weight" class="block text-sm font-medium text-gray-700">Weight (kg)</label>
                                 <input type="number" step="0.1" name="weight" id="edit_weight"
                                     class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
                         </div>
 
                         <div>
-                            <label for="edit_mobile_number"
-                                class="block text-sm font-medium text-gray-700">Mobile Number</label>
+                            <label for="edit_mobile_number" class="block text-sm font-medium text-gray-700">Mobile
+                                Number</label>
                             <input type="tel" name="mobile_number" id="edit_mobile_number" placeholder="e.g. 09123456789"
                                 class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="subscription_id" class="block text-sm font-medium text-gray-700">
+                            Subscription
+                            @if($isStaff)
+                                <span class="text-red-500">*</span>
+                            @endif
+                        </label>
+                        <select name="subscription_id" id="subscription_id" {{ $isStaff ? 'required' : '' }}
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            <option value="">Select a subscription{{ $isStaff ? '' : ' (optional)' }}</option>
+                            @php
+                                $subscriptions = \App\Models\Subscriptions::all();
+                            @endphp
+                            @foreach($subscriptions ?? [] as $subscription)
+                                <option value="{{ $subscription->subscription_id }}">{{ $subscription->name }} -
+                                    ₱{{ number_format($subscription->price, 2) }} / {{ $subscription->duration_days }} days
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Payment Method Selection (only shown if both plan and subscription are selected) --}}
+                    <div id="paymentSection" class="hidden space-y-4 pt-4 border-t border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-700">Payment Details</h3>
+
+                        <div>
+                            <label for="payment_method" class="block text-sm font-medium text-gray-700">
+                                Payment Method <span class="text-red-500">*</span>
+                            </label>
+                            <select name="payment_method" id="payment_method"
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                                <option value="cash">Cash</option>
+                                <option value="gcash">GCash</option>
+                            </select>
+                        </div>
+
+                        <div id="referenceCodeDiv" class="hidden">
+                            <label for="reference_code" class="block text-sm font-medium text-gray-700">
+                                GCash Reference Code <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="reference_code" id="reference_code" placeholder="e.g., 1234567890123"
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        </div>
+
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p class="text-sm text-blue-800">Payment will be recorded and QR code will be generated
+                                    automatically.</p>
+                            </div>
                         </div>
                     </div>
 
                     <div
                         class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
                         <button type="button" onclick="closeModal('editUserModal')"
-                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto"to">Cancel</button>
+                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto"
+                            to">Cancel</button>
                         <button type="submit"
                             class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">Update
                             {{ $isStaff ? 'Member' : 'User' }}</button>
@@ -927,8 +1180,7 @@
     <div id="userShowModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
         <div class="absolute inset-0" onclick="closeModal('userShowModal')"></div>
 
-        <div
-            class="block text-sm font-medium text-gray-700">
+        <div class="block text-sm font-medium text-gray-700">
             <header class="bg-gray-800 text-white p-5 rounded-t-2xl sticky top-0 z-10 flex justify-between items-center">
                 <h2 class="text-xl font-semibold">User Details</h2>
                 <button onclick="closeModal('userShowModal')" class="text-white hover:text-gray-200">
@@ -939,7 +1191,7 @@
                 </button>
             </header>
 
-            <div id="userShowContent" class="p-6">
+            <div id="userShowContent" class="p-6 bg-white">
                 <div class="flex justify-center items-center py-12">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
                 </div>
@@ -949,9 +1201,12 @@
 
     <script>
 
-        const isStaff = {{ $isStaff ? 'true' : 'false' }};
 
-        const showError = (element, message) => {
+        const isStaff = {{ $isStaff ? 'true' : 'false' }};
+        const isSuperAdmin = {{ $isSuperAdmin ? 'true' : 'false' }};
+        const isAdmin = {{ $isAdmin ? 'true' : 'false' }}
+
+                                const showError = (element, message) => {
             if (!element) return;
 
             element.classList.remove('border-2 border-gray-300');
@@ -1211,10 +1466,10 @@
                         const closeBtn = document.createElement('button');
                         closeBtn.className = 'menu-close-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1';
                         closeBtn.innerHTML = `
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        `;
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        `;
                         closeBtn.onclick = (e) => {
                             e.stopPropagation();
                             menu.classList.add('hidden');
@@ -1274,6 +1529,39 @@
             });
         }
 
+        document.addEventListener('DOMContentLoaded', function () {
+            const planSelect = document.getElementById('plan_id');
+            const subscriptionSelect = document.getElementById('subscription_id');
+            const paymentSection = document.getElementById('paymentSection');
+            const paymentMethodSelect = document.getElementById('payment_method');
+            const referenceCodeDiv = document.getElementById('referenceCodeDiv');
+
+            function updatePaymentSection() {
+                if (planSelect && subscriptionSelect && paymentSection) {
+                    if (planSelect.value && subscriptionSelect.value) {
+                        paymentSection.classList.remove('hidden');
+                    } else {
+                        paymentSection.classList.add('hidden');
+                    }
+                }
+            }
+
+            if (planSelect) planSelect.addEventListener('change', updatePaymentSection);
+            if (subscriptionSelect) subscriptionSelect.addEventListener('change', updatePaymentSection);
+
+            if (paymentMethodSelect) {
+                paymentMethodSelect.addEventListener('change', function () {
+                    if (this.value === 'gcash') {
+                        referenceCodeDiv.classList.remove('hidden');
+                        document.getElementById('reference_code').required = true;
+                    } else {
+                        referenceCodeDiv.classList.add('hidden');
+                        document.getElementById('reference_code').required = false;
+                    }
+                });
+            }
+        });
+
 
 
         // ===========================
@@ -1322,6 +1610,7 @@
             setValueById('edit_username', user.username);
             setValueById('edit_email', user.email);
             setValueById('edit_role', user.role);
+            setValueById('edit_branch_id', user.branch_id);
             setValueById('edit_status', user.status);
 
             if (user.member) {
@@ -1358,10 +1647,10 @@
             const content = document.getElementById('userShowContent');
             if (content) {
                 content.innerHTML = `
-                    <div class="flex justify-center items-center py-12">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
-                    </div>
-                `;
+                                                    <div class="flex justify-center items-center py-12">
+                                                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
+                                                    </div>
+                                                `;
             }
 
             fetch(`/admin/user_crud/show/${userId}`)
@@ -1387,10 +1676,10 @@
                     console.error('Error:', error);
                     if (content) {
                         content.innerHTML = `
-                            <div class="text-center py-12">
-                                <p class="text-red-600">Error loading user details</p>
-                            </div>
-                        `;
+                                                            <div class="text-center py-12">
+                                                                <p class="text-red-600">Error loading user details</p>
+                                                            </div>
+                                                        `;
                     }
                     if (typeof toastr !== 'undefined') {
                         toastr.error('Failed to load user details');
@@ -1411,52 +1700,46 @@
             const statusColor = user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600';
 
             let html = `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-1">
-                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-                            <div class="flex flex-col items-center mb-6">
-                                ${user.avatar ?
+                                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                    <div class="lg:col-span-1">
+                                                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                                                            <div class="flex flex-col items-center mb-6">
+                                                                ${user.avatar ?
                     `<img src="/storage/${user.avatar}" alt="${user.first_name}" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200">` :
                     `<div class="w-32 h-32 rounded-full bg-gray-400 flex items-center justify-center text-4xl font-bold text-white">${avatarInitial}</div>`
                 }
 
-                                <h2 class="text-2xl font-bold mt-4 text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${user.first_name} ${user.last_name}</h2>
-                                <p class="text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">@${user.username}</p>
+                                                                <h2 class="text-2xl font-bold mt-4 text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${user.first_name} ${user.last_name}</h2>
+                                                                <p class="text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">@${user.username}</p>
 
-                                <div class="flex gap-2 mt-3">
-                                    <span class="px-3 py-1 text-xs rounded-full ${roleColor}">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
-                                    <span class="px-3 py-1 text-xs rounded-full ${statusColor}">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
-                                </div>
-                            </div>
+                                                                <div class="flex gap-2 mt-3">
+                                                                    <span class="px-3 py-1 text-xs rounded-full ${roleColor}">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
+                                                                    <span class="px-3 py-1 text-xs rounded-full ${statusColor}">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
+                                                                </div>
+                                                            </div>
 
-                            <div class="border-t border-gray-200 border-gray-700 (change to border-gray-200) pt-4 space-y-3">
-                                <div>
-                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Email</p>
-                                    <p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium break-all">${user.email}</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">User ID</p>
-                                    <p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">#${user.user_id}</p>
-                                </div>
-                                ${user.created_at ? `
-                                    <div>
-                                        <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Member Since</p>
-                                        <p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                    </div>
-                                ` : ''}
-                            </div>
+                                                            <div class="border-t border-gray-200 border-gray-700 (change to border-gray-200) pt-4 space-y-3">
+                                                                <div>
+                                                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Email</p>
+                                                                    <p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium break-all">${user.email}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">User ID</p>
+                                                                    <p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">#${user.user_id}</p>
+                                                                </div>
+                                                                ${user.created_at ? `
+                                                                    <div>
+                                                                        <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Member Since</p>
+                                                                        <p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                                    </div>
+                                                                ` : ''}
+                                                            </div>
 
-                            <div class="border-t border-gray-200 border-gray-700 (change to border-gray-200) pt-4 mt-4">
-                                <button onclick="closeModal('userShowModal'); editUser('${user.user_id}');"
-                                        class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                                    Edit User
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                                                        </div>
+                                                    </div>
 
-                    <div class="lg:col-span-2 space-y-6">
-            `;
+                                                    <div class="lg:col-span-2 space-y-6">
+                                            `;
 
             if (user.member) {
                 const memberStatusColor = user.member.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700';
@@ -1478,67 +1761,67 @@
                 }
 
                 html += `
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-xl font-bold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) mb-4 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                            </svg>
-                            Membership Information
-                        </h3>
+                                                    <div class="bg-white rounded-lg shadow-md p-6">
+                                                        <h3 class="text-xl font-bold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) mb-4 flex items-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                                                            </svg>
+                                                            Membership Information
+                                                        </h3>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">Plan</p>
-                                <p class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${user.member.plan ? user.member.plan.name : 'No Plan Assigned'}</p>
-                                ${user.member.plan ? `<p class="text-sm text-gray-600 text-gray-400  (if on dark background, change to text-gray-600) mt-1">₱${parseFloat(user.member.plan.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${user.member.plan.duration_days} days</p>` : ''}
-                            </div>
+                                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <div class="bg-gray-50 p-4 rounded-lg">
+                                                                <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">Plan</p>
+                                                                <p class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${user.member.plan ? user.member.plan.name : 'No Plan Assigned'}</p>
+                                                                ${user.member.plan ? `<p class="text-sm text-gray-600 text-gray-400  (if on dark background, change to text-gray-600) mt-1">₱${parseFloat(user.member.plan.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${user.member.plan.duration_days} days</p>` : ''}
+                                                            </div>
 
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">Membership Status</p>
-                                <span class="inline-block px-3 py-1 text-sm rounded-full ${memberStatusColor}">${user.member.status.charAt(0).toUpperCase() + user.member.status.slice(1)}</span>
-                            </div>
+                                                            <div class="bg-gray-50 p-4 rounded-lg">
+                                                                <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">Membership Status</p>
+                                                                <span class="inline-block px-3 py-1 text-sm rounded-full ${memberStatusColor}">${user.member.status.charAt(0).toUpperCase() + user.member.status.slice(1)}</span>
+                                                            </div>
 
-                            ${user.member.start_date ? `
-                                <div class="bg-gray-50 p-4 rounded-lg">
-                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">Start Date</p>
-                                    <p class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${new Date(user.member.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                                </div>
-                            ` : ''}
+                                                            ${user.member.start_date ? `
+                                                                <div class="bg-gray-50 p-4 rounded-lg">
+                                                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">Start Date</p>
+                                                                    <p class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${new Date(user.member.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                                                                </div>
+                                                            ` : ''}
 
-                            ${user.member.end_date ? `
-                                <div class="bg-gray-50 p-4 rounded-lg">
-                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">End Date</p>
-                                    <p class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${new Date(user.member.end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                                    ${daysRemainingHTML}
-                                </div>
-                            ` : ''}
-                        </div>
+                                                            ${user.member.end_date ? `
+                                                                <div class="bg-gray-50 p-4 rounded-lg">
+                                                                    <p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-1">End Date</p>
+                                                                    <p class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800)">${new Date(user.member.end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                                                                    ${daysRemainingHTML}
+                                                                </div>
+                                                            ` : ''}
+                                                        </div>
 
-                        <div class="mt-6 pt-6 border-t border-gray-200 border-gray-700 (change to border-gray-200)">
-                            <h4 class="font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) mb-4">Personal Information</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                ${user.member.sex ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Sex</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium capitalize">${user.member.sex}</p></div>` : ''}
-                                ${user.member.birthday ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Birthday</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${new Date(user.member.birthday).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>` : ''}
-                                ${user.member.height ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Height</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${user.member.height} cm</p></div>` : ''}
-                                ${user.member.weight ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Weight</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${user.member.weight} kg</p></div>` : ''}
-                                ${user.member.mobile_number ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Mobile Number</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${user.member.mobile_number}</p></div>` : ''}
-                                ${user.member.qr_code ? `<div class="md:col-span-2"><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-2">QR Code</p><img src="/storage/${user.member.qr_code}" alt="QR Code" class="w-32 h-32 border border-gray-200 rounded"></div>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
+                                                        <div class="mt-6 pt-6 border-t border-gray-200 border-gray-700 (change to border-gray-200)">
+                                                            <h4 class="font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) mb-4">Personal Information</h4>
+                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                ${user.member.sex ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Sex</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium capitalize">${user.member.sex}</p></div>` : ''}
+                                                                ${user.member.birthday ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Birthday</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${new Date(user.member.birthday).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div>` : ''}
+                                                                ${user.member.height ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Height</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${user.member.height} cm</p></div>` : ''}
+                                                                ${user.member.weight ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Weight</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${user.member.weight} kg</p></div>` : ''}
+                                                                ${user.member.mobile_number ? `<div><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600)">Mobile Number</p><p class="text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) font-medium">${user.member.mobile_number}</p></div>` : ''}
+                                                                ${user.member.qr_code ? `<div class="md:col-span-2"><p class="text-sm text-gray-500 text-gray-400  (if on dark background, change to text-gray-600) mb-2">QR Code</p><img src="/storage/${user.member.qr_code}" alt="QR Code" class="w-32 h-32 border border-gray-200 rounded"></div>` : ''}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                `;
             } else {
                 html += `
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <div class="text-center py-8">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                            </svg>
-                            <h3 class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) mb-2">Not a Member</h3>
-                            <p class="text-gray-600 text-gray-400  (if on dark background, change to text-gray-600)">This user doesn't have a membership profile yet.</p>
-                        </div>
-                    </div>
-                `;
+                                                    <div class="bg-white rounded-lg shadow-md p-6">
+                                                        <div class="text-center py-8">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                                            </svg>
+                                                            <h3 class="text-lg font-semibold text-gray-800 text-gray-200  (if on dark background, change to text-gray-800) mb-2">Not a Member</h3>
+                                                            <p class="text-gray-600 text-gray-400  (if on dark background, change to text-gray-600)">This user doesn't have a membership profile yet.</p>
+                                                        </div>
+                                                    </div>
+                                                `;
             }
 
             html += '</div></div>';
@@ -1809,132 +2092,92 @@
         // MEMBER ACTIONS
         // ===========================
 
-        function approveMember(memberId) {
+        function approveProfile(memberId) {
             if (typeof Swal === 'undefined') {
-                if (confirm('Approve this member?')) {
-                    const payment = prompt('Enter payment method (cash/gcash):');
-                    if (payment) {
-                        if (payment.toLowerCase() === 'gcash') {
-                            const reference = prompt('Enter GCash reference code:');
-                            if (reference) {
-                                window.location.href = `/admin/user_crud/approve/${memberId}?payment=${payment}&reference=${encodeURIComponent(reference)}`;
-                            } else {
-                                alert('GCash reference code is required');
-                            }
-                        } else {
-                            window.location.href = `/admin/user_crud/approve/${memberId}?payment=${payment}`;
+                const payment = prompt('Enter payment method (cash/gcash):');
+                if (payment) {
+                    if (payment.toLowerCase() === 'gcash') {
+                        const reference = prompt('Enter GCash reference code:');
+                        if (reference) {
+                            submitProfileApprovalForm(memberId, payment, reference);
                         }
+                    } else {
+                        submitProfileApprovalForm(memberId, payment, null);
                     }
                 }
                 return;
             }
-
             Swal.fire({
-                title: 'Approve Member?',
+                title: 'Approve Profile & Process Payment?',
                 html: `
-                <div class="mb-4">
-                    <p class="text-gray-700 mb-4">Please select a payment method for this membership:</p>
+                    <div class="mb-4">
+                        <p class="text-gray-700 mb-4">Process membership plan payment:</p>
+                        <input type="hidden" id="selected-payment" value="">
 
-                    <input type="hidden" id="selected-payment" value="">
-
-                    <div class="space-y-3">
-                        <!-- Cash Option -->
-                        <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all hover:border-green-400"
-                             data-payment="cash"
-                             style="transition: all 0.3s ease;">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        <div class="space-y-3">
+                            <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer" data-payment="cash">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                        </div>
+                                        <div class="text-left">
+                                            <div class="font-semibold text-gray-800">Cash Payment</div>
+                                            <div class="text-sm text-gray-500">Direct cash payment</div>
+                                        </div>
+                                    </div>
+                                    <div class="checkmark hidden w-6 h-6 bg-green-500 rounded-full items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                                         </svg>
                                     </div>
-                                    <div class="text-left">
-                                        <div class="font-semibold text-gray-800">Cash Payment</div>
-                                        <div class="text-sm text-gray-500">Direct cash payment</div>
-                                    </div>
-                                </div>
-                                <div class="checkmark hidden w-6 h-6 bg-green-500 rounded-full items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                                    </svg>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- GCash Option -->
-                        <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-400"
-                             data-payment="gcash"
-                             style="transition: all 0.3s ease;">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer" data-payment="gcash">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div class="text-left">
+                                            <div class="font-semibold text-gray-800">GCash Payment</div>
+                                            <div class="text-sm text-gray-500">Mobile wallet</div>
+                                        </div>
+                                    </div>
+                                    <div class="checkmark hidden w-6 h-6 bg-blue-500 rounded-full items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                                         </svg>
                                     </div>
-                                    <div class="text-left">
-                                        <div class="font-semibold text-gray-800">GCash Payment</div>
-                                        <div class="text-sm text-gray-500">Mobile wallet payment</div>
-                                    </div>
-                                </div>
-                                <div class="checkmark hidden w-6 h-6 bg-blue-500 rounded-full items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                                    </svg>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `,
+                `,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#10b981',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Confirm Payment',
+                confirmButtonText: 'Process Payment',
                 cancelButtonText: 'Cancel',
-                customClass: {
-                    popup: 'payment-modal-popup'
-                },
                 didOpen: () => {
-                    // Add hover and click effects
                     const options = document.querySelectorAll('.payment-option');
                     const hiddenInput = document.getElementById('selected-payment');
 
                     options.forEach(option => {
-                        // Hover effect
-                        option.addEventListener('mouseenter', function () {
-                            if (!this.classList.contains('selected')) {
-                                this.style.borderColor = '#cbd5e1';
-                                this.style.transform = 'translateY(-4px)';
-                                this.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.1)';
-                            }
-                        });
-
-                        option.addEventListener('mouseleave', function () {
-                            if (!this.classList.contains('selected')) {
-                                this.style.borderColor = '#e5e7eb';
-                                this.style.transform = 'translateY(0)';
-                                this.style.boxShadow = 'none';
-                            }
-                        });
-
-                        // Click effect
                         option.addEventListener('click', function () {
-                            // Remove selection from all options
                             options.forEach(opt => {
                                 opt.classList.remove('selected');
                                 opt.style.borderColor = '#e5e7eb';
                                 opt.style.background = 'white';
-                                opt.style.transform = 'translateY(0)';
-                                opt.style.boxShadow = 'none';
                                 opt.querySelector('.checkmark').style.display = 'none';
                             });
 
-                            // Add selection to clicked option
                             this.classList.add('selected');
                             const payment = this.getAttribute('data-payment');
                             hiddenInput.value = payment;
@@ -1947,8 +2190,6 @@
                                 this.style.background = 'linear-gradient(to bottom, #eff6ff, white)';
                             }
 
-                            this.style.transform = 'translateY(-4px)';
-                            this.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.15)';
                             this.querySelector('.checkmark').style.display = 'flex';
                         });
                     });
@@ -1965,73 +2206,210 @@
                 if (result.isConfirmed && result.value) {
                     const payment = result.value;
 
-                    // If GCash, ask for reference number
                     if (payment === 'gcash') {
                         Swal.fire({
                             title: 'GCash Reference',
                             html: `
-                            <div class="text-left">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Enter GCash Reference Number:
-                                </label>
-                                <input type="text"
-                                       id="gcash-reference"
-                                       class="w-full px-4 py-2 border-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       placeholder="e.g., 1234567890123">
-                                <p class="text-xs text-gray-500 mt-2">This is required for GCash payments</p>
-                            </div>
-                        `,
-                            icon: 'info',
+                                <div class="text-left">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Enter GCash Reference Number:</label>
+                                    <input type="text" id="gcash-reference" class="w-full px-4 py-2 border-2 rounded-lg" placeholder="e.g., 1234567890123">
+                                </div>
+                            `,
                             showCancelButton: true,
                             confirmButtonColor: '#3b82f6',
-                            cancelButtonColor: '#6b7280',
-                            confirmButtonText: 'Submit',
-                            cancelButtonText: 'Back',
                             preConfirm: () => {
                                 const reference = document.getElementById('gcash-reference').value;
-                                if (!reference || reference.trim() === '') {
+                                if (!reference) {
                                     Swal.showValidationMessage('Reference number is required');
                                     return false;
                                 }
                                 return reference;
                             }
                         }).then((refResult) => {
-                            if (refResult.isConfirmed && refResult.value) {
-                                // Show loading and redirect
-                                Swal.fire({
-                                    title: 'Processing...',
-                                    text: 'Approving member with GCash payment',
-                                    icon: 'info',
-                                    allowOutsideClick: false,
-                                    allowEscapeKey: false,
-                                    showConfirmButton: false,
-                                    didOpen: () => {
-                                        Swal.showLoading();
-                                    }
-                                });
-
-                                window.location.href = `/admin/user_crud/approve/${memberId}?payment=gcash&reference=${encodeURIComponent(refResult.value)}`;
+                            if (refResult.isConfirmed) {
+                                submitProfileApprovalForm(memberId, 'gcash', refResult.value);
                             }
                         });
                     } else {
-                        // Cash payment - redirect directly
-                        Swal.fire({
-                            title: 'Processing...',
-                            text: 'Approving member with cash payment',
-                            icon: 'info',
-                            allowOutsideClick: false,
-                            allowEscapeKey: false,
-                            showConfirmButton: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-
-                        window.location.href = `/admin/user_crud/approve/${memberId}?payment=cash`;
+                        submitProfileApprovalForm(memberId, 'cash', null);
                     }
                 }
             });
         }
+        // Helper function to submit the profile approval form
+        function submitProfileApprovalForm(memberId, paymentMethod, referenceCode) {
+            const form = document.createElement('form');
+            form.method = 'GET';
+            let url = `/admin/user_crud/approve-profile/${memberId}?payment_method=${paymentMethod}`;
+            if (referenceCode) {
+                url += `&reference_code=${encodeURIComponent(referenceCode)}`;
+            }
+
+            form.action = url;
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function approveSubscription(memberId) {
+    if (typeof Swal === 'undefined') {
+        const payment = prompt('Enter payment method (cash/gcash):');
+        if (payment) {
+            if (payment.toLowerCase() === 'gcash') {
+                const reference = prompt('Enter GCash reference code:');
+                if (reference) {
+                    submitSubscriptionApprovalForm(memberId, payment, reference);
+                }
+            } else {
+                submitSubscriptionApprovalForm(memberId, payment, null);
+            }
+        }
+        return;
+    }
+
+    Swal.fire({
+        title: 'Approve & Process Payment?',
+        html: `
+            <div class="mb-4">
+                <p class="text-gray-700 mb-4">Process subscription payment:</p>
+                <input type="hidden" id="selected-payment" value="">
+
+                <div class="space-y-3">
+                    <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer" data-payment="cash">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                </div>
+                                <div class="text-left">
+                                    <div class="font-semibold text-gray-800">Cash Payment</div>
+                                    <div class="text-sm text-gray-500">Direct cash payment</div>
+                                </div>
+                            </div>
+                            <div class="checkmark hidden w-6 h-6 bg-green-500 rounded-full items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer" data-payment="gcash">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div class="text-left">
+                                    <div class="font-semibold text-gray-800">GCash Payment</div>
+                                    <div class="text-sm text-gray-500">Mobile wallet</div>
+                                </div>
+                            </div>
+                            <div class="checkmark hidden w-6 h-6 bg-blue-500 rounded-full items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Process Payment',
+        cancelButtonText: 'Cancel',
+        didOpen: () => {
+            const options = document.querySelectorAll('.payment-option');
+            const hiddenInput = document.getElementById('selected-payment');
+
+            options.forEach(option => {
+                option.addEventListener('click', function() {
+                    options.forEach(opt => {
+                        opt.classList.remove('selected');
+                        opt.style.borderColor = '#e5e7eb';
+                        opt.style.background = 'white';
+                        opt.querySelector('.checkmark').style.display = 'none';
+                    });
+
+                    this.classList.add('selected');
+                    const payment = this.getAttribute('data-payment');
+                    hiddenInput.value = payment;
+
+                    if (payment === 'cash') {
+                        this.style.borderColor = '#10b981';
+                        this.style.background = 'linear-gradient(to bottom, #f0fdf4, white)';
+                    } else {
+                        this.style.borderColor = '#3b82f6';
+                        this.style.background = 'linear-gradient(to bottom, #eff6ff, white)';
+                    }
+
+                    this.querySelector('.checkmark').style.display = 'flex';
+                });
+            });
+        },
+        preConfirm: () => {
+            const selectedPayment = document.getElementById('selected-payment').value;
+            if (!selectedPayment) {
+                Swal.showValidationMessage('Please select a payment method');
+                return false;
+            }
+            return selectedPayment;
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            const payment = result.value;
+
+            if (payment === 'gcash') {
+                Swal.fire({
+                    title: 'GCash Reference',
+                    html: `
+                        <div class="text-left">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Enter GCash Reference Number:</label>
+                            <input type="text" id="gcash-reference" class="w-full px-4 py-2 border-2 rounded-lg" placeholder="e.g., 1234567890123">
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonColor: '#3b82f6',
+                    preConfirm: () => {
+                        const reference = document.getElementById('gcash-reference').value;
+                        if (!reference) {
+                            Swal.showValidationMessage('Reference number is required');
+                            return false;
+                        }
+                        return reference;
+                    }
+                }).then((refResult) => {
+                    if (refResult.isConfirmed) {
+                        submitSubscriptionApprovalForm(memberId, 'gcash', refResult.value);
+                    }
+                });
+            } else {
+                submitSubscriptionApprovalForm(memberId, 'cash', null);
+            }
+        }
+    });
+}
+
+function submitSubscriptionApprovalForm(memberId, paymentMethod, referenceCode) {
+    const form = document.createElement('form');
+    form.method = 'GET';
+    let url = `/admin/user_crud/approve-subscription/${memberId}?payment_method=${paymentMethod}`;
+    if (referenceCode) {
+        url += `&reference_code=${encodeURIComponent(referenceCode)}`;
+    }
+    
+    form.action = url;
+    document.body.appendChild(form);
+    form.submit();
+}
+
 
         function denyMember(memberId) {
             if (typeof Swal === 'undefined') {
@@ -2068,9 +2446,9 @@
             Swal.fire({
                 title: 'Suspend Member?',
                 html: `
-                    <p class="text-gray-700 mb-2">This will immediately expire the member's subscription.</p>
-                    <p class="text-sm text-gray-500">The remaining days will be saved and can be restored if reactivated.</p>
-                `,
+                                                    <p class="text-gray-700 mb-2">This will immediately expire the member's subscription.</p>
+                                                    <p class="text-sm text-gray-500">The remaining days will be saved and can be restored if reactivated.</p>
+                                                `,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#f97316',
@@ -2095,9 +2473,9 @@
             Swal.fire({
                 title: 'Reactivate Member?',
                 html: `
-                    <p class="text-gray-700 mb-2">This will restore the member's subscription.</p>
-                    <p class="text-sm text-gray-500">Their remaining days will be restored if available.</p>
-                `,
+                                                    <p class="text-gray-700 mb-2">This will restore the member's subscription.</p>
+                                                    <p class="text-sm text-gray-500">Their remaining days will be restored if available.</p>
+                                                `,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#10b981',
@@ -2121,48 +2499,48 @@
             const style = document.createElement('style');
             style.id = 'customScrollbarStyles';
             style.textContent = `
-                /* Custom Scrollbar for Modals */
-                .overflow-y-auto::-webkit-scrollbar {
-                    width: 8px;
-                }
+                                                /* Custom Scrollbar for Modals */
+                                                .overflow-y-auto::-webkit-scrollbar {
+                                                    width: 8px;
+                                                }
 
-                .overflow-y-auto::-webkit-scrollbar-track {
-                    background: #F3F4F6;
-                    border-radius: 10px;
-                }
+                                                .overflow-y-auto::-webkit-scrollbar-track {
+                                                    background: #F3F4F6;
+                                                    border-radius: 10px;
+                                                }
 
-                .overflow-y-auto::-webkit-scrollbar-thumb {
-                    background: #9CA3AF;
-                    border-radius: 10px;
-                }
+                                                .overflow-y-auto::-webkit-scrollbar-thumb {
+                                                    background: #9CA3AF;
+                                                    border-radius: 10px;
+                                                }
 
-                .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-                    background: #6B7280;
-                }
+                                                .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+                                                    background: #6B7280;
+                                                }
 
-                /* Firefox */
-                .overflow-y-auto {
-                    scrollbar-width: thin;
-                    scrollbar-color: #9CA3AF #F3F4F6;
-                    scroll-behavior: smooth;
-                }
+                                                /* Firefox */
+                                                .overflow-y-auto {
+                                                    scrollbar-width: thin;
+                                                    scrollbar-color: #9CA3AF #F3F4F6;
+                                                    scroll-behavior: smooth;
+                                                }
 
-                /* SweetAlert Custom Styles */
-                .swal-custom-popup {
-                    border-radius: 1rem !important;
-                }
+                                                /* SweetAlert Custom Styles */
+                                                .swal-custom-popup {
+                                                    border-radius: 1rem !important;
+                                                }
 
-                .swal-confirm-btn,
-                .swal-cancel-btn {
-                    border-radius: 0.5rem !important;
-                    padding: 0.5rem 1.5rem !important;
-                }
+                                                .swal-confirm-btn,
+                                                .swal-cancel-btn {
+                                                    border-radius: 0.5rem !important;
+                                                    padding: 0.5rem 1.5rem !important;
+                                                }
 
-                /* Rotate icon */
-                .rotate-180 {
-                    transform: rotate(180deg);
-                }
-            `;
+                                                /* Rotate icon */
+                                                .rotate-180 {
+                                                    transform: rotate(180deg);
+                                                }
+                                            `;
             document.head.appendChild(style);
         }
 

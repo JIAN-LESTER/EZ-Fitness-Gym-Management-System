@@ -15,20 +15,40 @@ use Carbon\Carbon;
 class AttendanceController extends Controller
 {
     /**
+     * Get branch ID based on user role
+     */
+    private function getBranchId()
+    {
+        $currentUser = Auth::user();
+        
+        if ($currentUser->role === 'super_admin') {
+            return session('selected_branch_id');
+        }
+        
+        return $currentUser->branch_id;
+    }
+
+    /**
      * Show QR Scanner Page (Admin/Staff only)
      */
     public function scanner()
     {
         $user = Auth::user();
 
-        // Allow both admin and staff to access scanner
-        if (!in_array($user->role, ['admin', 'staff'])) {
+        if (!in_array($user->role, ['admin', 'staff', 'super_admin'])) {
             abort(403, 'Unauthorized access. Only admin and staff can access the scanner.');
         }
 
-        // Get today's check-ins for display
+        $branchId = $this->getBranchId();
+
+        // Get today's check-ins for display - filtered by branch
         $todayAttendances = Attendance::with(['member.user', 'member.plan'])
             ->whereDate('check_in_time', Carbon::today('Asia/Manila'))
+            ->when($branchId, function ($query) use ($branchId) {
+                return $query->whereHas('member.user', function ($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                });
+            })
             ->orderBy('check_in_time', 'desc')
             ->get();
 
@@ -40,9 +60,8 @@ class AttendanceController extends Controller
      */
     public function scan(Request $request)
     {
-        // Check if user is admin or staff
         $currentUser = Auth::user();
-        if (!in_array($currentUser->role, ['admin', 'staff'])) {
+        if (!in_array($currentUser->role, ['admin', 'staff', 'super_admin'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only admin and staff can scan QR codes.'
@@ -59,7 +78,6 @@ class AttendanceController extends Controller
                 ], 400);
             }
 
-            // Find user by email from QR
             $user = User::where('email', $qrData['email'])->first();
 
             if (!$user) {
@@ -69,7 +87,15 @@ class AttendanceController extends Controller
                 ], 404);
             }
 
-            // Get member profile
+            // **BRANCH VALIDATION**
+            $branchId = $this->getBranchId();
+            if ($branchId && $user->branch_id != $branchId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This member belongs to a different branch'
+                ], 403);
+            }
+
             $memberProfile = MemberProfile::where('user_id', $user->user_id)->first();
 
             if (!$memberProfile) {
@@ -79,7 +105,6 @@ class AttendanceController extends Controller
                 ], 404);
             }
 
-            // Check if member is active
             if ($memberProfile->status !== 'active') {
                 return response()->json([
                     'success' => false,
@@ -87,14 +112,12 @@ class AttendanceController extends Controller
                 ], 403);
             }
 
-            // Check if already checked in today (and not yet checked out)
             $today = Carbon::today('Asia/Manila');
             $existingAttendance = Attendance::where('member_id', $memberProfile->member_id)
                 ->whereDate('check_in_time', $today)
-                ->whereNull('check_out_time') // Only find active check-ins (not checked out)
+                ->whereNull('check_out_time')
                 ->first();
 
-            // If already checked in, process check-out
             if ($existingAttendance) {
                 // Process check-out
                 $checkOutTime = Carbon::now('Asia/Manila');
@@ -107,9 +130,9 @@ class AttendanceController extends Controller
                     'status' => 'checked_out',
                 ]);
 
-                // Log the check-out action
                 Logs::create([
                     'user_id' => $user->user_id,
+                    'branch_id' => $branchId,
                     'action' => "Member checked out: {$user->first_name} {$user->last_name} at {$checkOutTime->format('h:i A')} - Duration: {$this->formatDuration($duration)} (Scanned by: {$currentUser->role} - {$currentUser->first_name} {$currentUser->last_name})",
                     'timestamp' => $checkOutTime,
                 ]);
@@ -129,17 +152,18 @@ class AttendanceController extends Controller
                 ]);
             }
 
-            // Create new attendance record (allows multiple check-ins per day after checkout)
+            // Create new attendance record
             $checkInTime = Carbon::now('Asia/Manila');
             $attendance = Attendance::create([
                 'member_id' => $memberProfile->member_id,
+                'branch_id' => $branchId,
                 'check_in_time' => $checkInTime,
                 'status' => 'checked_in',
             ]);
 
-            // Log the check-in action
             Logs::create([
                 'user_id' => $user->user_id,
+                'branch_id' => $branchId,
                 'action' => "Member checked in: {$user->first_name} {$user->last_name} at {$checkInTime->format('h:i A')} (Scanned by: {$currentUser->role} - {$currentUser->first_name} {$currentUser->last_name})",
                 'timestamp' => $checkInTime,
             ]);
@@ -169,12 +193,19 @@ class AttendanceController extends Controller
     public function getTodayAttendance()
     {
         $currentUser = Auth::user();
-        if (!in_array($currentUser->role, ['admin', 'staff'])) {
+        if (!in_array($currentUser->role, ['admin', 'staff', 'super_admin'])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
+        $branchId = $this->getBranchId();
+
         $attendances = Attendance::with(['member.user', 'member.plan'])
             ->whereDate('check_in_time', Carbon::today('Asia/Manila'))
+            ->when($branchId, function ($query) use ($branchId) {
+                return $query->whereHas('member.user', function ($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                });
+            })
             ->orderBy('check_in_time', 'desc')
             ->get()
             ->map(function ($attendance) {
@@ -218,11 +249,20 @@ class AttendanceController extends Controller
      */
     public function adminLogs(Request $request)
     {
-        if (Auth::user()->role !== 'admin') {
+        $currentUser = Auth::user();
+        
+        if (!in_array($currentUser->role, ['admin', 'super_admin'])) {
             abort(403, 'Unauthorized access');
         }
 
+        $branchId = $this->getBranchId();
+
         $query = Attendance::with(['member.user', 'member.plan'])
+            ->when($branchId, function ($query) use ($branchId) {
+                return $query->whereHas('member.user', function ($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                });
+            })
             ->orderBy('check_in_time', 'desc');
 
         // Filter by date if provided
@@ -276,7 +316,6 @@ class AttendanceController extends Controller
                        Carbon::parse($attendance->check_in_time)->isCurrentMonth();
             })->count();
         } catch (\Exception $e) {
-            // If calculation fails, default to 0
             $thisMonthCount = 0;
         }
 

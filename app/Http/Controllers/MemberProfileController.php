@@ -10,6 +10,7 @@ use App\Mail\MemberQRCodeMail;
 use App\Models\User;
 use App\Models\MemberProfile;
 use App\Models\MembershipPlan;
+use App\Models\Subscriptions;
 use App\Models\Attendance;
 use App\Models\Logs;
 use Illuminate\Support\Facades\Auth;
@@ -21,40 +22,50 @@ use Carbon\Carbon;
 
 class MemberProfileController extends Controller
 {
-    public function dashboard()
+public function dashboard()
 {
     $user = Auth::user();
-    $plans = MembershipPlan::all();
     
-    // Get user's member profile
-    $memberProfile = MemberProfile::with('plan', 'user')
+    // Get user's member profile with optimized relations
+    $memberProfile = MemberProfile::select([
+            'member_id', 'user_id', 'plan_id', 'subscription_id', 
+            'start_date_for_subscription', 'end_date_for_subscription',
+            'subscription_status', 'qr_code'
+        ])
+        ->with([
+            'plan:plan_id,name,price,duration_days',
+            'subscription:subscription_id,name,price,duration_days',
+            'user:user_id,first_name,last_name,email,branch_id'
+        ])
         ->where('user_id', $user->user_id)
         ->first();
 
-    // Get current gym occupancy
+    // Optimized current gym occupancy - use direct count
     $currentOccupancy = Attendance::whereDate('check_in_time', Carbon::today())
         ->where('status', 'checked_in')
+        ->when($user->branch_id, function ($query) use ($user) {
+            return $query->whereHas('member.user', function ($q) use ($user) {
+                $q->where('branch_id', $user->branch_id);
+            });
+        })
         ->count();
 
-    // Calculate days left on membership (if exists)
+    // Calculate days left on membership
     $daysLeft = null;
     $membershipStatus = null;
     $isExpiringSoon = false;
     
-    if ($memberProfile && $memberProfile->start_date && $memberProfile->end_date) {
+    if ($memberProfile && $memberProfile->start_date_for_subscription && $memberProfile->end_date_for_subscription) {
         $now = Carbon::now();
-        $endDate = Carbon::parse($memberProfile->end_date);
+        $endDate = Carbon::parse($memberProfile->end_date_for_subscription);
         
-        // Calculate days remaining
         $daysLeft = $now->diffInDays($endDate, false);
         $daysLeft = (int) ceil($daysLeft);
         
-        // Determine membership status
         if ($daysLeft < 0) {
             $membershipStatus = 'expired';
-            // Auto-update status if needed
-            if ($memberProfile->status === 'active') {
-                $memberProfile->update(['status' => 'expired']);
+            if ($memberProfile->subscription_status === 'active') {
+                $memberProfile->update(['subscription_status' => 'expired']);
             }
         } elseif ($daysLeft <= 7) {
             $membershipStatus = 'expiring_soon';
@@ -63,28 +74,37 @@ class MemberProfileController extends Controller
             $membershipStatus = 'active';
         }
     } elseif ($memberProfile) {
-        // Has profile but no dates set (pending approval)
-        $membershipStatus = $memberProfile->status;
+        $membershipStatus = $memberProfile->subscription_status;
         $daysLeft = null;
     }
 
-    // Get all available membership plans
-    $membershipPlans = MembershipPlan::orderBy('price', 'asc')->get();
+    // Get available subscriptions - cache this if possible
+    $subscriptions = Subscriptions::select('subscription_id', 'name', 'price', 'duration_days', 'branch_id')
+        ->where('branch_id', $user->branch_id)
+        ->orderBy('price', 'asc')
+        ->get();
 
-    // Get user's attendance history (last 10 check-ins)
-    $recentAttendance = Attendance::where('member_id', $memberProfile?->member_id)
+    // Get user's attendance history - optimized with select
+    $recentAttendance = Attendance::select('attendance_id', 'member_id', 'check_in_time', 'check_out_time', 'status')
+        ->where('member_id', $memberProfile?->member_id)
         ->orderBy('check_in_time', 'desc')
         ->limit(10)
         ->get();
 
-    // Calculate attendance statistics
-    $totalCheckIns = Attendance::where('member_id', $memberProfile?->member_id)->count();
-    $thisMonthCheckIns = Attendance::where('member_id', $memberProfile?->member_id)
-        ->whereMonth('check_in_time', Carbon::now()->month)
-        ->whereYear('check_in_time', Carbon::now()->year)
-        ->count();
+    // Optimized attendance counts - use single queries
+    $attendanceCounts = Attendance::selectRaw('
+            COUNT(*) as total,
+            SUM(CASE WHEN MONTH(check_in_time) = ? AND YEAR(check_in_time) = ? THEN 1 ELSE 0 END) as this_month
+        ', [Carbon::now()->month, Carbon::now()->year])
+        ->where('member_id', $memberProfile?->member_id)
+        ->first();
 
-    // Legacy variables for backward compatibility
+    $totalCheckIns = $attendanceCounts->total ?? 0;
+    $thisMonthCheckIns = $attendanceCounts->this_month ?? 0;
+
+    // Get plans - select only needed columns
+    $plans = MembershipPlan::select('plan_id', 'name', 'price', 'duration_days')->get();
+
     $member = $user;
     $daysRemaining = $daysLeft;
 
@@ -98,19 +118,18 @@ class MemberProfileController extends Controller
         'currentOccupancy',
         'membershipStatus',
         'isExpiringSoon',
-        'membershipPlans',
+        'subscriptions',
         'recentAttendance',
         'totalCheckIns',
         'thisMonthCheckIns'
     ));
 }
-
     public function completeMemberProfile(Request $request)
     {
         $user = Auth::user();
 
         $validated = $request->validate([
-            'plan_id' => 'required|exists:membership_plans,plan_id',
+            'branch_id' => 'required|exists:branches,branch_id',
             'sex' => 'required|in:male,female',
             'birthday' => 'required|date',
             'height' => 'nullable|numeric|min:0',
@@ -119,35 +138,157 @@ class MemberProfileController extends Controller
         ]);
 
         $memberProfile = MemberProfile::firstOrNew(['user_id' => $user->user_id]);
-        $plan = MembershipPlan::find($validated['plan_id']);
 
         $memberProfile->fill([
-            'plan_id' => $plan->plan_id,
             'sex' => $validated['sex'],
             'birthday' => $validated['birthday'],
             'height' => $validated['height'] ?? null,
             'weight' => $validated['weight'] ?? null,
             'mobile_number' => $validated['mobile_number'],
             'status' => 'inactive',
+            'subscription_status' => 'pending_selection',
             'isApproved' => false,
+            'isApprovedForSubscription' => false,
             'isDisabled' => false,
-            'start_date' => null,
-            'end_date' => null,
-            'renewal_pending' => false,
+            'isDisabledForSubscription' => false,
+            'plan_id' => null,
+            'subscription_id' => null,
         ]);
+
+        // Update user's branch
+        $user->update(['branch_id' => $validated['branch_id']]);
 
         $memberProfile->save();
         $user->load('member');
 
         Logs::create([
             'user_id' => $user->user_id,
-            'action' => "Completed membership profile - Awaiting approval: {$user->first_name} {$user->last_name} - Plan: {$plan->name}",
+            'branch_id' => $validated['branch_id'],
+            'action' => "Completed profile - Ready to select plan: {$user->first_name} {$user->last_name}",
             'timestamp' => now(),
         ]);
 
         return redirect()
             ->route('member.dashboard')
-            ->with('success', 'Profile submitted successfully! Awaiting admin approval.');
+            ->with('success', 'Profile completed! Please select a membership plan.');
+    }
+
+    // STEP 2: Select membership plan (no approval needed, goes straight to subscription selection)
+    public function selectPlan(Request $request)
+{
+    $user = Auth::user();
+    $member = $user->member;
+
+    if (!$member) {
+        return redirect()->back()->with('error', 'Please complete your profile first.');
+    }
+
+    $validated = $request->validate([
+        'plan_id' => 'required|exists:membership_plans,plan_id',
+    ]);
+
+    $plan = MembershipPlan::find($validated['plan_id']);
+
+    $member->update([
+        'plan_id' => $validated['plan_id'],
+        'subscription_status' => 'pending_selection',
+        'start_date' => now(),
+        'end_date' => now()->addDays($plan->duration_days),
+    ]);
+
+    Logs::create([
+        'user_id' => $user->user_id,
+        'branch_id' => $user->branch_id,
+        'action' => "Selected membership plan - {$plan->name} - Ready to select subscription",
+        'timestamp' => now(),
+    ]);
+
+    return redirect()->route('member.dashboard')
+        ->with('success', 'Plan selected! Please choose a subscription.');
+}
+
+
+    // STEP 3: Select subscription (awaits approval)
+    public function selectSubscription(Request $request)
+    {
+        $user = Auth::user();
+        $member = $user->member;
+
+        if (!$member || !$member->plan_id) {
+            return redirect()->back()->with('error', 'Please select a membership plan first.');
+        }
+
+        $validated = $request->validate([
+            'subscription_id' => 'required|exists:subscriptions,subscription_id',
+        ]);
+
+        $subscription = Subscriptions::find($validated['subscription_id']);
+
+        $member->update([
+            'subscription_id' => $validated['subscription_id'],
+            'subscription_status' => 'pending_subscription_approval',
+            'isApprovedForSubscription' => false,
+        ]);
+
+        Logs::create([
+            'user_id' => $user->user_id,
+            'branch_id' => $user->branch_id,
+            'action' => "Selected subscription - {$subscription->name} - Awaiting admin approval",
+            'timestamp' => now(),
+        ]);
+
+        return redirect()->route('member.dashboard')
+            ->with('success', 'Subscription selected! Awaiting admin approval.');
+    }
+
+    public function checkApprovalStatus()
+    {
+        $user = Auth::user();
+        $member = $user->member;
+
+        if (!$member) {
+            return response()->json([
+                'status' => 'no_profile',
+                'message' => 'No member profile found'
+            ]);
+        }
+
+        if ($member->isDisabled || $member->isDisabledForSubscription) {
+            return response()->json([
+                'status' => 'rejected',
+                'message' => 'Your membership application was not approved.'
+            ]);
+        }
+
+        // Fully approved with QR code
+        if ($member->isApprovedForSubscription && $member->subscription_status === 'active') {
+            $member->refresh();
+            
+            $qrCodeUrl = null;
+            if ($member->qr_code) {
+                $fullPath = storage_path("app/public/{$member->qr_code}");
+                if (file_exists($fullPath)) {
+                    $qrCodeUrl = asset("storage/{$member->qr_code}");
+                }
+            }
+
+            return response()->json([
+                'status' => 'approved',
+                'message' => 'Your membership has been fully approved!',
+                'qr_code_url' => $qrCodeUrl,
+                'member_data' => [
+                    'plan' => $member->plan->name ?? 'N/A',
+                    'subscription' => $member->subscription->name ?? 'N/A',
+                    'start_date' => $member->start_date_for_subscription,
+                    'end_date' => $member->end_date_for_subscription,
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'pending',
+            'message' => 'Your application is still pending approval'
+        ]);
     }
 
     public function requestRenewal(Request $request)
@@ -167,74 +308,27 @@ class MemberProfileController extends Controller
         }
 
         $validated = $request->validate([
-            'plan_id' => 'required|exists:membership_plans,plan_id',
+            'subscription_id' => 'required|exists:subscriptions,subscription_id',
         ]);
 
-        $plan = MembershipPlan::find($validated['plan_id']);
+        $subscription = Subscriptions::find($validated['subscription_id']);
 
         $member->update([
-            'plan_id' => $validated['plan_id'],
-            'isApproved' => false,
-            'isDisabled' => false,
+            'subscription_id' => $validated['subscription_id'],
+            'isApprovedForSubscription' => false,
+            'isDisabledForSubscription' => false,
             'renewal_pending' => true,
-            'status' => 'expired', // Keep expired until approved
+            'subscription_status' => 'expired',
         ]);
 
         Logs::create([
             'user_id' => $user->user_id,
-            'action' => "Requested membership renewal - Plan: {$plan->name}",
+            'branch_id' => $user->branch_id,
+            'action' => "Requested membership renewal - Subscription: {$subscription->name}",
             'timestamp' => now(),
         ]);
 
         return redirect()->route('member.dashboard')
             ->with('success', 'Renewal request submitted! Awaiting admin approval.');
-    }
-
-    public function checkApprovalStatus()
-    {
-        $user = Auth::user();
-        $member = $user->member;
-
-        if (!$member) {
-            return response()->json([
-                'status' => 'no_profile',
-                'message' => 'No member profile found'
-            ]);
-        }
-
-        if ($member->isDisabled) {
-            return response()->json([
-                'status' => 'rejected',
-                'message' => 'Your membership application was not approved.'
-            ]);
-        }
-
-        if ($member->isApproved && $member->status === 'active') {
-            $member->refresh();
-            
-            $qrCodeUrl = null;
-            if ($member->qr_code) {
-                $fullPath = storage_path("app/public/{$member->qr_code}");
-                if (file_exists($fullPath)) {
-                    $qrCodeUrl = asset("storage/{$member->qr_code}");
-                }
-            }
-
-            return response()->json([
-                'status' => 'approved',
-                'message' => 'Your membership has been approved!',
-                'qr_code_url' => $qrCodeUrl,
-                'member_data' => [
-                    'plan' => $member->plan->name ?? 'N/A',
-                    'start_date' => $member->start_date,
-                    'end_date' => $member->end_date,
-                ]
-            ]);
-        }
-
-        return response()->json([
-            'status' => 'pending',
-            'message' => 'Your application is still pending approval'
-        ]);
     }
 }

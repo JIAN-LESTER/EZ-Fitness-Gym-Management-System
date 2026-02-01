@@ -16,6 +16,7 @@ class SalesItem extends Model
         'sales_id',
         'product_id',
         'plan_id',
+        'subscription_id',
         'quantity',
         'price',
         'sub_total',
@@ -45,6 +46,11 @@ class SalesItem extends Model
         return $this->belongsTo(MembershipPlan::class, 'plan_id', 'plan_id');
     }
 
+        public function subscription()
+    {
+        return $this->belongsTo(Subscriptions::class, 'subscription_id', 'subscription_id');
+    }
+
     // Helper method to determine item type
     public function getItemTypeAttribute()
     {
@@ -63,6 +69,8 @@ class SalesItem extends Model
             return $this->product->name;
         } elseif ($this->plan) {
             return $this->plan->name;
+        } elseif ($this->subscription){
+            return $this->susbcription->name;
         }
         return 'Unknown Item';
     }

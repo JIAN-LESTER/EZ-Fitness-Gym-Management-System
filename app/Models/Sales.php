@@ -17,6 +17,7 @@ class Sales extends Model
     protected $primaryKey = 'sales_id';
     protected $fillable = [
         'user_id',
+        'branch_id',
         'total_amount',
         'tax',
         'discount',
@@ -39,5 +40,10 @@ class Sales extends Model
     public function transaction()
     {
         return $this->hasOne(Transactions::class, 'transaction_id', 'transaction_id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
     }
 }

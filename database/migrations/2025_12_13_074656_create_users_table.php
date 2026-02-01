@@ -13,12 +13,14 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id('user_id');
+             $table->foreignId('branch_id')->nullable()->references('branch_id')->on('branches')->onDelete('cascade');
+           
             $table->string('first_name');
             $table->string('last_name');
             $table->string('username');
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['admin', 'staff', 'member'])->default('member');
+            $table->enum('role', ['admin', 'staff', 'member', 'super_admin'])->default('member');
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->longText('avatar')->nullable();
                       $table->timestamp('email_verified_at')->nullable();

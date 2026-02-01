@@ -17,6 +17,7 @@ class Attendance extends Model
     
     protected $fillable = [
         'member_id',
+        'branch_id',
         'check_in_time',
         'check_out_time',
         'status',
@@ -31,5 +32,9 @@ class Attendance extends Model
     public function member()
     {
         return $this->belongsTo(MemberProfile::class, 'member_id', 'member_id');
+    }
+
+        public function branch(){
+        return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
     }
 }
