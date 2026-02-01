@@ -261,3 +261,15 @@ Route::get('/check-email', [AuthController::class, 'checkEmail'])->name('check.e
 
 Route::post('/admin/select-branch', [BranchesController::class, 'selectBranch'])
     ->name('admin.select-branch');
+
+
+
+Route::get('/migrate', function () {
+    Artisan::call('migrate', ["--force" => true]);
+    return 'Migrations run!';
+});
+
+Route::get('/storage-link', function () {
+    Artisan::call('storage:link');
+    return 'Storage linked!';
+});
