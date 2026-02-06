@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Products Management')
+@section('title', 'Inventory')
 @section('header', 'Products Management')
 
 <style>
@@ -46,6 +46,16 @@
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+}
+
+/* Clickable Row */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+    background-color: #f9fafb;
 }
 </style>
 
@@ -184,71 +194,66 @@
         <!-- Products Table -->
         <div class="overflow-x-auto">
             <table class="min-w-full">
-          <thead>
-    <tr class="bg-gray-50 border-b border-gray-200">
-        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
-        <th class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Branch</th>
-        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Price</th>
-        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Quantity</th>
-        <th class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-    </tr>
-</thead>
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
+                        <th class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Branch</th>
+                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Price</th>
+                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Quantity</th>
+                        <th class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
 
                 <tbody class="divide-y divide-gray-100">
                     @forelse($products as $inventory)
-                        <tr class="hover:bg-gray-50 transition-colors group">
+                        <tr class="clickable-row hover:bg-gray-50 transition-colors group" 
+                            onclick="showProduct('{{ $inventory->product->product_id }}')">
 
                             <td class="px-3 sm:px-6 py-3 sm:py-4">
-    <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shadow flex-shrink-0">
-            @if($inventory->product && $inventory->product->image)
-                <img
-                    src="{{ asset('storage/' . $inventory->product->image) }}"
-                    alt="{{ $inventory->product->name }}"
-                    class="w-full h-full object-cover"
-                >
-            @else
-                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                </svg>
-            @endif
-        </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shadow flex-shrink-0">
+                                        @if($inventory->product && $inventory->product->image)
+                                            <img
+                                                src="{{ asset('storage/' . $inventory->product->image) }}"
+                                                alt="{{ $inventory->product->name }}"
+                                                class="w-full h-full object-cover"
+                                            >
+                                        @else
+                                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                />
+                                            </svg>
+                                        @endif
+                                    </div>
 
-        <div class="min-w-0 flex-1">
-            @if($inventory->product)
-                <button onclick="showProduct('{{ $inventory->product->product_id }}')"
-                        class="hover:text-gray-900 transition-colors text-left w-full">
-                    <p class="font-semibold text-gray-900 truncate max-w-[180px] sm:max-w-[250px]">
-                        {{ $inventory->product->name }}
-                    </p>
-                    <!-- Category below product name -->
-                    <p class="text-xs text-gray-500 mt-0.5">
-                        {{ $inventory->product && $inventory->product->category ? $inventory->product->category->name : 'No Category' }}
-                    </p>
-                    <!-- Description -->
-                    <p class="text-gray-500 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-[280px] mt-0.5">
-                        {{ Str::limit($inventory->product->description, 60) }}
-                    </p>
-                </button>
-            @else
-                <p class="text-gray-500">No Product</p>
-            @endif
-        </div>
-    </div>
-</td>
+                                    <div class="min-w-0 flex-1">
+                                        @if($inventory->product)
+                                            <p class="font-semibold text-gray-900 truncate max-w-[180px] sm:max-w-[250px]">
+                                                {{ $inventory->product->name }}
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-0.5">
+                                                {{ $inventory->product && $inventory->product->category ? $inventory->product->category->name : 'No Category' }}
+                                            </p>
+                                            <p class="text-gray-500 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-[280px] mt-0.5">
+                                                {{ Str::limit($inventory->product->description, 60) }}
+                                            </p>
+                                        @else
+                                            <p class="text-gray-500">No Product</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
 
-
-
-                         <td class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-gray-700 text-sm">
-    {{ $inventory->product && $inventory->product->branch ? $inventory->product->branch->name : 'N/A' }}
-</td>
+                            <td class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-gray-700 text-sm">
+                                {{ $inventory->product && $inventory->product->branch ? $inventory->product->branch->name : 'N/A' }}
+                            </td>
 
                             <td class="px-3 sm:px-6 py-3 sm:py-4 text-gray-700 font-semibold text-sm whitespace-nowrap">
                                 ₱{{ $inventory->product ? number_format($inventory->product->price, 2) : '0.00' }}
                             </td>
+                            
                             <td class="px-3 sm:px-6 py-3 sm:py-4 text-gray-700 font-semibold text-sm whitespace-nowrap">
                                 {{ number_format($inventory->quantity ?? 0, 0) }}
                             </td>
@@ -264,30 +269,42 @@
                                 @endif
                             </td>
                           
+                            <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
+                                <div class="relative inline-block text-left">
+                                    <button onclick="toggleActionsMenu(event, '{{ $inventory->product->product_id }}')"
+                                        class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor" class="w-5 h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                        </svg>
+                                    </button>
 
-                            <td class="px-3 sm:px-6 py-3 sm:py-4 text-center">
-                                @if($inventory->product)
-                                    <div class="flex items-center justify-center gap-2 sm:gap-3">
-                                        <button onclick="showProduct('{{ $inventory->product->product_id }}')" class="text-gray-500 hover:text-gray-700 p-1" title="View">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </button>
+                                    <div id="actionsMenu-{{ $inventory->product->product_id }}"
+                                        class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                                        <div class="py-1">
+                                            <button onclick="editProduct('{{ $inventory->product->product_id }}')"
+                                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                                                </svg>
+                                                Edit Product
+                                            </button>
 
-                                        <button onclick="editProduct('{{ $inventory->product->product_id }}')" class="text-blue-500 hover:text-blue-700 p-1" title="Edit">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
-                                            </svg>
-                                        </button>
-
-                                        <button onclick="openDeleteModal('{{ route('products.destroy', $inventory->product->product_id) }}')" class="text-red-500 hover:text-red-700 p-1" title="Delete">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
-                                            </svg>
-                                        </button>
+                                            <button onclick="openDeleteModal('{{ route('products.destroy', $inventory->product->product_id) }}')"
+                                                class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                                                </svg>
+                                                Delete Product
+                                            </button>
+                                        </div>
                                     </div>
-                                @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -339,9 +356,9 @@
 
     <!-- Add Product Modal -->
     <div id="addProductModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
-        <div class="absolute inset-0 bg-opacity-50" onclick="closeModal('addProductModal')"></div>
+        <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeModal('addProductModal')"></div>
 
-        <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
             <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
                 <h2 class="text-xl font-semibold">Add New Product</h2>
             </header>
@@ -352,7 +369,7 @@
 
                     <!-- Image Upload -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-800 dark:text-gray-500 mb-2">Product Image</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
                         <div class="image-preview" id="addImagePreview">
                             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -389,26 +406,31 @@
                     </div>
 
                     <div>
-    <label for="add_branch_id" class="block text-sm font-medium text-gray-700 mb-2">
-        Branch <span class="text-red-500">*</span>
-    </label>
-    @if(auth()->user()->role === 'super_admin')
-        <select name="branch_id" id="add_branch_id" required
-            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-gray-800 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
-            <option value="">Select Branch</option>
-            @foreach($branches as $branch)
-                <option value="{{ $branch->branch_id }}">{{ $branch->name }}</option>
-            @endforeach
-        </select>
-    @else
-        <input type="text" value="{{ auth()->user()->branch->name ?? 'N/A' }}" disabled
-            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-gray-100 px-4 py-2 text-gray-600">
-        <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
-    @endif
-    @error('branch_id')
-        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-    @enderror
-</div>
+                        <label for="add_branch_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            Branch <span class="text-red-500">*</span>
+                        </label>
+                        @if(auth()->user()->role === 'super_admin')
+                            @php
+                                $currentBranchId = session('selected_branch_id');
+                            @endphp
+                            <select name="branch_id" id="add_branch_id" required
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-gray-800 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                                <option value="">Select Branch</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->branch_id }}" {{ $currentBranchId == $branch->branch_id ? 'selected' : '' }}>
+                                        {{ $branch->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="text" value="{{ auth()->user()->branch->name ?? 'N/A' }}" disabled
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-gray-100 px-4 py-2 text-gray-600">
+                            <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
+                        @endif
+                        @error('branch_id')
+                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
 
                     <div>
                         <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
@@ -451,11 +473,11 @@
                         @enderror
                     </div>
 
-                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white dark:bg-gray-900 pb-2">
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
                         <button type="button" onclick="closeModal('addProductModal')"
-    class="px-6 py-2 rounded-lg border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 w-full sm:w-auto transition-colors">Cancel</button>
-                       <button type="submit"
-    class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">Add Product</button>
+                            class="px-6 py-2 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 w-full sm:w-auto transition-colors">Cancel</button>
+                        <button type="submit"
+                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">Add Product</button>
                     </div>
                 </form>
             </div>
@@ -464,9 +486,9 @@
 
     <!-- View Product Modal -->
     <div id="productShowModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden p-4">
-        <div class="absolute inset-0 bg-opacity-50" onclick="closeModal('productShowModal')"></div>
+        <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeModal('productShowModal')"></div>
 
-        <div class="relative bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto modal-scrollbar">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
             <header class="bg-gray-800 text-white p-4 sm:p-5 rounded-t-2xl sticky top-0 z-10 flex justify-between items-center">
                 <h2 class="text-lg sm:text-xl font-semibold">Product Details</h2>
                 <button onclick="closeModal('productShowModal')" class="text-white hover:text-gray-200">
@@ -476,7 +498,7 @@
                 </button>
             </header>
 
-            <div id="productShowContent" class="p-4 sm:p-6">
+            <div id="productShowContent" class="p-4 sm:p-6 bg-white overflow-y-auto" style="max-height: calc(90vh - 80px);">
                 <div class="flex justify-center items-center py-12">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
                 </div>
@@ -486,9 +508,9 @@
 
     <!-- Edit Product Modal -->
     <div id="editProductModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden p-4">
-        <div class="absolute inset-0 bg-opacity-50" onclick="closeModal('editProductModal')"></div>
+        <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeModal('editProductModal')"></div>
 
-        <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <header class="bg-gray-800 text-white p-4 sm:p-5 rounded-t-2xl flex-shrink-0">
                 <h2 class="text-lg sm:text-xl font-semibold">Edit Product</h2>
             </header>
@@ -499,15 +521,15 @@
                     @method('PUT')
                     <!-- Image Upload -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-500 mb-2">Product Image</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
                         <div class="image-preview" id="editImagePreview">
                             <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
                         </div>
                         <input type="file" name="image" id="editImage" accept="image/*" onchange="previewImage(this, 'editImagePreview')"
-                            class="mt-2 block w-full text-sm bg-white-400 text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:bg-gray-700 cursor-pointer">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep current image</p>
+                            class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:bg-gray-700 cursor-pointer">
+                        <p class="text-xs text-gray-500 mt-1">Leave empty to keep current image</p>
                     </div>
 
                     <div>
@@ -528,23 +550,28 @@
                     </div>
 
                     <div>
-    <label for="edit_branch_id" class="block text-sm font-medium text-gray-700 mb-2">
-        Branch <span class="text-red-500">*</span>
-    </label>
-    @if(auth()->user()->role === 'super_admin')
-        <select name="branch_id" id="edit_branch_id" required
-            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-gray-800 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
-            <option value="">Select Branch</option>
-            @foreach($branches as $branch)
-                <option value="{{ $branch->branch_id }}">{{ $branch->name }}</option>
-            @endforeach
-        </select>
-    @else
-        <input type="text" value="{{ auth()->user()->branch->name ?? 'N/A' }}" disabled
-            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-gray-100 px-4 py-2 text-gray-600">
-        <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
-    @endif
-</div>
+                        <label for="edit_branch_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            Branch <span class="text-red-500">*</span>
+                        </label>
+                        @if(auth()->user()->role === 'super_admin')
+                            @php
+                                $currentBranchId = session('selected_branch_id');
+                            @endphp
+                            <select name="branch_id" id="edit_branch_id" required
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-gray-800 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                                <option value="">Select Branch</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->branch_id }}" data-branch-id="{{ $branch->branch_id }}">
+                                        {{ $branch->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="text" value="{{ auth()->user()->branch->name ?? 'N/A' }}" disabled
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-gray-100 px-4 py-2 text-gray-600">
+                            <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
+                        @endif
+                    </div>
 
                     <div>
                         <label for="edit_description" class="block text-sm font-medium text-gray-700">Description</label>
@@ -575,11 +602,50 @@
                         </select>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white dark:bg-gray-900 pb-2">
+                    <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
                         <button type="button" onclick="closeModal('editProductModal')"
-    class="px-6 py-2 rounded-lg border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 w-full sm:w-auto transition-colors">Cancel</button>
+                            class="px-6 py-2 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 w-full sm:w-auto transition-colors">Cancel</button>
                         <button type="submit"
-                           class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">Update Product</button>
+                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">Update Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+        <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeDeleteModal()"></div>
+
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+
+                <h3 class="text-xl font-bold text-center text-gray-900 mb-2">
+                    Delete Product
+                </h3>
+
+                <p class="text-center text-gray-600 mb-6">
+                    Are you sure you want to delete <span class="font-bold">{{ $inventory->product->name }}</span>? This action cannot be undone.
+                </p>
+
+                <form id="deleteForm" method="POST" action="">
+                    @csrf
+                    @method('DELETE')
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeDeleteModal()"
+                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
+                            Delete
+                        </button>
                     </div>
                 </form>
             </div>
@@ -610,6 +676,7 @@
         document.body.style.position = 'fixed';
         document.body.style.top = `-${scrollY}px`;
         document.body.style.width = '100%';
+        document.body.style.overflowY = 'scroll';
 
         modal.classList.remove('hidden');
     }
@@ -623,6 +690,37 @@
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.width = '';
+        document.body.style.overflowY = '';
+
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+
+    // Delete Modal Functions
+    function openDeleteModal(actionUrl) {
+        const form = document.getElementById('deleteForm');
+        form.action = actionUrl;
+
+        const modal = document.getElementById('deleteModal');
+        const scrollY = window.scrollY;
+
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        document.body.style.overflowY = 'scroll';
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('deleteModal');
+        const scrollY = document.body.style.top;
+
+        modal.classList.add('hidden');
+
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflowY = '';
 
         window.scrollTo(0, parseInt(scrollY || '0') * -1);
     }
@@ -665,43 +763,108 @@
         if (form) form.submit();
     }
 
-    // Edit Product Function
- function editProduct(productId) {
-    fetch(`/products/${productId}/edit`)
-        .then(res => res.json())
-        .then(product => {
-            document.getElementById('edit_name').value = product.name;
-            document.getElementById('edit_category_id').value = product.category_id;
-            document.getElementById('edit_description').value = product.description || '';
-            document.getElementById('edit_price').value = product.price;
-            document.getElementById('edit_quantity').value = product.inventory ? product.inventory.quantity : 0;
-            document.getElementById('edit_status').value = product.status;
+    // Actions Menu Functions
+    function toggleActionsMenu(event, productId) {
+        event?.stopPropagation();
 
-            // Set branch value if super_admin
-            @if(auth()->user()->role === 'super_admin')
-                document.getElementById('edit_branch_id').value = product.branch_id;
-            @endif
-
-            // Show current image if exists
-            const editImagePreview = document.getElementById('editImagePreview');
-            if (product.image) {
-                editImagePreview.innerHTML = `<img src="/storage/${product.image}" alt="Current Image">`;
-            } else {
-                editImagePreview.innerHTML = `
-                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                `;
+        // Close all other menus
+        document.querySelectorAll('[id^="actionsMenu-"]').forEach(menu => {
+            if (menu.id !== `actionsMenu-${productId}`) {
+                menu.classList.add('hidden');
             }
-
-            document.getElementById('editProductForm').action = `/products/${product.product_id}`;
-            openModal('editProductModal');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to load product data');
         });
-}
+
+        // Toggle current menu
+        const menu = document.getElementById(`actionsMenu-${productId}`);
+        const button = event?.target?.closest('button');
+
+        if (menu && button) {
+            const isHidden = menu.classList.contains('hidden');
+
+            if (isHidden) {
+                // Add click handlers to all menu items to close after selection
+                const menuItems = menu.querySelectorAll('button');
+                menuItems.forEach(item => {
+                    if (!item.hasAttribute('data-close-handler')) {
+                        item.setAttribute('data-close-handler', 'true');
+
+                        const originalOnClick = item.onclick;
+
+                        item.onclick = function (e) {
+                            if (originalOnClick) {
+                                originalOnClick.call(this, e);
+                            }
+
+                            setTimeout(() => {
+                                menu.classList.add('hidden');
+                            }, 100);
+                        };
+                    }
+                });
+
+                // Position menu
+                const rect = button.getBoundingClientRect();
+                menu.style.position = 'fixed';
+                menu.style.top = `${rect.bottom + window.scrollY + 8}px`;
+                menu.style.left = `${rect.right - 192}px`;
+                menu.style.zIndex = '9999';
+                menu.classList.remove('hidden');
+            } else {
+                menu.classList.add('hidden');
+            }
+        }
+    }
+
+    function closeAllActionsMenus() {
+        document.querySelectorAll('[id^="actionsMenu-"]').forEach(menu => {
+            menu.classList.add('hidden');
+        });
+    }
+
+    // Edit Product Function
+    function editProduct(productId) {
+        fetch(`/products/${productId}/edit`)
+            .then(res => res.json())
+            .then(product => {
+                document.getElementById('edit_name').value = product.name;
+                document.getElementById('edit_category_id').value = product.category_id;
+                document.getElementById('edit_description').value = product.description || '';
+                document.getElementById('edit_price').value = product.price;
+                document.getElementById('edit_quantity').value = product.inventory ? product.inventory.quantity : 0;
+                document.getElementById('edit_status').value = product.status;
+
+                @if(auth()->user()->role === 'super_admin')
+                    const editBranchSelect = document.getElementById('edit_branch_id');
+                    if (editBranchSelect && product.branch_id) {
+                        editBranchSelect.value = product.branch_id;
+                        
+                        const option = editBranchSelect.querySelector(`option[value="${product.branch_id}"]`);
+                        if (option) {
+                            option.selected = true;
+                        }
+                    }
+                @endif
+
+                const editImagePreview = document.getElementById('editImagePreview');
+                if (product.image) {
+                    editImagePreview.innerHTML = `<img src="/storage/${product.image}" alt="Current Image">`;
+                } else {
+                    editImagePreview.innerHTML = `
+                        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    `;
+                }
+
+                document.getElementById('editProductForm').action = `/products/${product.product_id}`;
+                openModal('editProductModal');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to load product data');
+            });
+    }
+
     // Show Product Function
     function showProduct(productId) {
         openModal('productShowModal');
@@ -731,154 +894,138 @@
     }
 
     function renderProductDetails(product) {
-    const content = document.getElementById('productShowContent');
-    const statusColor = product.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+        const content = document.getElementById('productShowContent');
+        const statusColor = product.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
 
-    let html = `
-        <div class="space-y-6">
-            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-                ${product.image ? `
-                    <div class="mb-6">
-                        <img src="/storage/${product.image}" alt="${product.name}" class="w-full h-64 object-cover rounded-lg">
-                    </div>
-                ` : ''}
+        let html = `<div class="space-y-5">`;
 
-                <div class="flex justify-between items-start mb-4">
+        // Product Image
+        if (product.image) {
+            html += `
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <img src="/storage/${product.image}" alt="${product.name}" class="w-full h-64 object-cover rounded-lg">
+                </div>
+            `;
+        }
+
+        // Header with Title and Status
+        html += `
+            <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                <div class="flex justify-between items-start">
                     <div>
-                        <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">${product.name}</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Product ID: #${product.product_id}</p>
+                        <h3 class="text-2xl font-bold text-gray-800">${product.name}</h3>
+                     
                     </div>
-                    <span class="px-3 py-1 text-sm rounded-full ${statusColor}">${product.status.charAt(0).toUpperCase() + product.status.slice(1)}</span>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Branch</p>
-                        <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${product.branch ? product.branch.name : 'N/A'}</p>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Category</p>
-                        <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${product.category ? product.category.name : 'N/A'}</p>
-                    </div>
-
-                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Price</p>
-                        <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">₱${parseFloat(product.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                    </div>
-                </div>
-
-                ${product.description ? `
-                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Description</h4>
-                        <p class="text-gray-600 dark:text-gray-400">${product.description}</p>
-                    </div>
-                ` : ''}
-
-                ${product.inventory ? `
-                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4">Inventory Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Quantity</p>
-                                <p class="text-gray-800 dark:text-gray-200 font-medium text-lg">${product.inventory.quantity || 0}</p>
-                            </div>
-                        </div>
-                    </div>
-                ` : ''}
-
-                ${product.created_at ? `
-                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Created At</p>
-                                <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(product.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                            </div>
-                            ${product.updated_at ? `
-                                <div>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Last Updated</p>
-                                    <p class="text-gray-800 dark:text-gray-200 font-medium">${new Date(product.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                ` : ''}
-
-                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-                    <button onclick="closeModal('productShowModal'); editProduct('${product.product_id}');"
-                        class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                        Edit Product
-                    </button>
+                    <span class="px-3 py-1 text-sm rounded-full font-semibold ${statusColor}">
+                        ${product.status.charAt(0).toUpperCase() + product.status.slice(1)}
+                    </span>
                 </div>
             </div>
-        </div>
-    `;
+        `;
 
-    content.innerHTML = html;
-}
+        // Basic Information
+        html += `
+            <div class="bg-white border border-gray-200 rounded-lg">
+                <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
+                    <h4 class="text-md font-semibold text-gray-800">Basic Information</h4>
+                </div>
+                <div class="p-5 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-500">Branch</p>
+                            <p class="font-semibold text-gray-800">${product.branch ? product.branch.name : 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Category</p>
+                            <p class="font-semibold text-gray-800">${product.category ? product.category.name : 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Price</p>
+                            <p class="text-xl font-bold text-gray-800">₱${parseFloat(product.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                        </div>
+                        ${product.inventory ? `
+                            <div>
+                                <p class="text-gray-500">Quantity</p>
+                                <p class="font-semibold text-gray-800">${product.inventory.quantity || 0}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
 
-    // Delete Modal with SweetAlert
-    function openDeleteModal(actionUrl) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = actionUrl;
-
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = '_token';
-                    csrfInput.value = csrfToken;
-
-                    const methodInput = document.createElement('input');
-                    methodInput.type = 'hidden';
-                    methodInput.name = '_method';
-                    methodInput.value = 'DELETE';
-
-                    form.appendChild(csrfInput);
-                    form.appendChild(methodInput);
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            });
-        } else {
-            if (confirm('Are you sure you want to delete this product?')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = actionUrl;
-
-                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_token';
-                csrfInput.value = csrfToken;
-
-                const methodInput = document.createElement('input');
-                methodInput.type = 'hidden';
-                methodInput.name = '_method';
-                methodInput.value = 'DELETE';
-
-                form.appendChild(csrfInput);
-                form.appendChild(methodInput);
-                document.body.appendChild(form);
-                form.submit();
-            }
+        // Description
+        if (product.description) {
+            html += `
+                <div class="bg-white border border-gray-200 rounded-lg">
+                    <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
+                        <h4 class="text-md font-semibold text-gray-800">Description</h4>
+                    </div>
+                    <div class="p-5">
+                        <p class="text-gray-600">${product.description}</p>
+                    </div>
+                </div>
+            `;
         }
+
+        // Timestamps
+        if (product.created_at) {
+            html += `
+                <div class="bg-white border border-gray-200 rounded-lg">
+                    <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
+                        <h4 class="text-md font-semibold text-gray-800">Additional Information</h4>
+                    </div>
+                    <div class="p-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-gray-500">Created At</p>
+                                <p class="font-medium text-gray-800">${new Date(product.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            </div>
+                          
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Action Button
+        html += `
+            <div class="border-t border-gray-200 pt-4">
+                <button onclick="closeModal('productShowModal'); editProduct('${product.product_id}');"
+                    class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                    Edit Product
+                </button>
+            </div>
+        `;
+
+        html += `</div>`;
+        content.innerHTML = html;
     }
 
     // Initialize on DOM Ready
     document.addEventListener('DOMContentLoaded', function() {
+        // Toastr config
+        if (typeof toastr !== 'undefined') {
+            toastr.options = {
+                "closeButton": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "timeOut": "3000"
+            };
+        }
+
+        @if(session('success'))
+            if (typeof toastr !== 'undefined') {
+                toastr.success('{{ session('success') }}');
+            }
+        @endif
+
+        @if(session('error'))
+            if (typeof toastr !== 'undefined') {
+                toastr.error('{{ session('error') }}');
+            }
+        @endif
+
         updateFilterCount();
 
         // Close dropdown when clicking outside
@@ -893,14 +1040,28 @@
             }
         });
 
-        // Handle Escape key to close modals
+        // Close action menus when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('[id^="actionsMenu-"]') && !event.target.closest('button[onclick*="toggleActionsMenu"]')) {
+                closeAllActionsMenus();
+            }
+        });
+
+        // Handle Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                const openModals = document.querySelectorAll('.backdrop-blur-sm:not(.hidden)');
-                openModals.forEach(modal => {
-                    const modalId = modal.id;
-                    if (modalId) closeModal(modalId);
-                });
+                const dropdown = document.getElementById('filterDropdown');
+                if (dropdown && !dropdown.classList.contains('hidden')) {
+                    dropdown.classList.add('hidden');
+                    const icon = document.getElementById('filterDropdownIcon');
+                    if (icon) icon.classList.remove('rotate-180');
+                }
+
+                closeModal('addProductModal');
+                closeModal('editProductModal');
+                closeModal('productShowModal');
+                closeDeleteModal();
+                closeAllActionsMenus();
             }
         });
     });

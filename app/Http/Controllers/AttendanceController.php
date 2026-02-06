@@ -290,7 +290,9 @@ class AttendanceController extends Controller
     public function memberLogs()
     {
         $user = Auth::user();
-        $memberProfile = MemberProfile::where('user_id', $user->user_id)->first();
+        $memberProfile = MemberProfile::with(['plan', 'subscription'])
+            ->where('user_id', $user->user_id)
+            ->first();
 
         if (!$memberProfile) {
             return redirect()->back()->with('error', 'Member profile not found');
@@ -325,7 +327,7 @@ class AttendanceController extends Controller
         // Get membership plans for the layout
         $plans = MembershipPlan::all();
 
-        return view('attendance.member_logs', compact(
+        return view('member.member_logs', compact(
             'attendances', 
             'memberProfile', 
             'plans',

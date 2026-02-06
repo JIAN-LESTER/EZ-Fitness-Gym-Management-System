@@ -75,6 +75,55 @@ class MemberProfile extends Model
         return $this->hasMany(Attendance::class, 'member_id', 'member_id');
     }
 
+    /**
+     * CRITICAL FIX: Check if member is fully approved
+     * A member is fully approved when:
+     * 1. Both profile AND subscription are approved
+     * 2. Subscription status is active
+     * 3. Profile status is active
+     * 4. Not disabled in any way
+     */
+    public function isFullyApproved(): bool
+    {
+        return $this->isApproved == true 
+            && $this->isApprovedForSubscription == true
+            && $this->subscription_status === 'active'
+            && $this->status === 'active'
+            && !$this->isDisabled
+            && !$this->isDisabledForSubscription;
+    }
+
+    /**
+     * CRITICAL FIX: Check if profile is incomplete
+     * Profile is incomplete ONLY if basic required fields are missing
+     * This should NOT return true if the user is fully approved
+     */
+    public function hasIncompleteProfile(): bool
+    {
+        // If already fully approved, profile is NOT incomplete
+        if ($this->isFullyApproved()) {
+            return false;
+        }
+        
+        // Check if basic required fields are missing
+        return empty($this->sex) 
+            || empty($this->birthday) 
+            || empty($this->mobile_number);
+    }
+
+    /**
+     * Check if member needs approval (has plan & subscription but not approved)
+     * This is for members who have submitted everything but admin hasn't approved yet
+     */
+    public function needsApproval(): bool
+    {
+        return $this->plan_id 
+            && $this->subscription_id 
+            && (!$this->isApproved || !$this->isApprovedForSubscription)
+            && !$this->isDisabled
+            && !$this->isDisabledForSubscription;
+    }
+
 
     public function isExpired(): bool
     {

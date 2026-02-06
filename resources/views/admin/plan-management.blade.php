@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Plans')
-@section('header', 'Plans')
+@section('title', 'Membership Plans')
+@section('header', 'Membership Plans')
 
 <style>
     /* Custom Scrollbar for Modals */
@@ -49,7 +49,7 @@
         <!-- Header & Add Button -->
         <div
             class="flex justify-between items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-800">Membership Plans</h2>
+            <h2 class="text-2xl font-bold text-gray-800">Membership Plans Management</h2>
             <button onclick="openModal('addPlanModal')"
                 class="flex items-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor"
@@ -359,6 +359,44 @@
         </div>
     </div>
 
+     <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+        <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeDeleteModal()"></div>
+
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+
+                <h3 class="text-xl font-bold text-center text-gray-900 mb-2">
+                    Delete Membership Plan
+                </h3>
+
+                <p class="text-center text-gray-600 mb-6">
+                    Are you sure you want to delete <span class="font-bold">{{ $plan->name }}</span>? This action cannot be undone.
+                </p>
+
+                <form id="deleteForm" method="POST" action="">
+                    @csrf
+                    @method('DELETE')
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeDeleteModal()"
+                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
+                            Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Validation Utility Functions
         const showError = (element, message) => {
@@ -538,47 +576,36 @@
             openModal('editPlanModal');
         }
 
-        function openDeleteModal(plan) {
-            if (typeof Swal === 'undefined') {
-                if (confirm('Are you sure you want to delete this plan?')) {
-                    submitDeleteForm(plan.plan_id);
-                }
-                return;
-            }
+         function openDeleteModal(actionUrl) {
+    const form = document.getElementById('deleteForm');
+    form.action = actionUrl;
 
-            Swal.fire({
-                title: 'Delete Membership Plan?',
-                html: `
-                            <div class="text-left space-y-2">
-                                <p class="text-gray-700">You are about to delete:</p>
-                                <div class="bg-gray-50 p-4 rounded-lg">
-                                    <p class="font-semibold text-gray-900">${plan.name}</p>
-                                    <p class="text-sm text-gray-600">${plan.details || 'No description'}</p>
-                                    <p class="text-sm text-gray-600 mt-2">Price: ₱${parseFloat(plan.price).toFixed(2)}</p>
-                                    <p class="text-sm text-gray-600">Duration: ${plan.duration_days} days</p>
-                                    ${plan.members_count > 0 ? `<p class="text-sm text-red-600 mt-2 font-medium">⚠️ ${plan.members_count} member(s) are using this plan</p>` : ''}
-                                </div>
-                                <p class="text-red-600 font-medium mt-4">This action cannot be undone!</p>
-                            </div>
-                        `,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel',
-                width: '600px',
-                customClass: {
-                    popup: 'swal-custom-popup',
-                    confirmButton: 'swal-confirm-btn',
-                    cancelButton: 'swal-cancel-btn'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    submitDeleteForm(plan.plan_id);
-                }
-            });
-        }
+    const modal = document.getElementById('deleteModal');
+    const scrollY = window.scrollY;
+
+    // Prevent body scroll
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflowY = 'scroll';
+
+    modal.classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    const scrollY = document.body.style.top;
+
+    modal.classList.add('hidden');
+
+    // Restore body scroll
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.style.overflowY = '';
+
+    window.scrollTo(0, parseInt(scrollY || '0') * -1);
+}
 
         function submitDeleteForm(planId) {
             const form = document.createElement('form');

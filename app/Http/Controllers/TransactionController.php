@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Log;
 
 class TransactionController extends Controller
 {
+  /**
+   * FIXED: Index method - corrected branch filter logic
+   */
   public function index(Request $request)
 {
     $currentUser = Auth::user();
@@ -30,7 +33,7 @@ class TransactionController extends Controller
     }
 
     $transactions = Transactions::query()
-        ->with(['sale.user.member.plan', 'sale.items.product', 'performer'])
+        ->with(['sale.user.member.plan', 'sale.items.product', 'sale.items.plan', 'sale.items.subscription', 'performer', 'product'])
         ->when($search, function ($query, $search) {
             return $query->where(function ($q) use ($search) {
                 $q->where('transaction_id', 'like', "%{$search}%")
@@ -52,10 +55,15 @@ class TransactionController extends Controller
         ->when(!empty($statuses), function ($query) use ($statuses) {
             return $query->whereIn('type', $statuses);
         })
-        // **ADD BRANCH FILTER HERE**
+        // **FIXED BRANCH FILTER - handles both sales and non-sales transactions**
         ->when($branchId, function ($query) use ($branchId) {
-            return $query->whereHas('sale', function ($q) use ($branchId) {
-                $q->where('branch_id', $branchId);
+            return $query->where(function ($q) use ($branchId) {
+                // Filter transactions with sales by sale's branch_id
+                $q->whereHas('sale', function ($saleQuery) use ($branchId) {
+                    $saleQuery->where('branch_id', $branchId);
+                })
+                // OR filter transactions without sales by their direct branch_id
+                ->orWhere('branch_id', $branchId);
             });
         })
         ->orderBy('created_at', 'desc')
@@ -65,36 +73,56 @@ class TransactionController extends Controller
     return view('admin.transactions', compact('transactions', 'search', 'statuses'));
 }
 
+    /**
+     * FIXED: Show method - now properly loads all relationships
+     */
     public function show($id)
-    {
-        try {
-            // Use where() instead of find() - same as Sales controller
-            $transaction = Transactions::where('transaction_id', $id)
-                ->with(['sale.user.member.plan', 'sale.items.product', 'performer'])
-                ->first();
+{
+    try {
+        $transaction = Transactions::where('transaction_id', $id)
+            ->with([
+                'sale.user.member.plan',
+                'sale.user.member.subscription', 
+                'sale.items.product',
+                'sale.items.plan',
+                'sale.items.subscription',
+                'performer',
+                'product.category',
+                'product.branch',
+                'plan',              // ADD THIS
+                'subscription'       // ADD THIS
+            ])
+            ->first();
 
-            if (!$transaction) {
-                return response()->json([
-                    'error' => 'Transaction not found'
-                ], 404);
-            }
-
-            return response()->json($transaction);
-        } catch (\Exception $e) {
+        if (!$transaction) {
             return response()->json([
-                'error' => 'Server error',
-                'message' => $e->getMessage()
-            ], 500);
+                'error' => 'Transaction not found'
+            ], 404);
         }
+
+        return response()->json($transaction);
+        
+    } catch (\Exception $e) {
+        Log::error("Error loading transaction details", [
+            'transaction_id' => $id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'error' => 'Server error',
+            'message' => $e->getMessage()
+        ], 500);
     }
+}
     
     public function destroy($id)
     {
         try {
             $currentUser = Auth::user();
-                         $branchId = $currentUser->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $currentUser->branch_id;
+            $branchId = $currentUser->role === 'super_admin'
+                ? session('selected_branch_id')
+                : $currentUser->branch_id;
             
             // Only admin can delete transactions
             if ($currentUser->role !== 'admin') {
@@ -102,7 +130,13 @@ class TransactionController extends Controller
                     ->with('error', 'Only administrators can delete transactions.');
             }
 
-            $transaction = Transactions::where('transaction_id', $id)->firstOrFail();
+            // Use where() instead of find() for consistency
+            $transaction = Transactions::where('transaction_id', $id)->first();
+
+            if (!$transaction) {
+                return redirect()->back()
+                    ->with('error', 'Transaction not found.');
+            }
             
             // Store transaction details for logging
             $transactionType = $transaction->type;

@@ -180,7 +180,7 @@ Route::prefix('transactions')->name('transactions.')->group(function () {
 });
 
 Route::post('/member/request-renewal', [MemberProfileController::class, 'requestRenewal'])->name('member.request-renewal');
-Route::get('/user-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
+Route::get('/account-management', [UserManagementController::class, 'viewUsers'])->name('admin.user_management');
 Route::get('/member-management', [UserManagementController::class, 'viewMembersForStaff'])->name('staff.user_management');
 Route::get('/member/check-approval', [MemberProfileController::class, 'checkApprovalStatus'])
     ->name('member.check-approval');
@@ -223,7 +223,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Member - View own attendance logs
     Route::get('/member/attendance', [AttendanceController::class, 'memberLogs'])
-        ->name('attendance.member.logs');
+        ->name('member.member.logs');
 });
 
 
@@ -262,14 +262,16 @@ Route::get('/check-email', [AuthController::class, 'checkEmail'])->name('check.e
 Route::post('/admin/select-branch', [BranchesController::class, 'selectBranch'])
     ->name('admin.select-branch');
 
+    Route::get('/admin/branches/{branch_id}/edit', [BranchesController::class, 'edit'])->name('branches.edit');
 
 
-Route::get('/migrate', function () {
-    Artisan::call('migrate', ["--force" => true]);
-    return 'Migrations run!';
-});
 
-Route::get('/storage-link', function () {
-    Artisan::call('storage:link');
-    return 'Storage linked!';
-});
+// Route::get('/migrate', function () {
+//     Artisan::call('migrate', ["--force" => true]);
+//     return 'Migrations run!';
+// });
+
+// Route::get('/storage-link', function () {
+//     Artisan::call('storage:link');
+//     return 'Storage linked!';
+// });

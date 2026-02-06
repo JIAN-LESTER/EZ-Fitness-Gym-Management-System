@@ -26,6 +26,23 @@ class BranchesController extends Controller
         return view('admin.branches', compact('branches', 'search'));
     }
 
+    /**
+     * Show the form for editing the specified branch.
+     * Returns JSON for AJAX requests.
+     */
+    public function edit($branch_id)
+    {
+        $branch = Branches::where('branch_id', $branch_id)->firstOrFail();
+        
+        // Return JSON for AJAX requests
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json($branch);
+        }
+        
+        // Otherwise return view (if needed)
+        return view('admin.branches-edit', compact('branch'));
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -77,12 +94,14 @@ class BranchesController extends Controller
         return redirect()->route('admin.branch_management')->with('success', 'Branch created successfully.');
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $branch_id)
     {
-        $branch = Branches::findOrFail($id);
+        // Use where() instead of findOrFail() since primary key is branch_id, not id
+        $branch = Branches::where('branch_id', $branch_id)->firstOrFail();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:branches,name,' . $id . ',branch_id',
+            // Updated to specify branch_id as the column to ignore during unique check
+            'name' => 'required|string|max:255|unique:branches,name,' . $branch_id . ',branch_id',
             'country' => 'required|string|max:100',
             'region' => 'required|string|max:100',
             'province' => 'required|string|max:100',
@@ -130,9 +149,10 @@ class BranchesController extends Controller
         return redirect()->route('admin.branch_management')->with('success', 'Branch updated successfully.');
     }
 
-    public function destroy($id)
+    public function destroy($branch_id)
     {
-        $branch = Branches::findOrFail($id);
+        // Use where() instead of findOrFail() since primary key is branch_id, not id
+        $branch = Branches::where('branch_id', $branch_id)->firstOrFail();
 
         // Check if branch has associated data
         $hasUsers = $branch->users()->count() > 0;

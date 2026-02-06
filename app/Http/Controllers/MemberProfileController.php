@@ -13,117 +13,150 @@ use App\Models\MembershipPlan;
 use App\Models\Subscriptions;
 use App\Models\Attendance;
 use App\Models\Logs;
+use App\Services\CacheService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class MemberProfileController extends Controller
 {
-public function dashboard()
-{
-    $user = Auth::user();
-    
-    // Get user's member profile with optimized relations
-    $memberProfile = MemberProfile::select([
-            'member_id', 'user_id', 'plan_id', 'subscription_id', 
-            'start_date_for_subscription', 'end_date_for_subscription',
-            'subscription_status', 'qr_code'
-        ])
-        ->with([
-            'plan:plan_id,name,price,duration_days',
-            'subscription:subscription_id,name,price,duration_days',
-            'user:user_id,first_name,last_name,email,branch_id'
-        ])
-        ->where('user_id', $user->user_id)
-        ->first();
-
-    // Optimized current gym occupancy - use direct count
-    $currentOccupancy = Attendance::whereDate('check_in_time', Carbon::today())
-        ->where('status', 'checked_in')
-        ->when($user->branch_id, function ($query) use ($user) {
-            return $query->whereHas('member.user', function ($q) use ($user) {
-                $q->where('branch_id', $user->branch_id);
-            });
-        })
-        ->count();
-
-    // Calculate days left on membership
-    $daysLeft = null;
-    $membershipStatus = null;
-    $isExpiringSoon = false;
-    
-    if ($memberProfile && $memberProfile->start_date_for_subscription && $memberProfile->end_date_for_subscription) {
-        $now = Carbon::now();
-        $endDate = Carbon::parse($memberProfile->end_date_for_subscription);
+    public function dashboard()
+    {
+        $user = Auth::user();
         
-        $daysLeft = $now->diffInDays($endDate, false);
-        $daysLeft = (int) ceil($daysLeft);
-        
-        if ($daysLeft < 0) {
-            $membershipStatus = 'expired';
-            if ($memberProfile->subscription_status === 'active') {
-                $memberProfile->update(['subscription_status' => 'expired']);
-            }
-        } elseif ($daysLeft <= 7) {
-            $membershipStatus = 'expiring_soon';
-            $isExpiringSoon = true;
-        } else {
-            $membershipStatus = 'active';
-        }
-    } elseif ($memberProfile) {
-        $membershipStatus = $memberProfile->subscription_status;
+        // Get user's member profile with optimized relations (cached)
+        $memberProfile = CacheService::remember(
+            'member_profile',
+            'stats',
+            fn() => MemberProfile::select([
+                    'member_id', 'user_id', 'plan_id', 'subscription_id', 
+                    'start_date_for_subscription', 'end_date_for_subscription',
+                    'subscription_status', 'qr_code'
+                ])
+                ->with([
+                    'plan:plan_id,name,price,duration_days',
+                    'subscription:subscription_id,name,price,duration_days',
+                    'user:user_id,first_name,last_name,email,branch_id'
+                ])
+                ->where('user_id', $user->user_id)
+                ->first(),
+            $user->user_id
+        );
+
+        // Optimized current gym occupancy (short cache for real-time feel)
+        $currentOccupancy = CacheService::remember(
+            'gym_occupancy',
+            'realtime',
+            fn() => Attendance::whereDate('check_in_time', Carbon::today())
+                ->where('status', 'checked_in')
+                ->when($user->branch_id, function ($query) use ($user) {
+                    return $query->whereHas('member.user', function ($q) use ($user) {
+                        $q->where('branch_id', $user->branch_id);
+                    });
+                })
+                ->count(),
+            $user->branch_id
+        );
+
+        // Calculate days left on membership
         $daysLeft = null;
+        $membershipStatus = null;
+        $isExpiringSoon = false;
+        
+        if ($memberProfile && $memberProfile->start_date_for_subscription && $memberProfile->end_date_for_subscription) {
+            $now = Carbon::now();
+            $endDate = Carbon::parse($memberProfile->end_date_for_subscription);
+            
+            $daysLeft = $now->diffInDays($endDate, false);
+            $daysLeft = (int) ceil($daysLeft);
+            
+            if ($daysLeft < 0) {
+                $membershipStatus = 'expired';
+                if ($memberProfile->subscription_status === 'active') {
+                    $memberProfile->update(['subscription_status' => 'expired']);
+                    CacheService::forgetPattern('member_profile');
+                }
+            } elseif ($daysLeft <= 7) {
+                $membershipStatus = 'expiring_soon';
+                $isExpiringSoon = true;
+            } else {
+                $membershipStatus = 'active';
+            }
+        } elseif ($memberProfile) {
+            $membershipStatus = $memberProfile->subscription_status;
+            $daysLeft = null;
+        }
+
+        // Get available subscriptions (cached daily)
+        $subscriptions = CacheService::remember(
+            'available_subscriptions',
+            'daily',
+            fn() => Subscriptions::select('subscription_id', 'name', 'price', 'duration_days', 'branch_id')
+                ->where('branch_id', $user->branch_id)
+                ->orderBy('price', 'asc')
+                ->get(),
+            $user->branch_id
+        );
+
+        // Get user's attendance history (cached with short TTL)
+        $recentAttendance = CacheService::remember(
+            'recent_attendance',
+            'stats',
+            fn() => Attendance::select('attendance_id', 'member_id', 'check_in_time', 'check_out_time', 'status')
+                ->where('member_id', $memberProfile?->member_id)
+                ->orderBy('check_in_time', 'desc')
+                ->limit(10)
+                ->get(),
+            $memberProfile?->member_id
+        );
+
+        // Optimized attendance counts (cached)
+        $attendanceCounts = CacheService::remember(
+            'attendance_counts',
+            'stats',
+            fn() => Attendance::selectRaw('
+                    COUNT(*) as total,
+                    SUM(CASE WHEN MONTH(check_in_time) = ? AND YEAR(check_in_time) = ? THEN 1 ELSE 0 END) as this_month
+                ', [Carbon::now()->month, Carbon::now()->year])
+                ->where('member_id', $memberProfile?->member_id)
+                ->first(),
+            $memberProfile?->member_id
+        );
+
+        $totalCheckIns = $attendanceCounts->total ?? 0;
+        $thisMonthCheckIns = $attendanceCounts->this_month ?? 0;
+
+        // Get plans (cached daily)
+        $plans = CacheService::remember(
+            'membership_plans',
+            'daily',
+            fn() => MembershipPlan::select('plan_id', 'name', 'price', 'duration_days')->get()
+        );
+
+        $member = $user;
+        $daysRemaining = $daysLeft;
+
+        return view('member.dashboard', compact(
+            'member',
+            'user',
+            'plans',
+            'memberProfile',
+            'daysRemaining',
+            'daysLeft',
+            'currentOccupancy',
+            'membershipStatus',
+            'isExpiringSoon',
+            'subscriptions',
+            'recentAttendance',
+            'totalCheckIns',
+            'thisMonthCheckIns'
+        ));
     }
 
-    // Get available subscriptions - cache this if possible
-    $subscriptions = Subscriptions::select('subscription_id', 'name', 'price', 'duration_days', 'branch_id')
-        ->where('branch_id', $user->branch_id)
-        ->orderBy('price', 'asc')
-        ->get();
-
-    // Get user's attendance history - optimized with select
-    $recentAttendance = Attendance::select('attendance_id', 'member_id', 'check_in_time', 'check_out_time', 'status')
-        ->where('member_id', $memberProfile?->member_id)
-        ->orderBy('check_in_time', 'desc')
-        ->limit(10)
-        ->get();
-
-    // Optimized attendance counts - use single queries
-    $attendanceCounts = Attendance::selectRaw('
-            COUNT(*) as total,
-            SUM(CASE WHEN MONTH(check_in_time) = ? AND YEAR(check_in_time) = ? THEN 1 ELSE 0 END) as this_month
-        ', [Carbon::now()->month, Carbon::now()->year])
-        ->where('member_id', $memberProfile?->member_id)
-        ->first();
-
-    $totalCheckIns = $attendanceCounts->total ?? 0;
-    $thisMonthCheckIns = $attendanceCounts->this_month ?? 0;
-
-    // Get plans - select only needed columns
-    $plans = MembershipPlan::select('plan_id', 'name', 'price', 'duration_days')->get();
-
-    $member = $user;
-    $daysRemaining = $daysLeft;
-
-    return view('member.dashboard', compact(
-        'member',
-        'user',
-        'plans',
-        'memberProfile',
-        'daysRemaining',
-        'daysLeft',
-        'currentOccupancy',
-        'membershipStatus',
-        'isExpiringSoon',
-        'subscriptions',
-        'recentAttendance',
-        'totalCheckIns',
-        'thisMonthCheckIns'
-    ));
-}
     public function completeMemberProfile(Request $request)
     {
         $user = Auth::user();
@@ -161,6 +194,9 @@ public function dashboard()
         $memberProfile->save();
         $user->load('member');
 
+        // Clear member profile cache
+        CacheService::forgetPattern('member_profile');
+
         Logs::create([
             'user_id' => $user->user_id,
             'branch_id' => $validated['branch_id'],
@@ -173,42 +209,42 @@ public function dashboard()
             ->with('success', 'Profile completed! Please select a membership plan.');
     }
 
-    // STEP 2: Select membership plan (no approval needed, goes straight to subscription selection)
     public function selectPlan(Request $request)
-{
-    $user = Auth::user();
-    $member = $user->member;
+    {
+        $user = Auth::user();
+        $member = $user->member;
 
-    if (!$member) {
-        return redirect()->back()->with('error', 'Please complete your profile first.');
+        if (!$member) {
+            return redirect()->back()->with('error', 'Please complete your profile first.');
+        }
+
+        $validated = $request->validate([
+            'plan_id' => 'required|exists:membership_plans,plan_id',
+        ]);
+
+        $plan = MembershipPlan::find($validated['plan_id']);
+
+        $member->update([
+            'plan_id' => $validated['plan_id'],
+            'subscription_status' => 'pending_selection',
+            'start_date' => now(),
+            'end_date' => now()->addDays($plan->duration_days),
+        ]);
+
+        // Clear member profile cache
+        CacheService::forgetPattern('member_profile');
+
+        Logs::create([
+            'user_id' => $user->user_id,
+            'branch_id' => $user->branch_id,
+            'action' => "Selected membership plan - {$plan->name} - Ready to select subscription",
+            'timestamp' => now(),
+        ]);
+
+        return redirect()->route('member.dashboard')
+            ->with('success', 'Plan selected! Please choose a subscription.');
     }
 
-    $validated = $request->validate([
-        'plan_id' => 'required|exists:membership_plans,plan_id',
-    ]);
-
-    $plan = MembershipPlan::find($validated['plan_id']);
-
-    $member->update([
-        'plan_id' => $validated['plan_id'],
-        'subscription_status' => 'pending_selection',
-        'start_date' => now(),
-        'end_date' => now()->addDays($plan->duration_days),
-    ]);
-
-    Logs::create([
-        'user_id' => $user->user_id,
-        'branch_id' => $user->branch_id,
-        'action' => "Selected membership plan - {$plan->name} - Ready to select subscription",
-        'timestamp' => now(),
-    ]);
-
-    return redirect()->route('member.dashboard')
-        ->with('success', 'Plan selected! Please choose a subscription.');
-}
-
-
-    // STEP 3: Select subscription (awaits approval)
     public function selectSubscription(Request $request)
     {
         $user = Auth::user();
@@ -230,6 +266,9 @@ public function dashboard()
             'isApprovedForSubscription' => false,
         ]);
 
+        // Clear member profile cache
+        CacheService::forgetPattern('member_profile');
+
         Logs::create([
             'user_id' => $user->user_id,
             'branch_id' => $user->branch_id,
@@ -244,7 +283,9 @@ public function dashboard()
     public function checkApprovalStatus()
     {
         $user = Auth::user();
-        $member = $user->member;
+        
+        // Force refresh from database, bypassing cache
+        $member = MemberProfile::where('user_id', $user->user_id)->first();
 
         if (!$member) {
             return response()->json([
@@ -253,6 +294,7 @@ public function dashboard()
             ]);
         }
 
+        // Check if rejected
         if ($member->isDisabled || $member->isDisabledForSubscription) {
             return response()->json([
                 'status' => 'rejected',
@@ -260,15 +302,24 @@ public function dashboard()
             ]);
         }
 
-        // Fully approved with QR code
-        if ($member->isApprovedForSubscription && $member->subscription_status === 'active') {
-            $member->refresh();
+        // Check if both profile AND subscription are approved
+        if ($member->isApproved && $member->isApprovedForSubscription && $member->subscription_status === 'active') {
+            // Force refresh with relations
+            $member = $member->fresh(['plan', 'subscription']);
+            
+            // Clear old cache and update
+            CacheService::forgetPattern('member_profile');
             
             $qrCodeUrl = null;
             if ($member->qr_code) {
                 $fullPath = storage_path("app/public/{$member->qr_code}");
                 if (file_exists($fullPath)) {
-                    $qrCodeUrl = asset("storage/{$member->qr_code}");
+                    $qrCodeUrl = asset("storage/{$member->qr_code}") . '?v=' . time();
+                } else {
+                    \Log::warning("QR code file not found for member {$member->member_id}", [
+                        'expected_path' => $fullPath,
+                        'qr_code_field' => $member->qr_code
+                    ]);
                 }
             }
 
@@ -278,16 +329,21 @@ public function dashboard()
                 'qr_code_url' => $qrCodeUrl,
                 'member_data' => [
                     'plan' => $member->plan->name ?? 'N/A',
+                    'plan_price' => $member->plan ? '₱' . number_format($member->plan->price, 2) : 'N/A',
                     'subscription' => $member->subscription->name ?? 'N/A',
-                    'start_date' => $member->start_date_for_subscription,
-                    'end_date' => $member->end_date_for_subscription,
+                    'subscription_price' => $member->subscription ? '₱' . number_format($member->subscription->price, 2) : 'N/A',
+                    'start_date' => $member->start_date_for_subscription ? Carbon::parse($member->start_date_for_subscription)->format('M d, Y') : 'N/A',
+                    'end_date' => $member->end_date_for_subscription ? Carbon::parse($member->end_date_for_subscription)->format('M d, Y') : 'N/A',
+                    'status' => $member->subscription_status,
                 ]
             ]);
         }
 
+        // Still pending
         return response()->json([
             'status' => 'pending',
-            'message' => 'Your application is still pending approval'
+            'message' => 'Your application is still pending approval',
+            'pending_step' => !$member->isApproved ? 'profile' : 'subscription'
         ]);
     }
 
@@ -320,6 +376,9 @@ public function dashboard()
             'renewal_pending' => true,
             'subscription_status' => 'expired',
         ]);
+
+        // Clear member profile cache
+        CacheService::forgetPattern('member_profile');
 
         Logs::create([
             'user_id' => $user->user_id,

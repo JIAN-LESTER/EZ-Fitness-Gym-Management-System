@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AdminMiddleware
+class AdminOrStaffMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
@@ -16,9 +16,8 @@ class AdminMiddleware
 
         $user = auth()->user();
         
-        // Allow both admin and super_admin roles
-        if (!in_array($user->role, ['admin', 'super_admin'])) {
-            abort(403, 'Unauthorized - Admin access only');
+        if (!in_array($user->role, ['admin', 'super_admin', 'staff'])) {
+            abort(403, 'Unauthorized - Admin or Staff access only');
         }
 
         return $next($request);

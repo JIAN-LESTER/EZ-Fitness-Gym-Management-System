@@ -4,148 +4,260 @@
 
 @section('content')
 
-    <body class="bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 min-h-screen">
+    <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
         <div class="w-full px-4 py-6">
 
-            {{-- Branch Filter Indicator (Only for Super Admin) --}}
-            @if(auth()->user()->role === 'super_admin')
-                <div class="mb-4">
-                    @if($selectedBranchId)
-                        <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg flex items-center justify-between">
-                            <div class="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                                <strong>Viewing Branch:</strong>&nbsp;{{ session('selected_branch_name') }}
+            @if(auth()->user()->role === 'super_admin' && !$selectedBranchId)
+                <!-- SUPER ADMIN LAYOUT -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                    
+                    <!-- Left Column (2 columns) -->
+                    <div class="lg:col-span-2 space-y-4">
+                        
+                        <!-- Branch Stats - Full Width -->
+                        <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-indigo-500 hover:shadow-xl transition-all">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <p class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Total Branches</p>
+                                    <h3 class="text-4xl font-black text-indigo-600 mb-1">{{ $totalBranches }}</h3>
+                                    <p class="text-sm text-indigo-700 font-bold">
+                                        {{ $activeBranches }} active branches
+                                    </p>
+                                </div>
+                                <div class="bg-gradient-to-br from-indigo-100 to-purple-100 p-3 rounded-xl">
+                                    <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                </div>
                             </div>
                         </div>
-                    @else
-                        <div class="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                            </svg>
-                            <strong>Viewing:</strong>&nbsp;All Branches
+
+                        <!-- Membership & Subscription Grid - Side by Side -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            
+                            <!-- Active Members -->
+                            <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-emerald-500 hover:shadow-xl transition-all">
+                                <div class="flex items-start justify-between mb-3">
+                                    <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">Active Members</p>
+                                    <div class="bg-gradient-to-br from-emerald-100 to-green-100 p-2 rounded-lg">
+                                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h3 class="text-3xl font-black text-emerald-600 mb-2">{{ $totalActiveMembers }}</h3>
+                                <div class="space-y-1">
+                                    <p class="text-xs text-emerald-700 font-bold">
+                                        +{{ $newMembersThisMonth }} new this month
+                                    </p>
+                                    @if($expiringMemberships > 0)
+                                        <p class="text-xs text-orange-600 font-semibold">
+                                            {{ $expiringMemberships }} expiring soon
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Active Subscriptions -->
+                            <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-blue-500 hover:shadow-xl transition-all">
+                                <div class="flex items-start justify-between mb-3">
+                                    <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">Subscriptions</p>
+                                    <div class="bg-gradient-to-br from-blue-100 to-cyan-100 p-2 rounded-lg">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h3 class="text-3xl font-black text-blue-600 mb-2">{{ $activeSubscriptions }}</h3>
+                                <p class="text-xs text-blue-700 font-bold">
+                                    {{ $totalSubscriptions }} total plans
+                                </p>
+                            </div>
+
                         </div>
-                    @endif
+
+                        <!-- Total Users - Full Width -->
+                        <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-teal-500 hover:shadow-xl transition-all">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <p class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Total Users</p>
+                                    <h3 class="text-4xl font-black text-teal-600 mb-1">{{ $totalUsers }}</h3>
+                                    <p class="text-sm text-teal-700 font-bold">
+                                        {{ $activeUsers }} active users
+                                    </p>
+                                </div>
+                                <div class="bg-gradient-to-br from-teal-100 to-cyan-100 p-3 rounded-xl">
+                                    <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: 3 Stacked Cards (1 column) -->
+                    <div class="space-y-4">
+                        
+                        <!-- Gym Occupancy -->
+                        <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-violet-500 hover:shadow-xl transition-all">
+                            <div class="flex items-start justify-between mb-3">
+                                <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">Occupancy</p>
+                                <div class="bg-gradient-to-br from-violet-100 to-purple-100 p-2 rounded-lg">
+                                    <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <h3 class="text-3xl font-black text-violet-600 mb-1">{{ $currentOccupancy }}</h3>
+                            <p class="text-xs text-gray-600 font-semibold">Members in gym</p>
+                        </div>
+
+                        <!-- Total Stock -->
+                        <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-orange-500 hover:shadow-xl transition-all">
+                            <div class="flex items-start justify-between mb-3">
+                                <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">Total Stock</p>
+                                <div class="bg-gradient-to-br from-orange-100 to-amber-100 p-2 rounded-lg">
+                                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <h3 class="text-3xl font-black text-orange-600 mb-1">{{ $totalItemsInStock }}</h3>
+                            <p class="text-xs text-orange-700 font-bold">
+                                {{ $lowStockItems }} low stock items
+                            </p>
+                        </div>
+
+                        <!-- Today's Revenue -->
+                        <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-purple-500 hover:shadow-xl transition-all">
+                            <div class="flex items-start justify-between mb-3">
+                                <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">Today's Revenue</p>
+                                <div class="bg-gradient-to-br from-purple-100 to-pink-100 p-2 rounded-lg">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <h3 class="text-3xl font-black text-purple-600 mb-1">₱{{ number_format($todayRevenue, 2) }}</h3>
+                            <p class="text-xs text-purple-700 font-bold">{{ $todaySales }} sales today</p>
+                        </div>
+
+                    </div>
                 </div>
+
+            @else
+                <!-- ADMIN LAYOUT (or Super Admin with selected branch) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                    
+                    <!-- Left Column (2 columns) -->
+                    <div class="lg:col-span-2">
+                        <div class="space-y-4">
+                        
+                        <!-- Membership & Subscription Grid - Side by Side -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            
+                            <!-- Active Members -->
+                            <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-emerald-500 hover:shadow-xl transition-all">
+                                <div class="flex items-start justify-between mb-3">
+                                    <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">Active Members</p>
+                                    <div class="bg-gradient-to-br from-emerald-100 to-green-100 p-2 rounded-lg">
+                                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h3 class="text-3xl font-black text-emerald-600 mb-2">{{ $totalActiveMembers }}</h3>
+                                <div class="space-y-1">
+                                    <p class="text-xs text-emerald-700 font-bold">
+                                        +{{ $newMembersThisMonth }} new this month
+                                    </p>
+                                    @if($expiringMemberships > 0)
+                                        <p class="text-xs text-orange-600 font-semibold">
+                                            {{ $expiringMemberships }} expiring soon
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Active Subscriptions -->
+                            <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-blue-500 hover:shadow-xl transition-all">
+                                <div class="flex items-start justify-between mb-3">
+                                    <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">Subscriptions</p>
+                                    <div class="bg-gradient-to-br from-blue-100 to-cyan-100 p-2 rounded-lg">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h3 class="text-3xl font-black text-blue-600 mb-2">{{ $activeSubscriptions }}</h3>
+                                <p class="text-xs text-blue-700 font-bold">
+                                    {{ $totalSubscriptions }} total plans
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-violet-500 h-full">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <p class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
+                                        Gym Occupancy
+                                    </p>
+                                    <h3 class="text-4xl font-black text-violet-600 mb-1">
+                                        {{ $currentOccupancy }}
+                                    </h3>
+                                    <p class="text-sm text-violet-700 font-bold">
+                                        Current gym members
+                                    </p>
+                                </div>
+                                <div class="bg-gradient-to-br from-violet-100 to-purple-100 p-3 rounded-xl">
+                                    <svg class="w-8 h-8 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Right Column: 2 Stacked Cards (1 column) -->
+                    <div class="space-y-4">
+                        
+                        <!-- Today's Revenue -->
+                        <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-purple-500 hover:shadow-xl transition-all">
+                            <div class="flex items-start justify-between mb-3">
+                                <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">Today's Revenue</p>
+                                <div class="bg-gradient-to-br from-purple-100 to-pink-100 p-2 rounded-lg">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <h3 class="text-3xl font-black text-purple-600 mb-1">₱{{ number_format($todayRevenue, 2) }}</h3>
+                            <p class="text-xs text-purple-700 font-bold">{{ $todaySales }} sales today</p>
+                        </div>
+
+                        <!-- Inventory Status -->
+                        <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border-l-4 border-orange-500 hover:shadow-xl transition-all">
+                            <div class="flex items-start justify-between mb-3">
+                                <p class="text-xs font-bold text-gray-600 uppercase tracking-wider">Total Stock</p>
+                                <div class="bg-gradient-to-br from-orange-100 to-amber-100 p-2 rounded-lg">
+                                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <h3 class="text-3xl font-black text-orange-600 mb-1">{{ $totalItemsInStock }}</h3>
+                            <p class="text-xs text-orange-700 font-bold">
+                                {{ $lowStockItems }} low stock items
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+
             @endif
-
-            <!-- Top Stats Row -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-
-                {{-- Super Admin Only: Branch Stats --}}
-                @if(auth()->user()->role === 'super_admin' && !$selectedBranchId)
-                    <!-- Total Branches Card -->
-                    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-indigo-500 hover:shadow-xl transition-all hover:scale-105 duration-200">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm font-medium">Total Branches</p>
-                                <h3 class="text-3xl font-bold text-gray-800 mt-2">{{ $totalBranches }}</h3>
-                                <p class="text-indigo-600 text-sm mt-2">
-                                    <span class="font-semibold">{{ $activeBranches }}</span> active
-                                </p>
-                            </div>
-                            <div class="bg-indigo-100 p-4 rounded-full">
-                                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <!-- Active Members Card -->
-                <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-all hover:scale-105 duration-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm font-medium">Active Members</p>
-                            <h3 class="text-3xl font-bold text-gray-800 mt-2">{{ $totalActiveMembers }}</h3>
-                            <p class="text-green-600 text-sm mt-2">
-                                <span class="font-semibold">+{{ $newMembersThisMonth }}</span> new this month
-                            </p>
-                            @if($expiringMemberships > 0)
-                                <p class="text-orange-500 text-xs mt-1">
-                                    <span class="font-semibold">{{ $expiringMemberships }}</span> expiring soon
-                                </p>
-                            @endif
-                        </div>
-                        <div class="bg-green-100 p-4 rounded-full">
-                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Active Subscriptions Card -->
-                <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-teal-500 hover:shadow-xl transition-all hover:scale-105 duration-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm font-medium">Active Subscriptions</p>
-                            <h3 class="text-3xl font-bold text-gray-800 mt-2">{{ $activeSubscriptions }}</h3>
-                            <p class="text-teal-600 text-sm mt-2">
-                                <span class="font-semibold">{{ $totalSubscriptions }}</span> total plans
-                            </p>
-                        </div>
-                        <div class="bg-teal-100 p-4 rounded-full">
-                            <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Gym Occupancy Card -->
-                <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-all hover:scale-105 duration-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm font-medium">Current Occupancy</p>
-                            <h3 class="text-3xl font-bold text-gray-800 mt-2">{{ $currentOccupancy }}</h3>
-                            <p class="text-blue-600 text-sm mt-2">Members in gym</p>
-                        </div>
-                        <div class="bg-blue-100 p-4 rounded-full">
-                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Today's Revenue Card -->
-                <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-all hover:scale-105 duration-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm font-medium">Today's Revenue</p>
-                            <h3 class="text-3xl font-bold text-gray-800 mt-2">₱{{ number_format($todayRevenue, 2) }}</h3>
-                            <p class="text-purple-600 text-sm mt-2">{{ $todaySales }} sales today</p>
-                        </div>
-                        <div class="bg-purple-100 p-4 rounded-full">
-                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Inventory Status Card -->
-                <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500 hover:shadow-xl transition-all hover:scale-105 duration-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm font-medium">Total Stock</p>
-                            <h3 class="text-3xl font-bold text-gray-800 mt-2">{{ $totalItemsInStock }}</h3>
-                            <p class="text-orange-600 text-sm mt-2">
-                                <span class="font-semibold">{{ $lowStockItems }}</span> low stock items
-                            </p>
-                        </div>
-                        <div class="bg-orange-100 p-4 rounded-full">
-                            <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
 
             <!-- Main Content Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -155,7 +267,7 @@
 
                     {{-- Branch Performance (Super Admin Only, All Branches View) --}}
                     @if(auth()->user()->role === 'super_admin' && !$selectedBranchId && count($branchPerformance) > 0)
-                        <div class="bg-white rounded-xl shadow-lg p-6">
+                        <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20">
                             <h3 class="text-xl font-bold text-gray-800 mb-4">Branch Performance Overview</h3>
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-200">
@@ -187,7 +299,7 @@
                     @endif
 
                     <!-- Revenue & Sales Trend Chart -->
-                    <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
                             <div>
                                 <h3 class="text-xl font-bold text-gray-800">Sales Trend</h3>
@@ -228,48 +340,87 @@
                         </div>
                     </div>
 
-                    <!-- Revenue Breakdown & Sales Breakdown -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Revenue Breakdown -->
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <h3 class="text-xl font-bold text-gray-800 mb-4">Monthly Revenue Breakdown</h3>
-                            <div class="space-y-3">
-                                <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg">
-                                    <p class="text-sm text-gray-600 mb-1">Product Sales</p>
-                                    <p class="text-2xl font-bold text-blue-600">₱{{ number_format($revenueBreakdown['products'], 2) }}</p>
-                                </div>
-                                <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg">
-                                    <p class="text-sm text-gray-600 mb-1">Membership Sales</p>
-                                    <p class="text-2xl font-bold text-green-600">₱{{ number_format($revenueBreakdown['memberships'], 2) }}</p>
-                                </div>
-                                <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border-2 border-purple-300">
-                                    <p class="text-sm text-gray-600 mb-1">Total Revenue</p>
-                                    <p class="text-2xl font-bold text-purple-600">₱{{ number_format($revenueBreakdown['total'], 2) }}</p>
-                                </div>
-                            </div>
-                        </div>
+                         <!-- Membership & Subscription Growth Trends - Side by Side -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <!-- Membership Growth Trend -->
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800">Membership Growth</h3>
+                <p class="text-sm text-gray-500" id="membershipPeriodLabel">
+                    @if($membershipPeriod === 'today') Hourly breakdown for today
+                    @elseif($membershipPeriod === 'week') Daily breakdown for this week
+                    @else Weekly breakdown for this month
+                    @endif
+                </p>
+            </div>
+            <div class="flex gap-2">
+                <button data-membership-period="today"
+                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $membershipPeriod === 'today' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    Today
+                </button>
+                <button data-membership-period="week"
+                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $membershipPeriod === 'week' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    Week
+                </button>
+                <button data-membership-period="month"
+                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $membershipPeriod === 'month' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    Month
+                </button>
+            </div>
+        </div>
+        <div class="h-64">
+            <canvas id="membershipTrendChart"></canvas>
+        </div>
+    </div>
 
-                        <!-- Sales Count Breakdown -->
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <h3 class="text-xl font-bold text-gray-800 mb-4">Sales Breakdown</h3>
-                            <div class="h-56">
-                                <canvas id="salesBreakdownChart"></canvas>
-                            </div>
-                            <div class="mt-4 grid grid-cols-2 gap-3">
-                                <div class="text-center p-3 bg-blue-50 rounded-lg">
-                                    <p class="text-sm text-gray-600">Product Sales</p>
-                                    <p class="text-xl font-bold text-blue-600">{{ $productSalesCount }}</p>
-                                </div>
-                                <div class="text-center p-3 bg-green-50 rounded-lg">
-                                    <p class="text-sm text-gray-600">Memberships</p>
-                                    <p class="text-xl font-bold text-green-600">{{ $membershipSalesCount }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Subscription Growth Trend -->
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800">Subscription Growth</h3>
+                <p class="text-sm text-gray-500" id="subscriptionPeriodLabel">
+                    @if($subscriptionPeriod === 'today') Hourly breakdown for today
+                    @elseif($subscriptionPeriod === 'week') Daily breakdown for this week
+                    @else Weekly breakdown for this month
+                    @endif
+                </p>
+            </div>
+            <div class="flex gap-2">
+                <button data-subscription-period="today"
+                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $subscriptionPeriod === 'today' ? 'bg-teal-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    Today
+                </button>
+                <button data-subscription-period="week"
+                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $subscriptionPeriod === 'week' ? 'bg-teal-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    Week
+                </button>
+                <button data-subscription-period="month"
+                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $subscriptionPeriod === 'month' ? 'bg-teal-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    Month
+                </button>
+            </div>
+        </div>
+        <div class="flex gap-4 mb-4 justify-end">
+            <div class="flex items-center">
+                <div class="w-3 h-3 bg-teal-500 rounded-full mr-2"></div>
+                <span class="text-sm text-gray-600">New Subscriptions</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                <span class="text-sm text-gray-600">Revenue</span>
+            </div>
+        </div>
+        <div class="h-64">
+            <canvas id="subscriptionTrendChart"></canvas>
+        </div>
+    </div>
 
-                    <!-- Product & Membership Performance -->
-                    <div class="bg-white rounded-xl shadow-lg p-6">
+</div>
+
+ <!-- Product & Membership Performance -->
+                    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Performance Overview</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <!-- Highest Selling Product -->
@@ -338,37 +489,11 @@
                         </div>
                     </div>
 
-                    <!-- Membership Growth Trend -->
-                    <div class="bg-white rounded-xl shadow-lg p-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-800">Membership Growth Trend</h3>
-                                <p class="text-sm text-gray-500" id="membershipPeriodLabel">
-                                    @if($membershipPeriod === 'today') Hourly breakdown for today
-                                    @elseif($membershipPeriod === 'week') Daily breakdown for this week
-                                    @else Weekly breakdown for this month
-                                    @endif
-                                </p>
-                            </div>
-                            <div class="flex gap-2">
-                                <button data-membership-period="today"
-                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $membershipPeriod === 'today' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                    Today
-                                </button>
-                                <button data-membership-period="week"
-                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $membershipPeriod === 'week' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                    Week
-                                </button>
-                                <button data-membership-period="month"
-                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {{ $membershipPeriod === 'month' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                    Month
-                                </button>
-                            </div>
-                        </div>
-                        <div class="h-64">
-                            <canvas id="membershipTrendChart"></canvas>
-                        </div>
-                    </div>
+          
+
+                   
+
+
 
                 </div>
 
@@ -376,7 +501,7 @@
                 <div class="space-y-6">
 
                     <!-- Transaction Overview -->
-                    <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Monthly Overview</h3>
                         <div class="space-y-3">
                             <div class="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
@@ -417,48 +542,31 @@
                         </div>
                     </div>
 
-                    <!-- Members by Plan -->
-                    <div class="bg-white rounded-xl shadow-lg p-6">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Members by Plan</h3>
-                        <div class="space-y-3 max-h-72 overflow-y-auto">
-                            @forelse($membersByPlan as $planData)
-                                <div class="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg hover:shadow-md transition-shadow">
-                                    <div>
-                                        <p class="font-medium text-gray-800">{{ $planData['plan_name'] }}</p>
-                                        <p class="text-sm text-gray-600">Active Members</p>
-                                    </div>
-                                    <div class="bg-white rounded-full px-4 py-2 shadow-sm">
-                                        <span class="font-bold text-green-600">{{ $planData['count'] }}</span>
-                                    </div>
-                                </div>
-                            @empty
-                                <p class="text-gray-500 text-center py-4">No active members</p>
-                            @endforelse
-                        </div>
-                    </div>
-
                     <!-- Active Subscriptions by Type -->
-                    <div class="bg-white rounded-xl shadow-lg p-6">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Subscriptions by Type</h3>
-                        <div class="space-y-3 max-h-72 overflow-y-auto">
-                            @forelse($subscriptionsByType as $subscriptionData)
-                                <div class="flex items-center justify-between p-3 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg hover:shadow-md transition-shadow">
-                                    <div>
-                                        <p class="font-medium text-gray-800">{{ $subscriptionData['subscription_name'] }}</p>
-                                        <p class="text-sm text-gray-600">Active Subscribers</p>
-                                    </div>
-                                    <div class="bg-white rounded-full px-4 py-2 shadow-sm">
-                                        <span class="font-bold text-teal-600">{{ $subscriptionData['count'] }}</span>
-                                    </div>
+                           <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Monthly Revenue Breakdown</h3>
+                            <div class="space-y-3">
+                                <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 mb-1">Product Sales</p>
+                                    <p class="text-2xl font-bold text-blue-600">₱{{ number_format($revenueBreakdown['products'], 2) }}</p>
                                 </div>
-                            @empty
-                                <p class="text-gray-500 text-center py-4">No active subscriptions</p>
-                            @endforelse
+                                <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 mb-1">Membership Plans</p>
+                                    <p class="text-2xl font-bold text-green-600">₱{{ number_format($revenueBreakdown['memberships'], 2) }}</p>
+                                </div>
+                                <div class="bg-gradient-to-r from-teal-50 to-teal-100 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-600 mb-1">Subscriptions</p>
+                                    <p class="text-2xl font-bold text-teal-600">₱{{ number_format($revenueBreakdown['subscriptions'], 2) }}</p>
+                                </div>
+                                <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border-2 border-purple-300">
+                                    <p class="text-sm text-gray-600 mb-1">Total Revenue</p>
+                                    <p class="text-2xl font-bold text-purple-600">₱{{ number_format($revenueBreakdown['total'], 2) }}</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
                     <!-- Recent Sales Activity -->
-                    <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Recent Sales</h3>
                         <div class="space-y-3 max-h-96 overflow-y-auto">
                             @forelse($recentSales as $sale)
@@ -501,11 +609,13 @@
             // Store chart instances globally so we can update them
             let salesTrendChart = null;
             let membershipTrendChart = null;
+            let subscriptionTrendChart = null;
 
             // Initialize charts on page load
             document.addEventListener('DOMContentLoaded', function () {
                 initializeSalesTrendChart();
                 initializeMembershipTrendChart();
+                initializeSubscriptionTrendChart();
                 initializeSalesBreakdownChart();
                 setupChartFilterButtons();
             });
@@ -622,6 +732,78 @@
                 });
             }
 
+            // Initialize Subscription Trend Chart
+            function initializeSubscriptionTrendChart() {
+                const subscriptionCtx = document.getElementById('subscriptionTrendChart').getContext('2d');
+                const subscriptionData = @json($subscriptionTrend);
+
+                subscriptionTrendChart = new Chart(subscriptionCtx, {
+                    type: 'line',
+                    data: {
+                        labels: subscriptionData.map(item => item.label),
+                        datasets: [{
+                            label: 'New Subscriptions',
+                            data: subscriptionData.map(item => item.count),
+                            borderColor: 'rgb(20, 184, 166)',
+                            backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y',
+                        }, {
+                            label: 'Revenue (₱)',
+                            data: subscriptionData.map(item => item.total_revenue || 0),
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y1',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Subscriptions'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                beginAtZero: true,
+                                grid: {
+                                    drawOnChartArea: false,
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Revenue (₱)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
             // Initialize Sales Breakdown Chart
             function initializeSalesBreakdownChart() {
                 const breakdownCtx = document.getElementById('salesBreakdownChart').getContext('2d');
@@ -674,14 +856,20 @@
                         updateMembershipTrendChart(period);
                     });
                 });
+
+                // Subscription Trend filter buttons
+                document.querySelectorAll('[data-subscription-period]').forEach(button => {
+                    button.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const period = this.getAttribute('data-subscription-period');
+                        updateSubscriptionTrendChart(period);
+                    });
+                });
             }
 
             // Update Sales Trend Chart via AJAX
             function updateSalesTrendChart(period) {
-                // Show loading state
                 showChartLoading('salesTrendChart');
-
-                // Update active button state
                 document.querySelectorAll('[data-sales-period]').forEach(btn => {
                     if (btn.getAttribute('data-sales-period') === period) {
                         btn.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
@@ -692,26 +880,16 @@
                     }
                 });
 
-                // Fetch new data
                 fetch(`{{ route('admin.dashboard') }}?ajax=1&sales_period=${period}`, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
                     .then(response => response.json())
                     .then(data => {
-                        // Update chart data
                         salesTrendChart.data.labels = data.salesTrend.map(item => item.label);
                         salesTrendChart.data.datasets[0].data = data.salesTrend.map(item => item.total_revenue);
                         salesTrendChart.data.datasets[1].data = data.salesTrend.map(item => item.total_sales);
-
-                        // Update chart
                         salesTrendChart.update();
-
-                        // Update period label
                         updatePeriodLabel('sales', period);
-
-                        // Hide loading state
                         hideChartLoading('salesTrendChart');
                     })
                     .catch(error => {
@@ -722,10 +900,7 @@
 
             // Update Membership Trend Chart via AJAX
             function updateMembershipTrendChart(period) {
-                // Show loading state
                 showChartLoading('membershipTrendChart');
-
-                // Update active button state
                 document.querySelectorAll('[data-membership-period]').forEach(btn => {
                     if (btn.getAttribute('data-membership-period') === period) {
                         btn.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
@@ -736,30 +911,51 @@
                     }
                 });
 
-                // Fetch new data
                 fetch(`{{ route('admin.dashboard') }}?ajax=1&membership_period=${period}`, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
                     .then(response => response.json())
                     .then(data => {
-                        // Update chart data
                         membershipTrendChart.data.labels = data.membershipTrend.map(item => item.label);
                         membershipTrendChart.data.datasets[0].data = data.membershipTrend.map(item => item.count);
-
-                        // Update chart
                         membershipTrendChart.update();
-
-                        // Update period label
                         updatePeriodLabel('membership', period);
-
-                        // Hide loading state
                         hideChartLoading('membershipTrendChart');
                     })
                     .catch(error => {
                         console.error('Error updating membership trend:', error);
                         hideChartLoading('membershipTrendChart');
+                    });
+            }
+
+            // Update Subscription Trend Chart via AJAX
+            function updateSubscriptionTrendChart(period) {
+                showChartLoading('subscriptionTrendChart');
+                document.querySelectorAll('[data-subscription-period]').forEach(btn => {
+                    if (btn.getAttribute('data-subscription-period') === period) {
+                        btn.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                        btn.classList.add('bg-teal-500', 'text-white', 'shadow-md');
+                    } else {
+                        btn.classList.remove('bg-teal-500', 'text-white', 'shadow-md');
+                        btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                    }
+                });
+
+                fetch(`{{ route('admin.dashboard') }}?ajax=1&subscription_period=${period}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        subscriptionTrendChart.data.labels = data.subscriptionTrend.map(item => item.label);
+                        subscriptionTrendChart.data.datasets[0].data = data.subscriptionTrend.map(item => item.count);
+                        subscriptionTrendChart.data.datasets[1].data = data.subscriptionTrend.map(item => item.total_revenue || 0);
+                        subscriptionTrendChart.update();
+                        updatePeriodLabel('subscription', period);
+                        hideChartLoading('subscriptionTrendChart');
+                    })
+                    .catch(error => {
+                        console.error('Error updating subscription trend:', error);
+                        hideChartLoading('subscriptionTrendChart');
                     });
             }
 
@@ -786,8 +982,6 @@
                 if (!canvas) return;
 
                 const container = canvas.parentElement;
-
-                // Create loading overlay if it doesn't exist
                 let overlay = container.querySelector('.chart-loading-overlay');
                 if (!overlay) {
                     overlay = document.createElement('div');

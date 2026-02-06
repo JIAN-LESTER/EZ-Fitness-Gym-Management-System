@@ -28,6 +28,16 @@
     scrollbar-color: #9CA3AF #F3F4F6;
     scroll-behavior: smooth;
 }
+
+/* Clickable Row */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+    background-color: #f9fafb;
+}
 </style>
 
 @section('content')
@@ -271,20 +281,21 @@
             <table class="min-w-full">
                 <thead>
                     <tr class="bg-gray-100 border-b border-gray-200">
-
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Cashier</th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Amount</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Reference Code</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                        @if(Auth::user()->role === 'admin')
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                        @endif
                     </tr>
                 </thead>
 
                 <tbody class="divide-y divide-gray-100">
                     @forelse($sales as $sale)
-                        <tr class="hover:bg-gray-50 transition-colors group">
+                        <tr class="clickable-row hover:bg-gray-50 transition-colors group" onclick="showSale('{{ $sale->sales_id }}')">
                             <td class="px-6 py-4">
                                 <p class="font-medium text-gray-900">{{ $sale->user->first_name }} {{ $sale->user->last_name }}</p>
                                 <p class="text-sm text-gray-500">@&ZeroWidthSpace;{{ $sale->user->username }}</p>
@@ -299,7 +310,6 @@
                                     {{ ucfirst($sale->payment_method) }}
                                 </span>
                             </td>
-                            <!-- Reference Code Column -->
                             <td class="px-6 py-4 text-center">
                                 @if($sale->payment_method === 'gcash' && $sale->reference_code)
                                     <div class="flex items-center justify-center gap-1" title="GCash Reference Code">
@@ -325,32 +335,21 @@
                                 <p class="text-gray-900">{{ \Carbon\Carbon::parse($sale->created_at)->format('M d, Y') }}</p>
                                 <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($sale->created_at)->format('h:i A') }}</p>
                             </td>
-                                <td class="px-6 py-4 text-center">
-                                <div class="flex items-center justify-center gap-2">
-                                    <button onclick="showSale('{{ $sale->sales_id }}')"
-                                        class="text-gray-500 hover:text-gray-700 transition-colors"
-                                        title="View Details">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
-
-                                    @if(Auth::user()->role === 'admin')
-                                    <button onclick="confirmDelete('{{ $sale->sales_id }}')"
-                                        class="text-red-500 hover:text-red-700 transition-colors"
-                                        title="Delete Sale">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                    @endif
-                                </div>
+                            @if(Auth::user()->role === 'admin')
+                            <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
+                                <button onclick="confirmDelete('{{ $sale->sales_id }}')"
+                                    class="text-red-500 hover:text-red-700 transition-colors"
+                                    title="Delete Sale">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
                             </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-12 text-center text-gray-500"> <!-- Change from 7 to 8 -->
+                            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                                 <div class="flex flex-col items-center justify-center">
                                     <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -397,9 +396,9 @@
 
     <!-- View Sale Modal -->
     <div id="saleShowModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
-        <div class="absolute inset-0 bg-opacity-50" onclick="closeModal('saleShowModal')"></div>
+        <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeModal('saleShowModal')"></div>
 
-        <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
            <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex justify-between items-center">
     <h2 class="text-xl font-semibold">Sale Details</h2>
                 <button onclick="closeModal('saleShowModal')" class="text-white hover:text-gray-200">
@@ -409,7 +408,7 @@
                 </button>
             </header>
 
-            <div id="saleShowContent" class="p-6 modal-scrollbar overflow-y-auto" style="max-height: calc(90vh - 80px);">
+            <div id="saleShowContent" class="p-6 modal-scrollbar overflow-y-auto bg-white" style="max-height: calc(90vh - 80px);">
                 <div class="flex justify-center items-center py-12">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
                 </div>
@@ -417,43 +416,44 @@
         </div>
     </div>
 
+    <!-- Delete Modal -->
     <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
-    <div class="absolute inset-0 backdrop-blur" onclick="closeDeleteModal()"></div>
+        <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeDeleteModal()"></div>
 
-    <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4">
-        <div class="p-6">
-            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
-                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-            </div>
-
-            <h3 class="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
-                Delete Sale
-            </h3>
-
-            <p class="text-center text-gray-600 dark:text-gray-400 mb-6">
-                Are you sure you want to delete this sale? This action cannot be undone and will also delete all related transactions and sale items.
-            </p>
-
-            <form id="deleteForm" method="POST" action="">
-                @csrf
-                @method('DELETE')
-
-                <div class="flex gap-3">
-                    <button type="button" onclick="closeDeleteModal()"
-                        class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition-colors">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                        class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
-                        Delete
-                    </button>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
                 </div>
-            </form>
+
+                <h3 class="text-xl font-bold text-center text-gray-900 mb-2">
+                    Delete Sale
+                </h3>
+
+                <p class="text-center text-gray-600 mb-6">
+                    Are you sure you want to delete this sale? This action cannot be undone and will also delete all related transactions and sale items.
+                </p>
+
+                <form id="deleteForm" method="POST" action="">
+                    @csrf
+                    @method('DELETE')
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeDeleteModal()"
+                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
+                            Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
     <script>
 function confirmDelete(saleId) {
@@ -497,23 +497,21 @@ function closeDeleteModal() {
 
         switch(range) {
             case 'today':
-                // Start and end are today
                 break;
             case 'yesterday':
                 startDate.setDate(today.getDate() - 1);
                 endDate.setDate(today.getDate() - 1);
                 break;
             case 'week':
-                startDate.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
-                endDate.setDate(today.getDate() + (6 - today.getDay())); // End of week (Saturday)
+                startDate.setDate(today.getDate() - today.getDay());
+                endDate.setDate(today.getDate() + (6 - today.getDay()));
                 break;
             case 'month':
-                startDate = new Date(today.getFullYear(), today.getMonth(), 1); // First day of month
-                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0); // Last day of month
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
                 break;
         }
 
-        // Format dates as YYYY-MM-DD
         const formatDate = (date) => date.toISOString().split('T')[0];
 
         startDateInput.value = formatDate(startDate);
@@ -621,17 +619,18 @@ function closeDeleteModal() {
             });
     }
 
-   function renderSaleDetails(sale) {
+   // UPDATED renderSaleDetails function with subscription support
+function renderSaleDetails(sale) {
     const content = document.getElementById('saleShowContent');
 
     let html = `
         <div class="space-y-6">
             <!-- Sale Header -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div class="bg-gray-50 rounded-lg border border-gray-200 p-6">
                 <div class="flex justify-between items-start mb-4">
                     <div>
-                        <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Sale #${sale.sales_id}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${new Date(sale.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                        <h3 class="text-2xl font-bold text-gray-800">Sale #${sale.sales_id}</h3>
+                        <p class="text-sm text-gray-600 mt-1">${new Date(sale.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                     <div class="text-right">
                         <span class="px-4 py-2 rounded-full text-sm font-semibold
@@ -644,23 +643,24 @@ function closeDeleteModal() {
                 </div>
 
                 <!-- Customer & Payment Info -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200">
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Cashier</p>
-                        <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">${sale.user.first_name} ${sale.user.last_name}</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">@${sale.user.username}</p>
+                        <p class="text-sm text-gray-600 mb-1">Cashier</p>
+                        <p class="text-lg font-semibold text-gray-800">${sale.user.first_name} ${sale.user.last_name}</p>
+                        <p class="text-sm text-gray-600">@${sale.user.username}</p>
                     </div>
                     <div class="space-y-3">
                         <div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Payment Method</p>
+                            <p class="text-sm text-gray-600 mb-1">Payment Method</p>
                             <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold
                                 ${sale.payment_method === 'cash' ? 'bg-green-100 text-green-800' : ''}
                                 ${sale.payment_method === 'gcash' ? 'bg-purple-100 text-purple-800' : ''}">
+                                ${sale.payment_method === 'gcash' ? 'GCash' : sale.payment_method.charAt(0).toUpperCase() + sale.payment_method.slice(1)}
                             </span>
                         </div>
                         ${sale.payment_method === 'gcash' && sale.reference_code ? `
                         <div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">GCash Reference Code</p>
+                            <p class="text-sm text-gray-600 mb-1">GCash Reference Code</p>
                             <div class="flex items-center gap-2">
                                 <span class="font-mono text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-lg border border-blue-200">
                                     ${sale.reference_code}
@@ -673,83 +673,71 @@ function closeDeleteModal() {
             </div>
 
             <!-- Sale Items -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Items Purchased</h4>
+            <div class="bg-white rounded-lg border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <h4 class="text-lg font-semibold text-gray-800">Items Purchased</h4>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full">
-                        <thead class="bg-gray-50 dark:bg-gray-900">
+                        <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Item</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Type</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase">Quantity</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">Price</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">Total</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tbody class="divide-y divide-gray-200">
     `;
 
     if (sale.items && sale.items.length > 0) {
         sale.items.forEach(item => {
-            // Determine if it's a product or membership plan
-            const isProduct = item.product !== null;
-            const isPlan = item.plan !== null;
-            const isSubscription = item.subscription !== null;
-
-            let itemName = '';
+            let itemName = 'Unknown Item';
             let itemDescription = '';
-            let itemType = '';
-            let itemTypeBadge = '';
+            let itemType = 'Unknown';
+            let itemTypeBadge = 'bg-gray-100 text-gray-800';
+            let durationInfo = '';
 
-            if (isProduct) {
+            if (item.product_id && item.product) {
                 itemName = item.product.name;
                 itemDescription = item.product.description || '';
                 itemType = 'Product';
                 itemTypeBadge = 'bg-blue-100 text-blue-800';
-            } else if (isPlan) {
+            }
+            else if (item.plan_id && item.plan) {
                 itemName = item.plan.name;
                 itemDescription = item.plan.details || '';
-                if (item.plan.duration_days) {
-                    itemDescription += ` (${item.plan.duration_days} days)`;
-                }
                 itemType = 'Membership Plan';
                 itemTypeBadge = 'bg-purple-100 text-purple-800';
-
-                
-            } 
-            else if (isSubscription) {
+                if (item.plan.duration_days) {
+                    durationInfo = ` (${item.plan.duration_days} days)`;
+                }
+            }
+            else if (item.subscription_id && item.subscription) {
                 itemName = item.subscription.name;
                 itemDescription = item.subscription.details || '';
-                if (item.subscription.duration_days) {
-                    itemDescription += ` (${item.subscription.duration_days} days)`;
-                }
                 itemType = 'Subscription';
                 itemTypeBadge = 'bg-red-100 text-red-800';
-
-                
-            }else {
-                itemName = 'Unknown Item';
-                itemDescription = '';
-                itemType = 'Unknown';
-                itemTypeBadge = 'bg-gray-100 text-gray-800';
+                if (item.subscription.duration_days) {
+                    durationInfo = ` (${item.subscription.duration_days} days)`;
+                }
             }
 
             html += `
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-900">
+                <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4">
-                        <p class="font-medium text-gray-900 dark:text-gray-200">${itemName}</p>
-                        ${itemDescription ? `<p class="text-sm text-gray-500">${itemDescription}</p>` : ''}
+                        <p class="font-medium text-gray-900">${itemName}</p>
+                        ${itemDescription ? `<p class="text-sm text-gray-500">${itemDescription}${durationInfo}</p>` : ''}
                     </td>
                     <td class="px-6 py-4">
                         <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold ${itemTypeBadge}">
                             ${itemType}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-center text-gray-900 dark:text-gray-200">${item.quantity}</td>
-                    <td class="px-6 py-4 text-right text-gray-900 dark:text-gray-200">₱${parseFloat(item.price).toFixed(2)}</td>
-                    <td class="px-6 py-4 text-right font-semibold text-gray-900 dark:text-gray-200">₱${parseFloat(item.sub_total).toFixed(2)}</td>
+                    <td class="px-6 py-4 text-center text-gray-900">${item.quantity}</td>
+                    <td class="px-6 py-4 text-right text-gray-900">₱${parseFloat(item.price).toFixed(2)}</td>
+                    <td class="px-6 py-4 text-right font-semibold text-gray-900">₱${parseFloat(item.sub_total).toFixed(2)}</td>
                 </tr>
             `;
         });
@@ -763,12 +751,12 @@ function closeDeleteModal() {
 
     html += `
                         </tbody>
-                        <tfoot class="bg-gray-50 dark:bg-gray-900">
+                        <tfoot class="bg-gray-50">
                             <tr>
-                                <td colspan="4" class="px-6 py-4 text-right font-semibold text-gray-800 dark:text-gray-200">
+                                <td colspan="4" class="px-6 py-4 text-right font-semibold text-gray-800">
                                     Total Amount:
                                 </td>
-                                <td class="px-6 py-4 text-right font-bold text-xl text-gray-900 dark:text-gray-200">
+                                <td class="px-6 py-4 text-right font-bold text-xl text-gray-900">
                                     ₱${parseFloat(sale.total_amount).toFixed(2)}
                                 </td>
                             </tr>
@@ -806,38 +794,10 @@ function closeDeleteModal() {
                     const modalId = modal.id;
                     if (modalId) closeModal(modalId);
                 });
+                closeDeleteModal();
             }
         });
-    });document.addEventListener('DOMContentLoaded', function() {
-    updateFilterCount();
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(event) {
-        const dropdown = document.getElementById('filterDropdown');
-        const button = event.target.closest('button[onclick="toggleFilterDropdown()"]');
-
-        if (!button && dropdown && !dropdown.contains(event.target)) {
-            dropdown.classList.add('hidden');
-            const icon = document.getElementById('filterDropdownIcon');
-            if (icon) icon.classList.remove('rotate-180');
-        }
     });
-
-    // Handle Escape key to close modals AND delete modal
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            // Close sale details modal
-            const openModals = document.querySelectorAll('.backdrop-blur-sm:not(.hidden)');
-            openModals.forEach(modal => {
-                const modalId = modal.id;
-                if (modalId) closeModal(modalId);
-            });
-
-            // Close delete modal
-            closeDeleteModal();
-        }
-    });
-});
 
     </script>
 

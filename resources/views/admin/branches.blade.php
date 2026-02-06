@@ -126,11 +126,11 @@
 
                     <!-- Action Buttons -->
                     <div class="flex gap-2">
-                        <button onclick='editBranch(@json($branch))'
+                        <button onclick='editBranch({{ $branch->branch_id }})'
                             class="flex-1 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-all text-sm shadow-md">
                             Edit
                         </button>
-                        <button onclick='openDeleteModal(@json($branch))'
+                        <button onclick='openDeleteModal("{{ route('branches.destroy', $branch->branch_id) }}", "{{ $branch->name }}")'
                             class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all text-sm shadow-md">
                             Delete
                         </button>
@@ -262,7 +262,7 @@
 
                     <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
                         <button type="button" onclick="closeModal('addBranchModal')"
-                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">
+                            class="px-6 py-2 rounded-lg border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 w-full sm:w-auto transition-colors">
                             Cancel
                         </button>
                         <button type="submit"
@@ -351,7 +351,7 @@
 
                     <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
                         <button type="button" onclick="closeModal('editBranchModal')"
-                            class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">
+                            class="px-6 py-2 rounded-lg border-2 border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 w-full sm:w-auto transition-colors">
                             Cancel
                         </button>
                         <button type="submit"
@@ -364,9 +364,47 @@
         </div>
     </div>
 
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+        <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeDeleteModal()"></div>
+
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+
+                <h3 class="text-xl font-bold text-center text-gray-900 mb-2">
+                    Delete Branch
+                </h3>
+
+                <p class="text-center text-gray-600 mb-6">
+                    Are you sure you want to delete <span id="deleteBranchName" class="font-bold text-red-600"></span>? This action cannot be undone.
+                </p>
+
+                <form id="deleteForm" method="POST" action="">
+                    @csrf
+                    @method('DELETE')
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeDeleteModal()"
+                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
+                            Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <script>
-       let regionsData = [];
+let regionsData = [];
 let provincesData = [];
 let citiesData = [];
 
@@ -511,37 +549,6 @@ function parseAddress(address) {
     };
 }
 
-const showError = (element, message) => {
-    element.classList.remove('border-gray-300');
-    element.classList.add('border-red-500');
-
-    const container = element.closest('div');
-    let errorSpan = container.querySelector('.error-message');
-    if (!errorSpan) {
-        errorSpan = document.createElement('p');
-        errorSpan.className = 'error-message text-red-600 text-xs mt-1 block';
-        container.appendChild(errorSpan);
-    }
-    errorSpan.textContent = message;
-};
-
-const clearError = (element) => {
-    element.classList.remove('border-red-500');
-    element.classList.add('border-gray-300');
-
-    const container = element.closest('div');
-    const errorSpan = container.querySelector('.error-message');
-    if (errorSpan) errorSpan.remove();
-};
-
-const clearAllErrors = (form) => {
-    form.querySelectorAll('.error-message').forEach(el => el.remove());
-    form.querySelectorAll('.border-red-500').forEach(el => {
-        el.classList.remove('border-red-500');
-        el.classList.add('border-gray-300');
-    });
-};
-
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     const scrollY = window.scrollY;
@@ -569,196 +576,131 @@ function closeModal(modalId) {
 
     const form = modal.querySelector('form');
     if (form) {
-        clearAllErrors(form);
         form.reset();
         
         // Reset selects to default
         const selects = form.querySelectorAll('select');
         selects.forEach(select => {
-            if (select.id !== `${modalId === 'addBranchModal' ? 'add' : 'edit'}_country`) {
+            if (!select.id.includes('country')) {
                 select.innerHTML = '<option value="">Select...</option>';
             }
         });
     }
 }
 
-function validateBranchForm(form) {
-    let valid = true;
-    clearAllErrors(form);
-
-    const name = form.querySelector('[name="name"]');
-    const region = form.querySelector('[name="region"]');
-    const province = form.querySelector('[name="province"]');
-    const city = form.querySelector('[name="city"]');
-    const street = form.querySelector('[name="street"]');
-
-    if (!name.value.trim()) {
-        showError(name, 'Branch name is required');
-        valid = false;
-    } else if (name.value.trim().length < 3) {
-        showError(name, 'Branch name must be at least 3 characters');
-        valid = false;
-    }
-
-    if (!region.value) {
-        showError(region, 'Region is required');
-        valid = false;
-    }
-
-    if (!province.value) {
-        showError(province, 'Province is required');
-        valid = false;
-    }
-
-    if (!city.value) {
-        showError(city, 'City/Municipality is required');
-        valid = false;
-    }
-
-    if (!street.value.trim()) {
-        showError(street, 'Street name is required');
-        valid = false;
-    }
-
-    return valid;
-}
-
-async function editBranch(branch) {
-    // Parse the address
-    const addressParts = parseAddress(branch.address);
+// FIXED EDIT FUNCTION - Fetches data via AJAX with proper headers
+async function editBranch(branchId) {
+    console.log('Editing branch:', branchId);
     
-    // Set branch name
-    document.getElementById('edit_name').value = branch.name;
-    
-    // Set form action
-    document.getElementById('editBranchForm').action = `/admin/branches/${branch.branch_id}`;
-    
-    // Wait for regions to load if not already loaded
-    if (regionsData.length === 0) {
-        await loadRegions();
-    }
-    
-    // Set region
-    const regionSelect = document.getElementById('edit_region');
-    regionSelect.value = addressParts.region;
-    
-    // Load and set provinces
-    if (addressParts.region) {
-        await loadProvinces('edit');
-        setTimeout(() => {
-            const provinceSelect = document.getElementById('edit_province');
-            
-            // Find and select the province
-            for (let i = 0; i < provinceSelect.options.length; i++) {
-                if (provinceSelect.options[i].value === addressParts.province) {
-                    provinceSelect.selectedIndex = i;
-                    break;
+    try {
+        // Fetch branch data from API with proper headers to trigger JSON response
+        const response = await fetch(`/admin/branches/${branchId}/edit`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const branch = await response.json();
+        console.log('Branch data:', branch);
+        
+        // Parse the address
+        const addressParts = parseAddress(branch.address);
+        
+        // Set branch name
+        document.getElementById('edit_name').value = branch.name || '';
+        
+        // Set form action
+        document.getElementById('editBranchForm').action = `/admin/branches/${branch.branch_id}`;
+        
+        // Wait for regions to load if not already loaded
+        if (regionsData.length === 0) {
+            await loadRegions();
+        }
+        
+        // Set region
+        const regionSelect = document.getElementById('edit_region');
+        regionSelect.value = addressParts.region;
+        
+        // Load and set provinces
+        if (addressParts.region) {
+            await loadProvinces('edit');
+            setTimeout(() => {
+                const provinceSelect = document.getElementById('edit_province');
+                
+                // Find and select the province
+                for (let i = 0; i < provinceSelect.options.length; i++) {
+                    if (provinceSelect.options[i].value === addressParts.province) {
+                        provinceSelect.selectedIndex = i;
+                        break;
+                    }
                 }
-            }
-            
-            // Load and set cities
-            if (addressParts.province) {
-                loadCities('edit').then(() => {
-                    setTimeout(() => {
-                        const citySelect = document.getElementById('edit_city');
-                        citySelect.value = addressParts.city;
-                    }, 100);
-                });
-            }
-        }, 200);
-    }
-    
-    // Set street and building
-    document.getElementById('edit_street').value = addressParts.street;
-    document.getElementById('edit_building').value = addressParts.building;
-    
-    // Open modal
-    openModal('editBranchModal');
-}
-
-function openDeleteModal(branch) {
-    const hasUsers = branch.users_count > 0;
-    const hasSubscriptions = branch.subscriptions_count > 0;
-
-    if (hasUsers || hasSubscriptions) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Cannot Delete Branch',
-                html: `
-                    <div class="text-left space-y-2">
-                        <p class="text-gray-700">This branch cannot be deleted because it has:</p>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            ${hasUsers ? `<p class="text-sm text-gray-600">• ${branch.users_count} user(s)</p>` : ''}
-                            ${hasSubscriptions ? `<p class="text-sm text-gray-600">• ${branch.subscriptions_count} subscription(s)</p>` : ''}
-                        </div>
-                        <p class="text-gray-700 mt-4">Please reassign or remove associated data before deleting this branch.</p>
-                    </div>
-                `,
-                icon: 'error',
-                confirmButtonColor: '#6b7280',
-                confirmButtonText: 'Understood'
-            });
+                
+                // Load and set cities
+                if (addressParts.province) {
+                    loadCities('edit').then(() => {
+                        setTimeout(() => {
+                            const citySelect = document.getElementById('edit_city');
+                            citySelect.value = addressParts.city;
+                        }, 100);
+                    });
+                }
+            }, 200);
+        }
+        
+        // Set street and building
+        document.getElementById('edit_street').value = addressParts.street || '';
+        document.getElementById('edit_building').value = addressParts.building || '';
+        
+        // Open modal
+        openModal('editBranchModal');
+        
+    } catch (error) {
+        console.error('Error loading branch:', error);
+        
+        if (typeof toastr !== 'undefined') {
+            toastr.error('Failed to load branch data. Please try again.');
         } else {
-            alert('Cannot delete branch with associated users or subscriptions.');
+            alert('Failed to load branch data. Please try again.');
         }
-        return;
     }
-
-    if (typeof Swal === 'undefined') {
-        if (confirm('Are you sure you want to delete this branch?')) {
-            submitDeleteForm(branch.branch_id);
-        }
-        return;
-    }
-
-    Swal.fire({
-        title: 'Delete Branch?',
-        html: `
-            <div class="text-left space-y-2">
-                <p class="text-gray-700">You are about to delete:</p>
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <p class="font-semibold text-gray-900">${branch.name}</p>
-                    <p class="text-sm text-gray-600">${branch.address}</p>
-                </div>
-                <p class="text-red-600 font-medium mt-4">This action cannot be undone!</p>
-            </div>
-        `,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel',
-        width: '600px'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            submitDeleteForm(branch.branch_id);
-        }
-    });
 }
 
-function submitDeleteForm(branchId) {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `/admin/branches/${branchId}`;
+// Delete Modal Functions
+function openDeleteModal(actionUrl, branchName) {
+    const form = document.getElementById('deleteForm');
+    const nameSpan = document.getElementById('deleteBranchName');
+    
+    form.action = actionUrl;
+    nameSpan.textContent = branchName;
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    if (csrfToken) {
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = csrfToken;
-        form.appendChild(csrfInput);
-    }
+    const modal = document.getElementById('deleteModal');
+    const scrollY = window.scrollY;
 
-    const methodInput = document.createElement('input');
-    methodInput.type = 'hidden';
-    methodInput.name = '_method';
-    methodInput.value = 'DELETE';
-    form.appendChild(methodInput);
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflowY = 'scroll';
 
-    document.body.appendChild(form);
-    form.submit();
+    modal.classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    const scrollY = document.body.style.top;
+
+    modal.classList.add('hidden');
+
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.style.overflowY = '';
+
+    window.scrollTo(0, parseInt(scrollY || '0') * -1);
 }
 
 // Initialize on page load
@@ -766,35 +708,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load regions data
     loadRegions();
     
-    // Form validation
-    const addForm = document.querySelector('#addBranchModal form');
-    if (addForm) {
-        addForm.addEventListener('submit', function(e) {
-            if (!validateBranchForm(this)) {
-                e.preventDefault();
-            }
-        });
-    }
-
-    const editForm = document.querySelector('#editBranchForm');
-    if (editForm) {
-        editForm.addEventListener('submit', function(e) {
-            if (!validateBranchForm(this)) {
-                e.preventDefault();
-            }
-        });
-    }
-    
     // Close modals with Escape key
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
-            document.querySelectorAll('[id$="Modal"]').forEach(modal => {
-                if (!modal.classList.contains('hidden')) {
-                    closeModal(modal.id);
+            const modals = ['addBranchModal', 'editBranchModal', 'deleteModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (modal && !modal.classList.contains('hidden')) {
+                    if (modalId === 'deleteModal') {
+                        closeDeleteModal();
+                    } else {
+                        closeModal(modalId);
+                    }
                 }
             });
         }
     });
+    
+    console.log('Branch management page initialized');
 });
     </script>
 

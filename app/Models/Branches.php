@@ -10,6 +10,8 @@ class Branches extends Model
 {
     use Notifiable, HasFactory;
 
+    protected $primaryKey = 'branch_id';
+
     protected $fillable = [
         'name',
         'address',

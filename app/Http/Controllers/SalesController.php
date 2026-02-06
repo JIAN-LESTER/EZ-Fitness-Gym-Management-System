@@ -92,16 +92,42 @@ class SalesController extends Controller
         ));
     }
 
+    /**
+     * FIXED: Show method - now uses the correct primary key
+     */
     public function show($id)
     {
-        // Load sales with user, items, and both product and plan relationships
-        $sale = Sales::with([
-            'user', 
-            'items.product',
-            'items.plan'
-        ])->findOrFail($id);
+        try {
+            // Use where() with the correct primary key column name
+            $sale = Sales::where('sales_id', $id)
+                ->with([
+                    'user', 
+                    'items.product',
+                    'items.plan',
+                    'items.subscription'
+                ])
+                ->first();
 
-        return response()->json($sale);
+            if (!$sale) {
+                return response()->json([
+                    'error' => 'Sale not found'
+                ], 404);
+            }
+
+            return response()->json($sale);
+            
+        } catch (\Exception $e) {
+            Log::error("Error loading sale details", [
+                'sale_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Server error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function destroy($id)
@@ -121,7 +147,16 @@ class SalesController extends Controller
 
             DB::beginTransaction();
 
-            $sale = Sales::with(['items', 'user'])->findOrFail($id);
+            // Use where() instead of find() for consistency
+            $sale = Sales::where('sales_id', $id)
+                ->with(['items', 'user'])
+                ->first();
+
+            if (!$sale) {
+                DB::rollBack();
+                return redirect()->back()
+                    ->with('error', 'Sale not found.');
+            }
             
             // Store sale details for logging
             $saleId = $sale->sales_id;
