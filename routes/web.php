@@ -64,7 +64,7 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-Route::get('/admin/subscriptions', [SubscriptionController::class, 'index'])->name('admin.subscription_management');
+Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('admin.subscription_management');
 Route::post('/admin/subscriptions', [SubscriptionController::class, 'store'])->name('subscriptions.store');
 Route::put('/admin/subscriptions/{id}', [SubscriptionController::class, 'update'])->name('subscriptions.update');
 Route::delete('/admin/subscriptions/{id}', [SubscriptionController::class, 'destroy'])->name('subscriptions.destroy');
@@ -194,7 +194,7 @@ Route::prefix('categories')->name('categories.')->group(function () {
     Route::delete('/{id}', [CategoriesController::class, 'destroy'])->name('destroy');
 });
 
-Route::prefix('admin')->middleware(['auth'])->group(function () {
+Route::prefix('')->middleware(['auth'])->group(function () {
     Route::get('/plan-management', [MembershipPlanController::class, 'index'])->name('admin.plan_management');
     Route::post('/plans', [MembershipPlanController::class, 'store'])->name('plans.store');
     Route::put('/plans/{id}', [MembershipPlanController::class, 'update'])->name('plans.update');

@@ -10,6 +10,8 @@ use App\Models\Sales;
 use App\Models\Transactions;
 use App\Models\User;
 use App\Models\Branches;
+use App\Services\CacheService;
+use Cache;
 use Carbon\Traits\Timestamp;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
@@ -848,11 +850,16 @@ public function approveSubscription(Request $request, $memberId)
                 'timestamp' => now(),
             ]);
 
-            \DB::commit();
+      \DB::commit();
 
-            // Generate QR code synchronously
-            $this->generateAndSendQRCode($user, $member, $plan, $subscription);
-
+        // CRITICAL: Clear all member-related caches
+        CacheService::forgetPattern('member_profile');
+        CacheService::forgetPattern('recent_attendance');
+        CacheService::forgetPattern('attendance_counts');
+        Cache::forget("member_profile:stats:{$user->user_id}");
+        
+        // Generate QR code synchronously
+        $this->generateAndSendQRCode($user, $member, $plan, $subscription);
             $message = $isRenewal
                 ? "Renewal approved! QR code sent to {$user->email}"
                 : "Subscription approved! QR code sent to {$user->email}";

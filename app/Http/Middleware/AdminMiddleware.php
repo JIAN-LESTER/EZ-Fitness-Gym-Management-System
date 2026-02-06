@@ -11,14 +11,31 @@ class AdminMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (!auth()->check()) {
-            abort(403, 'Unauthorized - Authentication required');
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required',
+                    'error' => 'You must be logged in to access this resource.'
+                ], 401);
+            }
+            abort(403, 'Authentication required - Please login to access this resource.');
         }
 
         $user = auth()->user();
         
         // Allow both admin and super_admin roles
         if (!in_array($user->role, ['admin', 'super_admin'])) {
-            abort(403, 'Unauthorized - Admin access only');
+            $message = 'Access Denied - This area is restricted to administrators only. Your current role: ' . ucfirst($user->role);
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access Denied',
+                    'error' => $message
+                ], 403);
+            }
+            
+            abort(403, $message);
         }
 
         return $next($request);

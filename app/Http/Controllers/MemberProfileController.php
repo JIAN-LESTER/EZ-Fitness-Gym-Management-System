@@ -25,137 +25,136 @@ use Carbon\Carbon;
 class MemberProfileController extends Controller
 {
     public function dashboard()
-    {
-        $user = Auth::user();
-        
-        // Get user's member profile with optimized relations (cached)
-        $memberProfile = CacheService::remember(
-            'member_profile',
-            'stats',
-            fn() => MemberProfile::select([
-                    'member_id', 'user_id', 'plan_id', 'subscription_id', 
-                    'start_date_for_subscription', 'end_date_for_subscription',
-                    'subscription_status', 'qr_code'
-                ])
-                ->with([
-                    'plan:plan_id,name,price,duration_days',
-                    'subscription:subscription_id,name,price,duration_days',
-                    'user:user_id,first_name,last_name,email,branch_id'
-                ])
-                ->where('user_id', $user->user_id)
-                ->first(),
-            $user->user_id
-        );
+{
+    $user = Auth::user();
+    
+    // FORCE FRESH QUERY - Don't use cache for critical membership data
+    $memberProfile = MemberProfile::select([
+            'member_id', 'user_id', 'plan_id', 'subscription_id', 
+            'start_date', 'end_date',
+            'start_date_for_subscription', 'end_date_for_subscription',
+            'subscription_status', 'status', 'qr_code',
+            'isApproved', 'isApprovedForSubscription',
+            'isDisabled', 'isDisabledForSubscription',
+            'renewal_pending', 'suspended_at', 'days_remaining_before_suspend'
+        ])
+        ->with([
+            'plan:plan_id,name,price,duration_days',
+            'subscription:subscription_id,name,price,duration_days',
+            'user:user_id,first_name,last_name,email,branch_id'
+        ])
+        ->where('user_id', $user->user_id)
+        ->first();
 
-        // Optimized current gym occupancy (short cache for real-time feel)
-        $currentOccupancy = CacheService::remember(
-            'gym_occupancy',
-            'realtime',
-            fn() => Attendance::whereDate('check_in_time', Carbon::today())
-                ->where('status', 'checked_in')
-                ->when($user->branch_id, function ($query) use ($user) {
-                    return $query->whereHas('member.user', function ($q) use ($user) {
-                        $q->where('branch_id', $user->branch_id);
-                    });
-                })
-                ->count(),
-            $user->branch_id
-        );
+    // Optimized current gym occupancy (short cache for real-time feel)
+    $currentOccupancy = CacheService::remember(
+        'gym_occupancy',
+        'realtime',
+        fn() => Attendance::whereDate('check_in_time', Carbon::today())
+            ->where('status', 'checked_in')
+            ->when($user->branch_id, function ($query) use ($user) {
+                return $query->whereHas('member.user', function ($q) use ($user) {
+                    $q->where('branch_id', $user->branch_id);
+                });
+            })
+            ->count(),
+        $user->branch_id
+    );
 
-        // Calculate days left on membership
-        $daysLeft = null;
-        $membershipStatus = null;
-        $isExpiringSoon = false;
+    // Calculate days left on membership
+    $daysLeft = null;
+    $membershipStatus = null;
+    $isExpiringSoon = false;
+    
+    if ($memberProfile && $memberProfile->end_date_for_subscription) {
+        $now = Carbon::now();
+        $endDate = Carbon::parse($memberProfile->end_date_for_subscription);
         
-        if ($memberProfile && $memberProfile->start_date_for_subscription && $memberProfile->end_date_for_subscription) {
-            $now = Carbon::now();
-            $endDate = Carbon::parse($memberProfile->end_date_for_subscription);
-            
-            $daysLeft = $now->diffInDays($endDate, false);
-            $daysLeft = (int) ceil($daysLeft);
-            
-            if ($daysLeft < 0) {
-                $membershipStatus = 'expired';
-                if ($memberProfile->subscription_status === 'active') {
-                    $memberProfile->update(['subscription_status' => 'expired']);
-                    CacheService::forgetPattern('member_profile');
-                }
-            } elseif ($daysLeft <= 7) {
-                $membershipStatus = 'expiring_soon';
-                $isExpiringSoon = true;
-            } else {
-                $membershipStatus = 'active';
+        $daysLeft = $now->diffInDays($endDate, false);
+        $daysLeft = (int) ceil($daysLeft);
+        
+        if ($daysLeft < 0) {
+            $membershipStatus = 'expired';
+            if ($memberProfile->subscription_status !== 'expired') {
+                $memberProfile->update(['subscription_status' => 'expired']);
+                CacheService::forgetPattern('member_profile');
             }
-        } elseif ($memberProfile) {
-            $membershipStatus = $memberProfile->subscription_status;
-            $daysLeft = null;
+        } elseif ($daysLeft <= 7) {
+            $membershipStatus = 'expiring_soon';
+            $isExpiringSoon = true;
+        } else {
+            $membershipStatus = 'active';
         }
-
-        // Get available subscriptions (cached daily)
-        $subscriptions = CacheService::remember(
-            'available_subscriptions',
-            'daily',
-            fn() => Subscriptions::select('subscription_id', 'name', 'price', 'duration_days', 'branch_id')
-                ->where('branch_id', $user->branch_id)
-                ->orderBy('price', 'asc')
-                ->get(),
-            $user->branch_id
-        );
-
-        // Get user's attendance history (cached with short TTL)
-        $recentAttendance = CacheService::remember(
-            'recent_attendance',
-            'stats',
-            fn() => Attendance::select('attendance_id', 'member_id', 'check_in_time', 'check_out_time', 'status')
-                ->where('member_id', $memberProfile?->member_id)
-                ->orderBy('check_in_time', 'desc')
-                ->limit(10)
-                ->get(),
-            $memberProfile?->member_id
-        );
-
-        // Optimized attendance counts (cached)
-        $attendanceCounts = CacheService::remember(
-            'attendance_counts',
-            'stats',
-            fn() => Attendance::selectRaw('
-                    COUNT(*) as total,
-                    SUM(CASE WHEN MONTH(check_in_time) = ? AND YEAR(check_in_time) = ? THEN 1 ELSE 0 END) as this_month
-                ', [Carbon::now()->month, Carbon::now()->year])
-                ->where('member_id', $memberProfile?->member_id)
-                ->first(),
-            $memberProfile?->member_id
-        );
-
-        $totalCheckIns = $attendanceCounts->total ?? 0;
-        $thisMonthCheckIns = $attendanceCounts->this_month ?? 0;
-
-        // Get plans (cached daily)
-        $plans = CacheService::remember(
-            'membership_plans',
-            'daily',
-            fn() => MembershipPlan::select('plan_id', 'name', 'price', 'duration_days')->get()
-        );
-
-        $member = $user;
-        $daysRemaining = $daysLeft;
-
-        return view('member.dashboard', compact(
-            'member',
-            'user',
-            'plans',
-            'memberProfile',
-            'daysRemaining',
-            'daysLeft',
-            'currentOccupancy',
-            'membershipStatus',
-            'isExpiringSoon',
-            'subscriptions',
-            'recentAttendance',
-            'totalCheckIns',
-            'thisMonthCheckIns'
-        ));
+    } elseif ($memberProfile) {
+        $membershipStatus = $memberProfile->subscription_status;
+        $daysLeft = null;
     }
+
+    // Get available subscriptions (cached daily)
+    $subscriptions = CacheService::remember(
+        'available_subscriptions',
+        'daily',
+        fn() => Subscriptions::select('subscription_id', 'name', 'price', 'duration_days', 'branch_id')
+            ->where('branch_id', $user->branch_id)
+            ->orderBy('price', 'asc')
+            ->get(),
+        $user->branch_id
+    );
+
+    // Get user's attendance history (short cache)
+    $recentAttendance = CacheService::remember(
+        'recent_attendance',
+        'stats',
+        fn() => Attendance::select('attendance_id', 'member_id', 'check_in_time', 'check_out_time', 'status')
+            ->where('member_id', $memberProfile?->member_id)
+            ->orderBy('check_in_time', 'desc')
+            ->limit(10)
+            ->get(),
+        $memberProfile?->member_id
+    );
+
+    // Optimized attendance counts (cached)
+    $attendanceCounts = CacheService::remember(
+        'attendance_counts',
+        'stats',
+        fn() => Attendance::selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN MONTH(check_in_time) = ? AND YEAR(check_in_time) = ? THEN 1 ELSE 0 END) as this_month
+            ', [Carbon::now()->month, Carbon::now()->year])
+            ->where('member_id', $memberProfile?->member_id)
+            ->first(),
+        $memberProfile?->member_id
+    );
+
+    $totalCheckIns = $attendanceCounts->total ?? 0;
+    $thisMonthCheckIns = $attendanceCounts->this_month ?? 0;
+
+    // Get plans (cached daily)
+    $plans = CacheService::remember(
+        'membership_plans',
+        'daily',
+        fn() => MembershipPlan::select('plan_id', 'name', 'price', 'duration_days', 'details')->get()
+    );
+
+    $member = $user;
+    $daysRemaining = $daysLeft;
+
+    return view('member.dashboard', compact(
+        'member',
+        'user',
+        'plans',
+        'memberProfile',
+        'daysRemaining',
+        'daysLeft',
+        'currentOccupancy',
+        'membershipStatus',
+        'isExpiringSoon',
+        'subscriptions',
+        'recentAttendance',
+        'totalCheckIns',
+        'thisMonthCheckIns'
+    ));
+}
 
     public function completeMemberProfile(Request $request)
     {

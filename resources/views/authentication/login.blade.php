@@ -103,7 +103,7 @@
           </div>
         </div>
         <h1 class="text-3xl font-bold text-gray-800 text-center md:text-left">
-          USER LOGIN
+          LOGIN
         </h1>
         <p class="text-gray-600 mt-2 text-center md:text-left">Welcome back! Please login to your account.</p>
       </header>
@@ -283,17 +283,6 @@
       });
     });
 
-    // Toast notifications
-    @if(session('success'))
-      Toastify({
-        text: "{{ session('success') }}",
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        backgroundColor: "linear-gradient(to right, #008000 , #008080)",
-        stopOnFocus: true,
-      }).showToast();
-    @endif
 
     // Toggle password visibility
     const togglePassword = document.getElementById('togglePassword');
