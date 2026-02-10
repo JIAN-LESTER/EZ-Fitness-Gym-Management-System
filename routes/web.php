@@ -115,13 +115,14 @@ Route::prefix('admin/user_crud')->name('admin.')->middleware(['auth'])->group(fu
     Route::put('/update/{id}', [UserManagementController::class, 'update'])->name('update');
     Route::delete('/destroy/{id}', [UserManagementController::class, 'destroy'])->name('users-destroy');
     
-    // Approval routes - use GET for these
     Route::get('/approve-profile/{member}', [UserManagementController::class, 'approveProfile'])->name('approve-profile');
     Route::get('/approve-subscription/{member}', [UserManagementController::class, 'approveSubscription'])->name('approve-subscription');
     Route::get('/deny/{member}', [UserManagementController::class, 'deny'])->name('deny');
     Route::get('/suspend/{member}', [UserManagementController::class, 'suspendMember'])->name('suspend');
-    Route::get('/reactivate/{member}', [UserManagementController::class, 'reactivateMember'])->name('reactivate');
+    Route::get('/resume/{member}', [UserManagementController::class, 'resumeMember'])->name('resume');
+    Route::get('/cancel-plan/{member}', [UserManagementController::class, 'cancelPlan'])->name('cancel-plan'); // <- ADD THIS LINE
 });
+
 
         Route::post('/profile/complete-member-profile', [MemberProfileController::class, 'completeMemberProfile'])
         ->name('profile.complete-member-profile');

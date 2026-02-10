@@ -30,7 +30,8 @@ return new class extends Migration {
                 'pending_subscription_approval',
                 'active',
                 'expired',
-                'suspended'
+                'suspended',
+                'cancelled'
             ) DEFAULT 'inactive'
         ");
 

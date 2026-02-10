@@ -263,340 +263,342 @@
                     </tr>
                 </thead>
          <tbody class="divide-y divide-gray-100">
-    @forelse($users as $user)
-        {{-- Skip non-members if user is staff --}}
-        @if($isStaff && $user->role !== 'member')
-            @continue
-        @endif
+    {{-- REPLACE the @forelse($users as $user) section in your user-management.blade.php --}}
 
-        @php
-            // Determine member status
-            $needsApproval = $user->member && $user->member->needsApproval();
-            $isDenied = $user->member && ($user->member->isDisabled || $user->member->isDisabledForSubscription);
-            $isSuspended = $user->member && $user->member->subscription_status === 'expired' && $user->member->suspended_at;
-            $isRenewalPending = $user->member && $user->member->renewal_pending;
+@forelse($users as $user)
+    {{-- Skip non-members if user is staff --}}
+    @if($isStaff && $user->role !== 'member')
+        @continue
+    @endif
 
-            // Check if fully approved
-            $isFullyApproved = $user->role === 'member'
-                && $user->member
-                && $user->member->isFullyApproved();
+    @php
+        // Determine member status
+        $needsApproval = $user->member && $user->member->needsApproval();
+        $isDenied = $user->member && ($user->member->isDisabled || $user->member->isDisabledForSubscription);
+        $isSuspended = $user->member && $user->member->subscription_status === 'suspended';
+        $isCancelled = $user->member && ($user->member->subscription_status === 'cancelled' || $user->member->status === 'cancelled');
+        $isRenewalPending = $user->member && $user->member->renewal_pending;
 
-            // Determine user status for display
-            $displayStatus = $user->status; // Default to user table status
-            
-            // For members, override based on approval status
-            if ($user->role === 'member' && $user->member) {
-                if ($user->member->isApproved && $user->member->isApprovedForSubscription) {
-                    $displayStatus = 'active';
-                } else {
-                    $displayStatus = 'inactive';
-                }
+        // Check if fully approved
+        $isFullyApproved = $user->role === 'member'
+            && $user->member
+            && $user->member->isFullyApproved();
+
+        // Determine user status for display
+        $displayStatus = $user->status; // Default to user table status
+        
+        // For members, override based on approval/subscription status
+        if ($user->role === 'member' && $user->member) {
+            if ($isCancelled) {
+                $displayStatus = 'cancelled';
+            } elseif ($isSuspended) {
+                $displayStatus = 'suspended';
+            } elseif ($user->member->isApproved && $user->member->isApprovedForSubscription) {
+                $displayStatus = 'active';
+            } else {
+                $displayStatus = 'inactive';
             }
+        }
 
-            // Determine plan display
-            $planDisplay = 'Not a member';
-            if ($user->role === 'member' && $user->member) {
-                if ($user->member->isApproved && $user->member->isApprovedForSubscription && $user->member->subscription) {
-                    $planDisplay = 'active_subscription';
-                } elseif (!$user->member->isApproved || !$user->member->isApprovedForSubscription) {
-                    $planDisplay = 'incomplete';
-                }
+        // Determine plan display
+        $planDisplay = 'Not a member';
+        if ($user->role === 'member' && $user->member) {
+            if ($isCancelled) {
+                $planDisplay = 'cancelled';
+            } elseif ($user->member->isApproved && $user->member->isApprovedForSubscription && $user->member->subscription) {
+                $planDisplay = 'active_subscription';
+            } elseif (!$user->member->isApproved || !$user->member->isApprovedForSubscription) {
+                $planDisplay = 'incomplete';
             }
-        @endphp
+        }
+    @endphp
 
-        <tr class="clickable-row hover:bg-gray-50 transition-colors group"
-            onclick="showUser('{{ $user->user_id }}')">
+    <tr class="clickable-row hover:bg-gray-50 transition-colors group"
+        onclick="showUser('{{ $user->user_id }}')">
 
-            @if($needsApproval)
-                {{-- PENDING APPROVAL ROW --}}
-                <td class="px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-yellow-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
-                            {{ strtoupper(substr($user->first_name, 0, 1)) }}{{ strtoupper(substr($user->last_name, 0, 1)) }}
-                        </div>
-                        <div>
-                            <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
-                            <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
-                        </div>
+        @if($needsApproval)
+            {{-- PENDING APPROVAL ROW --}}
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-yellow-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
+                        {{ strtoupper(substr($user->first_name, 0, 1)) }}{{ strtoupper(substr($user->last_name, 0, 1)) }}
                     </div>
-                </td>
-
-                <td class="px-6 py-4 text-gray-700 font-medium">{{ $user->username }}</td>
-
-                <td class="px-6 py-4">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                        Member
-                    </span>
-                </td>
-
-                <td class="px-6 py-4">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">
-                        Pending Approval
-                    </span>
-                </td>
-
-                <td class="px-6 py-4">
-                    <div class="text-sm">
-                        <p class="font-medium text-gray-900">{{ $user->member->plan->name ?? 'N/A' }}</p>
-                        <p class="text-xs text-gray-500">₱{{ number_format($user->member->plan->price ?? 0, 2) }}</p>
-                        @if($user->member->subscription)
-                            <p class="text-xs text-blue-600 mt-1">+ {{ $user->member->subscription->name }}</p>
-                        @endif
+                    <div>
+                        <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
+                        <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
                     </div>
-                </td>
-
-                <td class="px-6 py-4 text-sm text-gray-500">
-                    {{ $user->created_at->format('M d, Y') }}
-                </td>
-
-                {{-- APPROVE/DENY BUTTONS INSTEAD OF 3-DOT MENU --}}
-                <td class="px-6 py-4" onclick="event.stopPropagation()">
-                    <div class="flex items-center justify-center gap-2">
-                        <button onclick="approveSubscription('{{ $user->member->member_id }}')"
-                            class="group flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-                            title="{{ $isRenewalPending ? 'Approve Renewal' : 'Approve Payment' }}">
-                            <svg class="w-4 h-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            <span>Approve</span>
-                        </button>
-
-                        <button onclick="denyMember('{{ $user->member->member_id }}')"
-                            class="group flex items-center gap-1.5 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-                            title="Deny Member">
-                            <svg class="w-4 h-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            <span>Deny</span>
-                        </button>
-                    </div>
-                </td>
-
-            @elseif($isDenied)
-                {{-- DENIED STATUS ROW --}}
-                <td class="px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-red-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
-                            {{ strtoupper(substr($user->first_name, 0, 1)) }}{{ strtoupper(substr($user->last_name, 0, 1)) }}
-                        </div>
-                        <div>
-                            <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
-                            <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
-                        </div>
-                    </div>
-                </td>
-
-                <td class="px-6 py-4 text-gray-700 font-medium">{{ $user->username }}</td>
-
-                <td class="px-6 py-4">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                        Member
-                    </span>
-                </td>
-
-                <td class="px-6 py-4">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
-                        Denied
-                    </span>
-                </td>
-
-                <td class="px-6 py-4">
-                    <span class="text-red-600 text-sm font-medium">Membership Disabled</span>
-                </td>
-
-                <td class="px-6 py-4 text-sm text-gray-500">
-                    {{ $user->created_at->format('M d, Y') }}
-                </td>
-
-                {{-- ONLY DELETE BUTTON FOR DENIED MEMBERS --}}
-                <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
-                    <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')"
-                        class="inline-flex items-center gap-1.5 px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors"
-                        title="Delete">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" class="w-4 h-4">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
-                        </svg>
-                        <span class="text-sm font-medium">Delete</span>
-                    </button>
-                </td>
-
-            @else
-                {{-- NORMAL/ACTIVE/INACTIVE USERS (3-DOT MENU) --}}
-                <td class="px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
-                            {{ strtoupper(substr($user->first_name ?? 'U', 0, 1)) }}{{ strtoupper(substr($user->last_name ?? 'N', 0, 1)) }}
-                        </div>
-                        <div>
-                            <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
-                            <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
-                        </div>
-                    </div>
-                </td>
-
-                <td class="px-6 py-4 text-gray-700 font-medium">{{ $user->username }}</td>
-
-                <td class="px-6 py-4">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full
-                        {{ $user->role === 'super_admin' ? 'bg-red-100 text-red-700' :
-                            ($user->role === 'admin' ? 'bg-orange-100 text-orange-700' :
-                                ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700')) }}">
-                        {{ ucfirst(str_replace('_', ' ', $user->role)) }}
-                    </span>
-                </td>
-
-                <td class="px-6 py-4">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full
-                        {{ $displayStatus === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
-                        {{ ucfirst($displayStatus) }}
-                    </span>
-                </td>
-
-                <td class="px-6 py-4 text-gray-700">
-                    @if($user->role === 'member' && $user->member)
-                        @if($planDisplay === 'active_subscription')
-                            <div class="text-sm">
-                                <p class="font-medium text-gray-900">{{ $user->member->subscription->name ?? 'N/A' }}</p>
-                                <p class="text-xs text-gray-500">
-                                    @if($user->member->end_date_for_subscription)
-                                        @php
-                                            $now = now();
-                                            $end = $user->member->end_date_for_subscription;
-                                            $days = (int) $now->diffInDays($end, false);
-                                        @endphp
-                                        @if ($days >= 1)
-                                            {{ $days }} {{ $days == 1 ? 'day' : 'days' }} left
-                                        @elseif ($days === 0)
-                                            Expires today
-                                        @else
-                                            Expired
-                                        @endif
-                                    @endif
-                                </p>
-                                <p class="text-xs text-blue-600 mt-1">w/ {{ $user->member->plan->name ?? 'Plan' }}</p>
-                            </div>
-                        @elseif($planDisplay === 'incomplete')
-                            <span class="text-orange-600 text-sm font-medium">Incomplete Profile</span>
-                        @else
-                            <span class="text-gray-400 text-xs">No Plan</span>
-                        @endif
-                    @else
-                        <span class="text-gray-400 text-xs">Not a member</span>
-                    @endif
-                </td>
-
-                <td class="px-6 py-4">
-                    <div class="flex flex-col">
-                        <span class="text-gray-900 font-medium">{{ $user->created_at->format('M d, Y') }}</span>
-                        <span class="text-gray-500 text-sm">{{ $user->created_at->format('h:i A') }}</span>
-                    </div>
-                </td>
-
-                {{-- KEEP 3-DOT MENU FOR ACTIVE/INACTIVE MEMBERS --}}
-       
-<td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
-    <div class="relative inline-block text-left">
-        <button onclick="toggleActionsMenu(event, '{{ $user->user_id }}')"
-            class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
-        </button>
-
-        <div id="actionsMenu-{{ $user->user_id }}"
-            class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-            <div class="py-1">
-                <!-- Edit Button -->
-                <button onclick="editUser('{{ $user->user_id }}')"
-                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" class="w-4 h-4">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
-                    </svg>
-                    Edit User
-                </button>
-
-                @if($user->role === 'member' && $user->member)
-                    @php
-                        $isSuspended = $user->member->subscription_status === 'suspended';
-                        $isCancelled = $user->member->subscription_status === 'cancelled' || $user->member->status === 'cancelled';
-                        $isActive = $user->member->subscription_status === 'active';
-                    @endphp
-
-                    @if($isSuspended)
-                        <!-- Resume Button (only shown when suspended) -->
-                        <button onclick="resumeMember('{{ $user->member->member_id }}')"
-                            class="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-gray-100 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Resume
-                        </button>
-                    @elseif($isActive)
-                        <!-- Suspend Button (only shown when active) -->
-                        <button onclick="suspendMember('{{ $user->member->member_id }}')"
-                            class="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-gray-100 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Suspend
-                        </button>
-
-                        <!-- Cancel Plan Button (only shown when active) -->
-                        <button onclick="cancelPlan('{{ $user->member->member_id }}')"
-                            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                            Cancel Plan
-                        </button>
-                    @endif
-                @endif
-
-                <!-- Delete Button -->
-                <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')"
-                    class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" class="w-4 h-4">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
-                    </svg>
-                    Delete User
-                </button>
-            </div>
-        </div>
-    </div>
-</td>
-            @endif
-        </tr>
-    @empty
-        <tr>
-            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                <div class="flex flex-col items-center justify-center">
-                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p class="text-lg font-medium">No {{ $isStaff ? 'members' : 'users' }} found</p>
-                    <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
                 </div>
             </td>
-        </tr>
-    @endforelse
+
+            <td class="px-6 py-4 text-gray-700 font-medium">{{ $user->username }}</td>
+
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                    Member
+                </span>
+            </td>
+
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">
+                    Pending Approval
+                </span>
+            </td>
+
+            <td class="px-6 py-4">
+                <div class="text-sm">
+                    <p class="font-medium text-gray-900">{{ $user->member->plan->name ?? 'N/A' }}</p>
+                    <p class="text-xs text-gray-500">₱{{ number_format($user->member->plan->price ?? 0, 2) }}</p>
+                    @if($user->member->subscription)
+                        <p class="text-xs text-blue-600 mt-1">+ {{ $user->member->subscription->name }}</p>
+                    @endif
+                </div>
+            </td>
+
+            <td class="px-6 py-4 text-sm text-gray-500">
+                {{ $user->created_at->format('M d, Y') }}
+            </td>
+
+            {{-- APPROVE/DENY BUTTONS --}}
+            <td class="px-6 py-4" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-center gap-2">
+                    <button onclick="approveSubscription('{{ $user->member->member_id }}')"
+                        class="group flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Approve</span>
+                    </button>
+
+                    <button onclick="denyMember('{{ $user->member->member_id }}')"
+                        class="group flex items-center gap-1.5 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Deny</span>
+                    </button>
+                </div>
+            </td>
+
+        @elseif($isDenied)
+            {{-- DENIED STATUS ROW --}}
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
+                        {{ strtoupper(substr($user->first_name, 0, 1)) }}{{ strtoupper(substr($user->last_name, 0, 1)) }}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
+                        <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
+                    </div>
+                </div>
+            </td>
+
+            <td class="px-6 py-4 text-gray-700 font-medium">{{ $user->username }}</td>
+
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                    Member
+                </span>
+            </td>
+
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
+                    Denied
+                </span>
+            </td>
+
+            <td class="px-6 py-4">
+                <span class="text-red-600 text-sm font-medium">Membership Disabled</span>
+            </td>
+
+            <td class="px-6 py-4 text-sm text-gray-500">
+                {{ $user->created_at->format('M d, Y') }}
+            </td>
+
+            {{-- ONLY DELETE BUTTON --}}
+            <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
+                <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                    </svg>
+                    <span class="text-sm font-medium">Delete</span>
+                </button>
+            </td>
+
+        @else
+            {{-- NORMAL/ACTIVE/INACTIVE/SUSPENDED/CANCELLED USERS --}}
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-800 font-bold text-sm shadow-md">
+                        {{ strtoupper(substr($user->first_name ?? 'U', 0, 1)) }}{{ strtoupper(substr($user->last_name ?? 'N', 0, 1)) }}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-900 truncate">{{ $user->first_name }} {{ $user->last_name }}</p>
+                        <p class="text-gray-500 text-sm truncate">{{ $user->email }}</p>
+                    </div>
+                </div>
+            </td>
+
+            <td class="px-6 py-4 text-gray-700 font-medium">{{ $user->username }}</td>
+
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full
+                    {{ $user->role === 'super_admin' ? 'bg-red-100 text-red-700' :
+                        ($user->role === 'admin' ? 'bg-orange-100 text-orange-700' :
+                            ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700')) }}">
+                    {{ ucfirst(str_replace('_', ' ', $user->role)) }}
+                </span>
+            </td>
+
+            <td class="px-6 py-4">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full
+                    {{ $displayStatus === 'active' ? 'bg-green-100 text-green-700' : 
+                       ($displayStatus === 'suspended' ? 'bg-orange-100 text-orange-700' :
+                       ($displayStatus === 'cancelled' ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-600')) }}">
+                    {{ ucfirst($displayStatus) }}
+                </span>
+            </td>
+<td class="px-6 py-4 text-gray-700">
+    @if($user->role === 'member' && $user->member)
+        @if($planDisplay === 'cancelled')
+            <span class="text-purple-600 text-sm font-medium">Plan Cancelled</span>
+        @elseif($user->member->status === 'suspended')
+            <div class="text-sm">
+                <p class="font-medium text-orange-600">Suspended</p>
+                <p class="text-xs text-gray-500">
+                    {{ $user->member->plan_days_remaining_before_suspend ?? 0 }} days paused
+                </p>
+                <p class="text-xs text-blue-600 mt-1">Plan: {{ $user->member->plan->name ?? 'N/A' }}</p>
+            </div>
+                    @elseif($planDisplay === 'active_subscription')
+                        <div class="text-sm">
+                            <p class="font-medium text-gray-900">{{ $user->member->subscription->name ?? 'N/A' }}</p>
+                            <p class="text-xs text-gray-500">
+                                @if($user->member->end_date_for_subscription)
+                                    @php
+                                        $now = now();
+                                        $end = $user->member->end_date_for_subscription;
+                                        $days = (int) $now->diffInDays($end, false);
+                                    @endphp
+                                    @if($isSuspended)
+                                        <span class="text-orange-600">Suspended ({{ $user->member->days_remaining_before_suspend ?? 0 }} days paused)</span>
+                                    @elseif ($days >= 1)
+                                        {{ $days }} {{ $days == 1 ? 'day' : 'days' }} left
+                                    @elseif ($days === 0)
+                                        Expires today
+                                    @else
+                                        Expired
+                                    @endif
+                                @endif
+                            </p>
+                            <p class="text-xs text-blue-600 mt-1">w/ {{ $user->member->plan->name ?? 'Plan' }}</p>
+                        </div>
+                    @elseif($planDisplay === 'incomplete')
+                        <span class="text-orange-600 text-sm font-medium">Incomplete Profile</span>
+                    @else
+                        <span class="text-gray-400 text-xs">No Plan</span>
+                    @endif
+                @else
+                    <span class="text-gray-400 text-xs">Not a member</span>
+                @endif
+            </td>
+
+            <td class="px-6 py-4">
+                <div class="flex flex-col">
+                    <span class="text-gray-900 font-medium">{{ $user->created_at->format('M d, Y') }}</span>
+                    <span class="text-gray-500 text-sm">{{ $user->created_at->format('h:i A') }}</span>
+                </div>
+            </td>
+
+            {{-- 3-DOT MENU WITH DYNAMIC OPTIONS --}}
+            <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
+                <div class="relative inline-block text-left">
+                    <button onclick="toggleActionsMenu(event, '{{ $user->user_id }}')"
+                        class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                    </button>
+
+                    <div id="actionsMenu-{{ $user->user_id }}"
+                        class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                        <div class="py-1">
+                            <!-- Edit Button -->
+                            <button onclick="editUser('{{ $user->user_id }}')"
+                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                                </svg>
+                                Edit User
+                            </button>
+
+                            @if($user->role === 'member' && $user->member)
+                                @php
+                                    // Determine if member can be suspended/cancelled
+                                    $isActive = $user->member->isApproved 
+                                        && $user->member->isApprovedForSubscription 
+                                        && $user->member->subscription_status === 'active';
+                                @endphp
+
+                                @if($isSuspended)
+                                    <!-- Resume Button (only shown when suspended) -->
+                                    <button onclick="resumeMember('{{ $user->member->member_id }}')"
+                                        class="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-gray-100 flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        Resume
+                                    </button>
+                                @elseif($isActive)
+                                    <!-- Suspend Button (only shown when active) -->
+                                    <button onclick="suspendMember('{{ $user->member->member_id }}')"
+                                        class="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-gray-100 flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Suspend
+                                    </button>
+
+                                    <!-- Cancel Plan Button (only shown when active) -->
+                                    <button onclick="cancelPlan('{{ $user->member->member_id }}')"
+                                        class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                        Cancel Plan
+                                    </button>
+                                @endif
+                            @endif
+
+                            <!-- Delete Button -->
+                            <button onclick="openDeleteModal('{{ route('admin.users-destroy', $user->user_id) }}')"
+                                class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                                </svg>
+                                Delete User
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        @endif
+    </tr>
+@empty
+    <tr>
+        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+            <div class="flex flex-col items-center justify-center">
+                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p class="text-lg font-medium">No {{ $isStaff ? 'members' : 'users' }} found</p>
+                <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
+            </div>
+        </td>
+    </tr>
+@endforelse
 </tbody>
             </table>
         </div>

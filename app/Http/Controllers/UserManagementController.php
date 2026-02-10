@@ -813,35 +813,49 @@ public function approveSubscription(Request $request, $memberId)
                 'timestamp' => now(),
             ]);
 
-            // CRITICAL FIX: Update ALL required fields for full approval
-            $member->update([
-                // BOTH profile AND subscription approvals
-                'isApproved' => true,
-                'isApprovedForSubscription' => true,
-                
-                // Clear all disabled flags
-                'isDisabled' => false,
-                'isDisabledForSubscription' => false,
-                
-                // Set BOTH statuses to active
-                'subscription_status' => 'active',
-                'status' => 'active',
-                
-                // Clear renewal flag
-                'renewal_pending' => false,
-                
-                // Set approval timestamps
-                'approved_at' => now(),
-                'approved_at_for_subscription' => now(),
-                
-                // Set subscription dates
-                'start_date_for_subscription' => now(),
-                'end_date_for_subscription' => now()->addDays($subscription->duration_days),
-                
-                // Clear suspension data
-                'suspended_at' => null,
-                'days_remaining_before_suspend' => null,
-            ]);
+            // Calculate new end dates based on current state
+            $now = now();
+            
+            // For subscription end date
+            if ($isRenewal && $member->end_date_for_subscription && \Carbon\Carbon::parse($member->end_date_for_subscription)->isFuture()) {
+                // If renewing and current subscription hasn't expired, add to existing end date
+                $newSubscriptionEndDate = \Carbon\Carbon::parse($member->end_date_for_subscription)
+                    ->addDays($subscription->duration_days);
+            } else {
+                // If new or expired, start from now
+                $newSubscriptionEndDate = $now->copy()->addDays($subscription->duration_days);
+            }
+
+            // For plan end date
+            if ($isRenewal && $member->end_date && \Carbon\Carbon::parse($member->end_date)->isFuture()) {
+                // If plan hasn't expired, add to existing end date
+                $newPlanEndDate = \Carbon\Carbon::parse($member->end_date)
+                    ->addDays($plan->duration_days);
+            } else {
+                // If new or expired, start from now
+                $newPlanEndDate = $now->copy()->addDays($plan->duration_days);
+            }
+
+            // Update member profile with ALL required fields
+            $member->isApproved = true;
+            $member->isApprovedForSubscription = true;
+            $member->isDisabled = false;
+            $member->isDisabledForSubscription = false;
+            $member->subscription_status = 'active';
+            $member->status = 'active';
+            $member->renewal_pending = false;
+            $member->approved_at = $isRenewal ? $member->approved_at : now(); // Keep original approval date if renewal
+            $member->approved_at_for_subscription = now();
+            $member->start_date_for_subscription = $isRenewal ? $member->start_date_for_subscription : now(); // Keep original start if renewal
+            $member->end_date_for_subscription = $newSubscriptionEndDate;
+            $member->start_date = $isRenewal ? $member->start_date : now(); // Keep original start if renewal
+            $member->end_date = $newPlanEndDate;
+            $member->suspended_at = null;
+            $member->days_remaining_before_suspend = null;
+            $member->plan_days_remaining_before_suspend = null; // Clear paused plan days
+            
+            // Save the member profile
+            $member->save();
 
             Logs::create([
                 'user_id' => $currentUser->user_id,
@@ -850,16 +864,20 @@ public function approveSubscription(Request $request, $memberId)
                 'timestamp' => now(),
             ]);
 
-      \DB::commit();
+            \DB::commit();
 
-        // CRITICAL: Clear all member-related caches
-        CacheService::forgetPattern('member_profile');
-        CacheService::forgetPattern('recent_attendance');
-        CacheService::forgetPattern('attendance_counts');
-        Cache::forget("member_profile:stats:{$user->user_id}");
-        
-        // Generate QR code synchronously
-        $this->generateAndSendQRCode($user, $member, $plan, $subscription);
+            // Clear all caches BEFORE generating QR
+            CacheService::forgetPattern('member_profile');
+            CacheService::forgetPattern('recent_attendance');
+            CacheService::forgetPattern('attendance_counts');
+            Cache::forget("member_profile:stats:{$user->user_id}");
+            
+            // Refresh member data before generating QR
+            $member->refresh();
+            
+            // Generate and send QR code
+            $this->generateAndSendQRCode($user, $member, $plan, $subscription);
+            
             $message = $isRenewal
                 ? "Renewal approved! QR code sent to {$user->email}"
                 : "Subscription approved! QR code sent to {$user->email}";
@@ -868,6 +886,11 @@ public function approveSubscription(Request $request, $memberId)
 
         } catch (\Exception $e) {
             \DB::rollBack();
+            \Log::error("Database transaction failed during approval", [
+                'member_id' => $memberId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             throw $e;
         }
 
@@ -998,8 +1021,13 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
     }
 
     try {
+        // Reload relationships to ensure we have latest data
+        $memberProfile->refresh();
+        $memberProfile->load(['user', 'plan', 'subscription']);
+        
         // Simplified QR data
         $qrData = json_encode([
+            'email' => $user->email,
             'id' => $memberProfile->member_id,
             'name' => "{$user->first_name} {$user->last_name}",
             'plan' => $plan->name,
@@ -1019,13 +1047,13 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
             unlink($fullPath);
         }
 
-        // Generate QR with smaller size for faster generation
+        // Generate QR code
         $result = Builder::create()
             ->writer(new PngWriter())
             ->data($qrData)
             ->encoding(new Encoding('UTF-8'))
-            ->size(250) // Reduced from 300
-            ->margin(5)  // Reduced from 10
+            ->size(250)
+            ->margin(5)
             ->build();
 
         $result->saveToFile($fullPath);
@@ -1037,18 +1065,20 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
         $memberProfile->qr_code = $qrRelativePath;
         $memberProfile->save();
 
-        // Send email asynchronously using queue
-        \Mail::to($user->email)->queue(new MemberQRCodeMail($memberProfile, $fullPath));
+        // CHANGE: Send immediately instead of queue
+        Mail::to($user->email)->send(new MemberQRCodeMail($memberProfile, $fullPath));
 
-        \Log::info("QR Code generated and queued for email", [
+        \Log::info("QR Code generated and sent via email", [
             'user_id' => $user->user_id,
+            'email' => $user->email,
             'path' => $qrRelativePath
         ]);
 
     } catch (\Exception $e) {
-        \Log::error("QR Code generation failed", [
+        \Log::error("QR Code generation/email failed", [
             'user_id' => $user->user_id,
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
         ]);
         // Don't throw - allow approval to succeed even if QR fails
     }
@@ -1091,95 +1121,146 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
     /**
      * Suspend member - Pause their days
      */
-    public function suspendMember($memberId)
-    {
-        try {
-            $member = MemberProfile::findOrFail($memberId);
-            $user = $member->user;
-            $currentUser = Auth::user();
+public function suspendMember($memberId)
+{
+    try {
+        $member = MemberProfile::findOrFail($memberId);
+        $user = $member->user;
+        $currentUser = Auth::user();
 
-            if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
-                return redirect()->back()->with('error', 'You can only suspend members from your branch.');
-            }
-
-            // Calculate days remaining
-            $daysRemaining = 0;
-            if ($member->end_date_for_subscription) {
-                $now = now();
-                $endDate = \Carbon\Carbon::parse($member->end_date_for_subscription);
-                $daysRemaining = max(0, $now->diffInDays($endDate, false));
-            }
-
-            $member->update([
-                'subscription_status' => 'suspended',
-                'suspended_at' => now(),
-                'days_remaining_before_suspend' => $daysRemaining,
-            ]);
-
-            Logs::create([
-                'user_id' => Auth::id(),
-                'branch_id' => $currentUser->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $currentUser->branch_id,
-                'action' => "Suspended membership for: {$user->first_name} {$user->last_name} ({$daysRemaining} days paused)",
-                'timestamp' => now(),
-            ]);
-
-            return redirect()->back()->with('success', "Member {$user->first_name} {$user->last_name} has been suspended. {$daysRemaining} days paused.");
-        } catch (\Exception $e) {
-            \Log::error("Error suspending member", [
-                'member_id' => $memberId,
-                'error' => $e->getMessage()
-            ]);
-
-            return redirect()->back()->with('error', 'Error suspending member: ' . $e->getMessage());
+        if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+            return redirect()->back()->with('error', 'You can only suspend members from your branch.');
         }
-    }
 
-    /**
-     * Resume member - Restore their remaining days
-     */
-    public function resumeMember($memberId)
-    {
-        try {
-            $member = MemberProfile::findOrFail($memberId);
-            $user = $member->user;
-            $currentUser = Auth::user();
+        $now = now();
 
-            if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
-                return redirect()->back()->with('error', 'You can only resume members from your branch.');
-            }
-
-            // Restore the remaining days
-            $daysToRestore = $member->days_remaining_before_suspend ?? 0;
-            $newEndDate = now()->addDays($daysToRestore);
-
-            $member->update([
-                'subscription_status' => 'active',
-                'suspended_at' => null,
-                'end_date_for_subscription' => $newEndDate,
-                'days_remaining_before_suspend' => null,
-            ]);
-
-            Logs::create([
-                'user_id' => Auth::id(),
-                'branch_id' => $currentUser->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $currentUser->branch_id,
-                'action' => "Resumed membership for: {$user->first_name} {$user->last_name} ({$daysToRestore} days restored)",
-                'timestamp' => now(),
-            ]);
-
-            return redirect()->back()->with('success', "Member {$user->first_name} {$user->last_name} has been resumed. {$daysToRestore} days restored.");
-        } catch (\Exception $e) {
-            \Log::error("Error resuming member", [
-                'member_id' => $memberId,
-                'error' => $e->getMessage()
-            ]);
-
-            return redirect()->back()->with('error', 'Error resuming member: ' . $e->getMessage());
+        // Calculate days remaining for SUBSCRIPTION
+        $subscriptionDaysRemaining = 0;
+        if ($member->end_date_for_subscription) {
+            $endDate = \Carbon\Carbon::parse($member->end_date_for_subscription);
+            $subscriptionDaysRemaining = max(0, (int) ceil($now->diffInDays($endDate, false)));
         }
+
+        // Calculate days remaining for MEMBERSHIP PLAN
+        $planDaysRemaining = 0;
+        if ($member->end_date) {
+            $endDate = \Carbon\Carbon::parse($member->end_date);
+            $planDaysRemaining = max(0, (int) ceil($now->diffInDays($endDate, false)));
+        }
+
+        \Log::info('Suspending member', [
+            'member_id' => $memberId,
+            'subscription_days' => $subscriptionDaysRemaining,
+            'plan_days' => $planDaysRemaining,
+            'subscription_end' => $member->end_date_for_subscription,
+            'plan_end' => $member->end_date,
+        ]);
+
+        // Update member with suspended status and save BOTH remaining days
+        $member->update([
+            'subscription_status' => 'suspended',
+            'status' => 'suspended', // Also suspend the membership status
+            'suspended_at' => $now,
+            'days_remaining_before_suspend' => $subscriptionDaysRemaining, // Subscription days
+            'plan_days_remaining_before_suspend' => $planDaysRemaining, // Plan days
+        ]);
+
+        // Clear caches
+        CacheService::forgetPattern('member_profile');
+        Cache::forget("member_profile:stats:{$user->user_id}");
+
+        Logs::create([
+            'user_id' => Auth::id(),
+            'branch_id' => $currentUser->role === 'super_admin'
+                ? session('selected_branch_id')
+                : $currentUser->branch_id,
+            'action' => "Suspended membership for: {$user->first_name} {$user->last_name} (Subscription: {$subscriptionDaysRemaining} days, Plan: {$planDaysRemaining} days paused)",
+            'timestamp' => now(),
+        ]);
+
+        return redirect()->back()->with('success', "Member {$user->first_name} {$user->last_name} has been suspended. Subscription: {$subscriptionDaysRemaining} days paused, Plan: {$planDaysRemaining} days paused.");
+    } catch (\Exception $e) {
+        \Log::error("Error suspending member", [
+            'member_id' => $memberId,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return redirect()->back()->with('error', 'Error suspending member: ' . $e->getMessage());
     }
+}
+
+/**
+ * Resume member - Restore BOTH subscription AND membership remaining days
+ */
+public function resumeMember($memberId)
+{
+    try {
+        $member = MemberProfile::findOrFail($memberId);
+        $user = $member->user;
+        $currentUser = Auth::user();
+
+        if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+            return redirect()->back()->with('error', 'You can only resume members from your branch.');
+        }
+
+        // Check if member was suspended
+        if ($member->subscription_status !== 'suspended') {
+            return redirect()->back()->with('error', 'This member is not currently suspended.');
+        }
+
+        // Restore subscription days
+        $subscriptionDaysToRestore = $member->days_remaining_before_suspend ?? 0;
+        $newSubscriptionEndDate = now()->addDays($subscriptionDaysToRestore);
+
+        // Restore membership plan days
+        $planDaysToRestore = $member->plan_days_remaining_before_suspend ?? 0;
+        $newPlanEndDate = now()->addDays($planDaysToRestore);
+
+        \Log::info('Resuming member', [
+            'member_id' => $memberId,
+            'subscription_days_to_restore' => $subscriptionDaysToRestore,
+            'plan_days_to_restore' => $planDaysToRestore,
+            'new_subscription_end' => $newSubscriptionEndDate,
+            'new_plan_end' => $newPlanEndDate,
+        ]);
+
+        $member->update([
+            'subscription_status' => 'active',
+            'status' => 'active',
+            'suspended_at' => null,
+            'end_date_for_subscription' => $newSubscriptionEndDate,
+            'end_date' => $newPlanEndDate,
+            'days_remaining_before_suspend' => null,
+            'plan_days_remaining_before_suspend' => null,
+            'renewal_pending' => false, // Clear renewal pending flag
+        ]);
+
+        // Clear caches
+        CacheService::forgetPattern('member_profile');
+        Cache::forget("member_profile:stats:{$user->user_id}");
+
+        Logs::create([
+            'user_id' => Auth::id(),
+            'branch_id' => $currentUser->role === 'super_admin'
+                ? session('selected_branch_id')
+                : $currentUser->branch_id,
+            'action' => "Resumed membership for: {$user->first_name} {$user->last_name} (Subscription: {$subscriptionDaysToRestore} days, Plan: {$planDaysToRestore} days restored)",
+            'timestamp' => now(),
+        ]);
+
+        return redirect()->back()->with('success', "Member {$user->first_name} {$user->last_name} has been resumed. Subscription: {$subscriptionDaysToRestore} days restored, Plan: {$planDaysToRestore} days restored.");
+    } catch (\Exception $e) {
+        \Log::error("Error resuming member", [
+            'member_id' => $memberId,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return redirect()->back()->with('error', 'Error resuming member: ' . $e->getMessage());
+    }
+}
+
 
     /**
      * Cancel Plan - Member needs to renew everything

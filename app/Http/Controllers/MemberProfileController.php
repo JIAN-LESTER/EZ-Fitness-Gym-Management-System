@@ -24,11 +24,12 @@ use Carbon\Carbon;
 
 class MemberProfileController extends Controller
 {
-    public function dashboard()
+   public function dashboard()
 {
     $user = Auth::user();
     
     // FORCE FRESH QUERY - Don't use cache for critical membership data
+    // ✅ MAKE SURE we're selecting plan_days_remaining_before_suspend
     $memberProfile = MemberProfile::select([
             'member_id', 'user_id', 'plan_id', 'subscription_id', 
             'start_date', 'end_date',
@@ -36,7 +37,9 @@ class MemberProfileController extends Controller
             'subscription_status', 'status', 'qr_code',
             'isApproved', 'isApprovedForSubscription',
             'isDisabled', 'isDisabledForSubscription',
-            'renewal_pending', 'suspended_at', 'days_remaining_before_suspend'
+            'renewal_pending', 'suspended_at', 
+            'days_remaining_before_suspend',        // ✅ Subscription days
+            'plan_days_remaining_before_suspend'    // ✅ Plan days - CRITICAL!
         ])
         ->with([
             'plan:plan_id,name,price,duration_days',
@@ -45,6 +48,19 @@ class MemberProfileController extends Controller
         ])
         ->where('user_id', $user->user_id)
         ->first();
+
+    // 🔍 DEBUG: Log what we retrieved
+    if ($memberProfile) {
+        \Log::info('Dashboard loaded member profile', [
+            'member_id' => $memberProfile->member_id,
+            'status' => $memberProfile->status,
+            'subscription_status' => $memberProfile->subscription_status,
+            'plan_days_remaining_before_suspend' => $memberProfile->plan_days_remaining_before_suspend,
+            'days_remaining_before_suspend' => $memberProfile->days_remaining_before_suspend,
+            'end_date' => $memberProfile->end_date,
+            'end_date_for_subscription' => $memberProfile->end_date_for_subscription,
+        ]);
+    }
 
     // Optimized current gym occupancy (short cache for real-time feel)
     $currentOccupancy = CacheService::remember(
@@ -347,46 +363,51 @@ class MemberProfileController extends Controller
     }
 
     public function requestRenewal(Request $request)
-    {
-        $user = Auth::user();
-        $member = $user->member;
+{
+    $user = Auth::user();
+    $member = $user->member;
 
-        if (!$member) {
-            return redirect()->back()->with('error', 'No membership profile found.');
-        }
-
-        if ($request->action === 'logout') {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            return redirect()->route('login')->with('info', 'You have been logged out.');
-        }
-
-        $validated = $request->validate([
-            'subscription_id' => 'required|exists:subscriptions,subscription_id',
-        ]);
-
-        $subscription = Subscriptions::find($validated['subscription_id']);
-
-        $member->update([
-            'subscription_id' => $validated['subscription_id'],
-            'isApprovedForSubscription' => false,
-            'isDisabledForSubscription' => false,
-            'renewal_pending' => true,
-            'subscription_status' => 'expired',
-        ]);
-
-        // Clear member profile cache
-        CacheService::forgetPattern('member_profile');
-
-        Logs::create([
-            'user_id' => $user->user_id,
-            'branch_id' => $user->branch_id,
-            'action' => "Requested membership renewal - Subscription: {$subscription->name}",
-            'timestamp' => now(),
-        ]);
-
-        return redirect()->route('member.dashboard')
-            ->with('success', 'Renewal request submitted! Awaiting admin approval.');
+    if (!$member) {
+        return redirect()->back()->with('error', 'No membership profile found.');
     }
+
+    if ($request->action === 'logout') {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect()->route('login')->with('info', 'You have been logged out.');
+    }
+
+    $validated = $request->validate([
+        'plan_id' => 'required|exists:membership_plans,plan_id',
+        'subscription_id' => 'required|exists:subscriptions,subscription_id',
+    ]);
+
+    $plan = MembershipPlan::find($validated['plan_id']);
+    $subscription = Subscriptions::find($validated['subscription_id']);
+
+    $member->update([
+        'plan_id' => $validated['plan_id'],
+        'subscription_id' => $validated['subscription_id'],
+        'isApprovedForSubscription' => false,
+        'isDisabledForSubscription' => false,
+        'isApproved' => false, // Also reset plan approval
+        'renewal_pending' => true,
+        'subscription_status' => 'pending_subscription_approval',
+        'status' => 'pending_approval', // Also set plan status to pending
+    ]);
+
+    // Clear member profile cache
+    CacheService::forgetPattern('member_profile');
+
+    Logs::create([
+        'user_id' => $user->user_id,
+        'branch_id' => $user->branch_id,
+        'action' => "Requested membership renewal - Plan: {$plan->name}, Subscription: {$subscription->name}",
+        'timestamp' => now(),
+    ]);
+
+    return redirect()->route('member.dashboard')
+        ->with('success', 'Renewal request submitted! Awaiting admin approval for both plan and subscription.');
+}
 }

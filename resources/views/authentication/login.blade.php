@@ -171,9 +171,8 @@
 
         <div>
           <label for="login" class="block text-sm font-medium text-gray-700 mb-2">
-            <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
-            </svg>
+
+         
             Username or Email
           </label>
           <input type="text" id="login" name="login" placeholder="Enter your username or email"
@@ -186,9 +185,7 @@
 
         <div class="relative">
           <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-            <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
-            </svg>
+     
             Password
           </label>
           <input type="password" id="password" name="password" placeholder="Enter your password"

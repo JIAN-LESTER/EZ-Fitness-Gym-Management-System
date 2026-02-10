@@ -21,6 +21,10 @@ class Kernel extends ConsoleKernel
     {
         // Run every minute for testing
         $schedule->command('membership:check-expiration')->everyMinute();
+
+         $schedule->command('memberships:expire')
+                 ->daily()
+                 ->at('00:00');
         
         // Change to daily() in production
         // $schedule->command('membership:check-expiration')->daily();

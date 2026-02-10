@@ -51,7 +51,8 @@ class MemberProfile extends Model
 
         'renewal_pending',
         'suspended_at',
-        'days_remaining_before_suspend'
+        'days_remaining_before_suspend',
+        'plan_days_remaining_before_suspend'
     ];
 
     public function user()
