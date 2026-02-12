@@ -142,7 +142,7 @@
                                 class="flex-1 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-all text-sm shadow-md">
                                 Edit
                             </button>
-                            <button onclick='openDeleteModal(@json($plan))'
+                            <button onclick='openDeleteModal("{{ route('plans.destroy', $plan->plan_id) }}", "{{ $plan->name }}")'
                                 class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all text-sm shadow-md">
                                 Delete
                             </button>
@@ -362,6 +362,10 @@
      <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
         <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeDeleteModal()"></div>
 
+        @php
+           
+        @endphp
+
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
             <div class="p-6">
                 <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
@@ -375,7 +379,7 @@
                 </h3>
 
                 <p class="text-center text-gray-600 mb-6">
-                    Are you sure you want to delete <span class="font-bold">{{ $plan->name }}</span>? This action cannot be undone.
+                    Are you sure you want to delete <span id="deletePlanName" class="font-bold text-red-600"></span>? This action cannot be undone.
                 </p>
 
                 <form id="deleteForm" method="POST" action="">
@@ -576,9 +580,11 @@
             openModal('editPlanModal');
         }
 
-         function openDeleteModal(actionUrl) {
+         function openDeleteModal(actionUrl, planName) {
     const form = document.getElementById('deleteForm');
+    const nameSpan = document.getElementById('deletePlanName');
     form.action = actionUrl;
+    nameSpan.textContent = planName;
 
     const modal = document.getElementById('deleteModal');
     const scrollY = window.scrollY;

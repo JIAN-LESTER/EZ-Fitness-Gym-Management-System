@@ -210,8 +210,8 @@
     "
     class="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
-<!-- Your PHP code here -->
-<?php 
+
+<?php
 $user = Auth::user();
 $member = null;
 
@@ -221,21 +221,47 @@ if ($user->role === 'member') {
     $plan = $member->plan ?? null;
 }
 
-// Count pending member approvals (only for admins)
-$pendingApprovalsCount = 0;
-if ($user->role === 'admin' || $user->role === 'super_admin' || $user->role === 'staff') {
-    $pendingApprovalsCount = \App\Models\MemberProfile::where('isApproved', false)
-        ->where('isDisabled', false)
-        ->count();
+
+$selectedBranchId = null;
+
+if ($user->role === 'super_admin') {
+
+    $selectedBranchId = session('selected_branch_id'); 
+} elseif ($user->branch_id) {
+    $selectedBranchId = $user->branch_id;
 }
 
-// Count low stock products (for admins and staff)
+
+$pendingApprovalsCount = 0;
+
+if (in_array($user->role, ['admin', 'super_admin', 'staff'])) {
+    $query = \App\Models\MemberProfile::where('isApproved', false)
+        ->where('isDisabled', false);
+
+    if ($selectedBranchId) {
+
+        $query->whereHas('user', function ($q) use ($selectedBranchId) {
+            $q->where('branch_id', $selectedBranchId);
+        });
+    }
+
+    $pendingApprovalsCount = $query->count();
+}
+
+
 $lowStockCount = 0;
+
 if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     $lowStockThreshold = 10;
-    $lowStockCount = \App\Models\Inventory::where('quantity', '<=', $lowStockThreshold)
-        ->where('quantity', '>', 0)
-        ->count();
+
+    $query = \App\Models\Inventory::where('quantity', '<=', $lowStockThreshold)
+        ->where('quantity', '>', 0);
+
+    if ($selectedBranchId) {
+        $query->where('branch_id', $selectedBranchId);
+    }
+
+    $lowStockCount = $query->count();
 }
 ?>
 
@@ -429,8 +455,8 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
 
-<a href="{{ route('staff.user_management') }}" @click="profileOpen = false"  
-   class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('staff.user_management') ? 'bg-white/20 text-white' : '' }}">
+<a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  
+   class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
     </svg>

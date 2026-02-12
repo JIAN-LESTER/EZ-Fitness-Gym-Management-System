@@ -142,7 +142,7 @@
                             class="flex-1 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-all text-sm shadow-md">
                             Edit
                         </button>
-                        <button onclick='openDeleteModal(@json($subscription))'
+                        <button onclick="openDeleteModal('{{ route('subscriptions.destroy', $subscription->subscription_id) }}', '{{ $subscription->name }}')"
                             class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all text-sm shadow-md">
                             Delete
                         </button>
@@ -350,7 +350,7 @@
                 </h3>
 
                 <p class="text-center text-gray-600 mb-6">
-                    Are you sure you want to delete <span class="font-bold">{{ $subscription->name }}</span>? This action cannot be undone.
+                    Are you sure you want to delete <span id="deleteSubscriptionName" class="font-bold text-red-600"></span>? This action cannot be undone.
                 </p>
 
                 <form id="deleteForm" method="POST" action="">
@@ -488,9 +488,12 @@
             openModal('editSubscriptionModal');
         }
 
-         function openDeleteModal(actionUrl) {
+         function openDeleteModal(actionUrl, subscriptionName) {
     const form = document.getElementById('deleteForm');
+    const nameSpan = document.getElementById('deleteSubscriptionName');
     form.action = actionUrl;
+
+        nameSpan.textContent = subscriptionName;
 
     const modal = document.getElementById('deleteModal');
     const scrollY = window.scrollY;

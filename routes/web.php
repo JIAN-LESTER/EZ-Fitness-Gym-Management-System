@@ -49,20 +49,20 @@ Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])
     ->name('password.update');
 
-Route::middleware(['auth'])->group(function () {
+// Route::middleware(['auth'])->group(function () {
 
-    Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard');
-        })->name('admin.dashboard');
-    });
+//     Route::prefix('')->middleware(['admin'])->group(function () {
+//         Route::get('/dashboard', function () {
+//             return view('admin.dashboard');
+//         })->name('admin.dashboard');
+//     });
 
-    Route::prefix('member')->name('member.')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('member.dashboard');
-        })->name('member.dashboard');
-    });
-});
+//     Route::prefix('')->group(function () {
+//         Route::get('/dashboard', function () {
+//             return view('member.dashboard');
+//         })->name('member.dashboard');
+//     });
+// });
 
 Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('admin.subscription_management');
 Route::post('/admin/subscriptions', [SubscriptionController::class, 'store'])->name('subscriptions.store');
@@ -84,6 +84,7 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/member/dashboard', [MemberProfileController::class, 'dashboard'])->name('member.dashboard');
 Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
 
 
 Route::middleware(['auth'])->group(function () {
