@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Logs')
+@section('title', 'Activity Logs | EZ Fitness')
 @section('header', 'Logs')
 
 @section('content')

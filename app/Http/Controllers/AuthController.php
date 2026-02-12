@@ -308,7 +308,7 @@ class AuthController extends Controller
         ]);
             }
 
-            return back()->with('status', 'Password reset link sent! Please check your email.');
+            return back()->with('success', 'Password reset link sent! Please check your email.');
         }
 
         return back()->with('error', 'Unable to send password reset link. Please try again.');

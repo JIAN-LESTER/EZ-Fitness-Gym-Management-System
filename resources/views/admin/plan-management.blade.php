@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Membership Plans')
+@section('title', 'Membership Plans | EZ Fitness')
 @section('header', 'Membership Plans')
 
 <style>

@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard')</title>
+    
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
@@ -2412,55 +2413,40 @@ function closeQRApprovedModal() {
 
 </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Load SweetAlert2 first -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Then load notifications.js -->
+<script src="{{ asset('js/notifications.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                Notifications.toast('success', '{{ session('success') }}');
+            @endif
+
+            @if(session('error'))
+                Notifications.toast('error', '{{ session('error') }}');
+            @endif
+
+            @if(session('warning'))
+                Notifications.toast('warning', '{{ session('warning') }}');
+            @endif
+
+            @if(session('info'))
+                Notifications.toast('info', '{{ session('info') }}');
+            @endif
+
+            @if(session('status'))
+                Notifications.toast('success', '{{ session('status') }}');
+            @endif
+        });
+    </script>
+    
+    @stack('scripts')
 
 
-    @if(session('success'))
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                Toastify({
-                    text: "{{ session('success') }}",
-                    duration: 3000,
-                    gravity: "top",
-                    position: "right",
-                    backgroundColor: "linear-gradient(to right, #10b981, #059669)",
-                    stopOnFocus: true,
-                }).showToast();
-            });
-        </script>
-    @endif
-
-    @if(session('error'))
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                Toastify({
-                    text: "{{ session('error') }}",
-                    duration: 3000,
-                    gravity: "top",
-                    position: "right",
-                    backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-                    stopOnFocus: true,
-                }).showToast();
-            });
-        </script>
-    @endif
-
-    @if($errors->any())
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                Toastify({
-                    text: "{{ $errors->first() }}",
-                    duration: 4000,
-                    gravity: "top",
-                    position: "right",
-                    backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-                    stopOnFocus: true,
-                }).showToast();
-            });
-            
-        </script>
-    @endif
+    
 
 
 

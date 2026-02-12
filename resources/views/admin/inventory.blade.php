@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Inventory')
-@section('header', 'Products Management')
+@section('title', 'Inventory | EZ Fitness')
+@section('header', 'Inventory')
 
 <style>
 /* Custom Scrollbar for Modals */

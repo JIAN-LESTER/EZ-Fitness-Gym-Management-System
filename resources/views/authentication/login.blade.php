@@ -4,12 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - EZ Fitness</title>
+  <title>Sign in | EZ Fitness</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('logo_image/ez_fitness_gym_logo.png') }}">
+  
+  <!-- Load SweetAlert2 CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-  <style>
 
+  <style>
     .info-section {
       background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
       position: relative;
@@ -55,21 +57,6 @@
       20%, 40%, 60%, 80% { transform: translateX(5px); }
     }
     
-    @keyframes fadeOut {
-      from {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      to {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-    }
-    
-    .fade-out {
-      animation: fadeOut 0.5s ease-out forwards;
-    }
-    
     @keyframes float {
       0%, 100% { transform: translateY(0px) rotate(0deg); }
       50% { transform: translateY(-20px) rotate(5deg); }
@@ -108,71 +95,12 @@
         <p class="text-gray-600 mt-2 text-center md:text-left">Welcome back! Please login to your account.</p>
       </header>
 
-      <!-- Alert Messages -->
-      <div class="space-y-3 mb-6">
-        {{-- Error Alert --}}
-        @if(session('error') && session('error') !== 'Your email is not verified.')
-          <div class="alert-message flex items-center p-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50"
-            role="alert">
-            <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor" viewBox="0 0 20 20">
-              <path
-                d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
-            </svg>
-            <div>
-              <span class="font-medium">Error:</span> {{ session('error') }}
-            </div>
-          </div>
-        @endif
-
-        {{-- Success Alert --}}
-        @if(session('success'))
-          <div class="alert-message flex items-center p-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50"
-            role="alert">
-            <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
-            </svg>
-            <div>
-              <span class="font-medium">Success:</span> {{ session('success') }}
-            </div>
-          </div>
-        @endif
-
-        {{-- Resend Verification --}}
-        @if(session('resend_user_id'))
-          <div
-            class="alert-message flex items-center justify-between p-4 text-sm text-orange-800 border border-orange-300 rounded-lg bg-orange-50"
-            role="alert">
-            <div class="flex items-center">
-              <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
-              </svg>
-              <div>
-                Your account is not yet verified.
-              </div>
-            </div>
-            <form method="POST" action="{{ route('verification.send') }}">
-              @csrf
-              <input type="hidden" name="user_id" value="{{ session('resend_user_id') }}">
-              <button type="submit"
-                class="ml-3 px-3 py-1.5 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 focus:ring-2 focus:ring-orange-400 focus:outline-none">
-                Resend Email
-              </button>
-            </form>
-          </div>
-        @endif
-      </div>
-
-      <form method="POST" action="{{ route('login') }}" class="space-y-5">
+      <!-- Login Form -->
+      <form id="loginForm" method="POST" action="{{ route('login') }}" class="space-y-5">
         @csrf
 
         <div>
           <label for="login" class="block text-sm font-medium text-gray-700 mb-2">
-
-         
             Username or Email
           </label>
           <input type="text" id="login" name="login" placeholder="Enter your username or email"
@@ -185,7 +113,6 @@
 
         <div class="relative">
           <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-     
             Password
           </label>
           <input type="password" id="password" name="password" placeholder="Enter your password"
@@ -211,7 +138,7 @@
           </a>
         </div>
 
-        <button type="submit"
+        <button type="submit" id="loginBtn"
           class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition-all shadow-lg hover:shadow-xl">
           LOGIN
         </button>
@@ -221,6 +148,18 @@
           <a href="{{ route('register') }}" class="text-gray-800 hover:underline font-medium">Sign Up</a>
         </p>
       </form>
+
+      <!-- Resend Verification Form (if needed) -->
+      @if(session('resend_user_id'))
+        <form id="resendVerificationForm" method="POST" action="{{ route('verification.send') }}" class="mt-4">
+          @csrf
+          <input type="hidden" name="user_id" value="{{ session('resend_user_id') }}">
+          <button type="submit" id="resendBtn"
+            class="w-full px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 focus:ring-2 focus:ring-orange-400 focus:outline-none">
+            Resend Verification Email
+          </button>
+        </form>
+      @endif
     </section>
 
     <!-- Right Side - Info Section -->
@@ -262,69 +201,112 @@
 
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <!-- Scripts - Load in correct order -->
+  <!-- 1. SweetAlert2 Library -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- 2. Notifications Module -->
+  <script src="{{ asset('js/notifications.js') }}"></script>
 
+  <!-- 3. Your Custom Scripts -->
   <script>
-    // Auto-dismiss alert messages after 5 seconds
     document.addEventListener('DOMContentLoaded', function() {
-      const alerts = document.querySelectorAll('.alert-message');
-      
-      alerts.forEach(alert => {
-        setTimeout(() => {
-          alert.classList.add('fade-out');
-          setTimeout(() => {
-            alert.remove();
-          }, 500);
-        }, 5000);
-      });
-    });
+      // Show session messages as toasts
+      @if(session('success'))
+        Notifications.toast('success', '{{ session('success') }}');
+      @endif
 
+      @if(session('error'))
+        Notifications.toast('error', '{{ session('error') }}');
+      @endif
+
+      @if(session('warning'))
+        Notifications.toast('warning', '{{ session('warning') }}');
+      @endif
+
+      @if(session('info'))
+        Notifications.toast('info', '{{ session('info') }}');
+      @endif
+
+      @if(session('status'))
+        Notifications.toast('success', '{{ session('status') }}');
+      @endif
+
+      // Login form with loading state
+      const loginForm = document.getElementById('loginForm');
+      const loginBtn = document.getElementById('loginBtn');
+      
+      if (loginForm && loginBtn) {
+        loginForm.addEventListener('submit', function(e) {
+          loginBtn.disabled = true;
+          loginBtn.innerHTML = '<span class="animate-pulse">Signing in...</span>';
+          Notifications.loading('Signing in...');
+        });
+      }
+
+      // Resend verification with loading state
+      @if(session('resend_user_id'))
+        const resendForm = document.getElementById('resendVerificationForm');
+        const resendBtn = document.getElementById('resendBtn');
+        
+        if (resendForm && resendBtn) {
+          resendForm.addEventListener('submit', function(e) {
+            resendBtn.disabled = true;
+            resendBtn.innerHTML = '<span class="animate-pulse">Sending...</span>';
+            Notifications.loading('Sending verification email...');
+          });
+        }
+      @endif
+    });
 
     // Toggle password visibility
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
     const eyeIcon = document.getElementById('eyeIcon');
 
-    togglePassword.addEventListener('click', function() {
-      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      passwordInput.setAttribute('type', type);
+    if (togglePassword && passwordInput && eyeIcon) {
+      togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
 
-      if (type === 'text') {
-        eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
-      } else {
-        eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
-      }
-    });
+        if (type === 'text') {
+          eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
+        } else {
+          eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
+        }
+      });
+    }
 
     // Form validation
     const form = document.querySelector('form');
     const loginInput = document.getElementById('login');
 
-    form.addEventListener('submit', function(e) {
-      let isValid = true;
+    if (form && loginInput && passwordInput) {
+      form.addEventListener('submit', function(e) {
+        let isValid = true;
 
-      if (!loginInput.value.trim()) {
-        showError(loginInput, 'Username or email is required');
-        isValid = false;
-      } else {
-        clearError(loginInput);
-      }
+        if (!loginInput.value.trim()) {
+          showError(loginInput, 'Username or email is required');
+          isValid = false;
+        } else {
+          clearError(loginInput);
+        }
 
-      if (!passwordInput.value.trim()) {
-        showError(passwordInput, 'Password is required');
-        isValid = false;
-      } else if (passwordInput.value.length < 6) {
-        showError(passwordInput, 'Password must be at least 6 characters');
-        isValid = false;
-      } else {
-        clearError(passwordInput);
-      }
+        if (!passwordInput.value.trim()) {
+          showError(passwordInput, 'Password is required');
+          isValid = false;
+        } else if (passwordInput.value.length < 6) {
+          showError(passwordInput, 'Password must be at least 6 characters');
+          isValid = false;
+        } else {
+          clearError(passwordInput);
+        }
 
-      if (!isValid) {
-        e.preventDefault();
-      }
-    });
+        if (!isValid) {
+          e.preventDefault();
+        }
+      });
+    }
 
     function showError(input, message) {
       input.classList.add('border-red-500');
