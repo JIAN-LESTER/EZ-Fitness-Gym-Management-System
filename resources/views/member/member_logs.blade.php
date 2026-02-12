@@ -14,7 +14,7 @@
         </div>
 
         <!-- Compact Statistics Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <!-- This Month Card -->
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-gray-500 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
@@ -76,7 +76,7 @@
             </div>
 
             <!-- Current Plan Card -->
-            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500 hover:shadow-md transition-shadow">
+            <!-- <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-600 text-xs font-medium uppercase tracking-wide">Current Plan</p>
@@ -95,7 +95,29 @@
                         </svg>
                     </div>
                 </div>
-            </div>
+            </div> -->
+
+            <!-- Subscription Card -->
+            <!-- <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-xs font-medium uppercase tracking-wide">Subscription</p>
+                        <p class="text-lg font-bold text-blue-600 mt-1">{{ $memberProfile->subscription->name ?? 'N/A' }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            @if($memberProfile->subscription)
+                                ₱{{ number_format($memberProfile->subscription->price, 2) }}/{{ $memberProfile->subscription->duration_days }}d
+                            @else
+                                No subscription
+                            @endif
+                        </p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                </div>
+            </div> -->
         </div>
 
         <!-- Compact Attendance Timeline -->
@@ -108,7 +130,7 @@
                         <p class="text-gray-100 text-xs">Your complete attendance history</p>
                     </div>
                     <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded px-3 py-1">
-                        <p class="text-white dark:text-gray-900 text-xs font-medium">
+                        <p class="text-gray-900 dark:text-gray-900 text-xs font-medium">
                             {{ $attendances->firstItem() ?? 0 }} - {{ $attendances->lastItem() ?? 0 }} of {{ $attendances->total() }}
                         </p>
                     </div>

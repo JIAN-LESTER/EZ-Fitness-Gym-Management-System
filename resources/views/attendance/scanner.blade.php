@@ -35,7 +35,7 @@
                     
                     <!-- Camera Controls -->
                     <div class="flex gap-3 mb-6">
-                        <button id="start-scan" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition font-medium">
+                        <button id="start-scan" class="flex-1 bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition font-medium">
                             Start Scanning
                         </button>
                         <button id="stop-scan" class="flex-1 bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition font-medium" disabled>

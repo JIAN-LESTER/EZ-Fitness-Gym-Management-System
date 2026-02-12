@@ -10,6 +10,8 @@ use App\Models\Sales;
 use App\Models\Transactions;
 use App\Models\User;
 use App\Models\Branches;
+use App\Services\CacheService;
+use Cache;
 use Carbon\Traits\Timestamp;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
@@ -22,116 +24,136 @@ use Storage;
 
 class UserManagementController extends Controller
 {
+  /**
+   * Summary of viewUsers
+   * @param Request $request
+   */
    public function viewUsers(Request $request)
-{
-    $search = $request->get('search');
-    $roles = $request->get('roles', []);
-    $statuses = $request->get('user_status', []);
-    $currentUser = Auth::user();
+    {
+        $search = $request->get('search');
+        $roles = $request->get('roles', []);
+        $statuses = $request->get('user_status', []);
+        $currentUser = Auth::user();
 
-    $branchId = null;
+        $branchId = null;
 
-    if ($currentUser->role === 'super_admin') {
-        $branchId = session('selected_branch_id');
-    } else {
-        $branchId = $currentUser->branch_id;
-    }
-
-    // Build the base query without the join first
-    $query = User::query()
-        ->with(['member' => function($query) {
-            $query->select('member_id', 'user_id', 'plan_id', 'subscription_id', 'isApprovedForSubscription', 'isDisabledForSubscription');
-        }, 'member.plan:plan_id,name,price', 'member.subscription:subscription_id,name,price', 'branch:branch_id,name'])
-        ->when($search, function ($query, $search) {
-            return $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('username', 'like', "%{$search}%");
-            });
-        })
-        ->when(!empty($roles), function ($query) use ($roles) {
-            return $query->whereIn('role', $roles);
-        })
-        ->when(!empty($statuses), function ($query) use ($statuses) {
-            return $query->whereIn('status', $statuses);
-        })
-        ->when($branchId, function ($query) use ($branchId) {
-            return $query->where('branch_id', $branchId);
-        });
-
-    // Get all users first
-    $allUsers = $query->get();
-
-    // Sort them with custom logic
-    $sortedUsers = $allUsers->sort(function($a, $b) {
-        // Priority 1: Members with pending approval (plan + subscription but not approved)
-        $aPending = $a->role === 'member' 
-            && $a->member 
-            && $a->member->plan_id 
-            && $a->member->subscription_id
-            && !$a->member->isApprovedForSubscription
-            && !$a->member->isDisabledForSubscription;
-            
-        $bPending = $b->role === 'member' 
-            && $b->member 
-            && $b->member->plan_id 
-            && $b->member->subscription_id
-            && !$b->member->isApprovedForSubscription
-            && !$b->member->isDisabledForSubscription;
-
-        if ($aPending && !$bPending) return -1;
-        if (!$aPending && $bPending) return 1;
-
-        // Priority by role
-        $roleOrder = ['member' => 2, 'staff' => 3, 'admin' => 4, 'super_admin' => 5];
-        $aOrder = $roleOrder[$a->role] ?? 6;
-        $bOrder = $roleOrder[$b->role] ?? 6;
-
-        if ($aOrder !== $bOrder) {
-            return $aOrder - $bOrder;
+        if ($currentUser->role === 'super_admin') {
+            $branchId = session('selected_branch_id');
+        } else {
+            $branchId = $currentUser->branch_id;
         }
 
-        // If same priority, sort by created_at desc
-        return $b->created_at <=> $a->created_at;
-    })->values();
-
-    // Manually paginate the sorted collection
-    $perPage = 12;
-    $currentPage = $request->get('page', 1);
-    $offset = ($currentPage - 1) * $perPage;
-    
-    $paginatedItems = $sortedUsers->slice($offset, $perPage)->values();
-    
-    $users = new \Illuminate\Pagination\LengthAwarePaginator(
-        $paginatedItems,
-        $sortedUsers->count(),
-        $perPage,
-        $currentPage,
-        ['path' => $request->url(), 'query' => $request->query()]
-    );
-
-    $plans = \App\Models\MembershipPlan::select('plan_id', 'name', 'price')->get();
-    $branches = Branches::select('branch_id', 'name')->orderBy('name')->get();
-
-    // Optimized pending approvals count
-    $pendingApprovalsCount = 0;
-    if ($currentUser->role === 'admin') {
-        $pendingApprovalsCount = MemberProfile::where('isApprovedForSubscription', false)
-            ->where('isDisabledForSubscription', false)
-            ->whereNotNull('plan_id')
-            ->whereNotNull('subscription_id')
+        // Calculate pending approvals count
+        $pendingApprovalsCount = MemberProfile::where(function($query) {
+                // Members with plan and subscription but not approved
+                $query->whereNotNull('plan_id')
+                      ->whereNotNull('subscription_id')
+                      ->where('isApprovedForSubscription', false)
+                      ->where('isDisabledForSubscription', false);
+            })
+            ->orWhere(function($query) {
+                // Members with incomplete profiles (no plan or subscription)
+                $query->where(function($q) {
+                    $q->whereNull('plan_id')
+                      ->orWhereNull('subscription_id');
+                })
+                ->where('subscription_status', '!=', 'denied')
+                ->where('isDisabled', false);
+            })
+            ->when($branchId, function($query) use ($branchId) {
+                // Filter by branch if applicable
+                $query->whereHas('user', function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                });
+            })
             ->count();
-    }
 
-    return view('admin.user-management', compact(
-        'users',
-        'search',
-        'roles',
-        'statuses',
-        'plans',
-        'branches'
-    ));
-}
+        // Build the base query
+        $query = User::query()
+            ->with(['member' => function($query) {
+                $query->select('member_id', 'user_id', 'plan_id', 'subscription_id', 'isApprovedForSubscription', 'isDisabledForSubscription', 'sex', 'birthday', 'mobile_number', 'subscription_status', 'isApproved', 'isDisabled', 'renewal_pending');
+            }, 'member.plan:plan_id,name,price', 'member.subscription:subscription_id,name,price', 'branch:branch_id,name'])
+            ->when($search, function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%");
+                });
+            })
+            ->when(!empty($roles), function ($query) use ($roles) {
+                return $query->whereIn('role', $roles);
+            })
+            ->when(!empty($statuses), function ($query) use ($statuses) {
+                return $query->whereIn('status', $statuses);
+            })
+            ->when($branchId, function ($query) use ($branchId) {
+                return $query->where('branch_id', $branchId);
+            });
+
+        // Get all users
+        $allUsers = $query->get();
+
+        // Sort with custom logic
+        $sortedUsers = $allUsers->sort(function($a, $b) {
+            // Priority 1: Members with pending approval (plan + subscription but not approved)
+            $aPending = $a->role === 'member' 
+                && $a->member 
+                && $a->member->plan_id 
+                && $a->member->subscription_id
+                && (!$a->member->isApprovedForSubscription || $a->member->renewal_pending)
+                && !$a->member->isDisabledForSubscription;
+                
+            $bPending = $b->role === 'member' 
+                && $b->member 
+                && $b->member->plan_id 
+                && $b->member->subscription_id
+                && (!$b->member->isApprovedForSubscription || $b->member->renewal_pending)
+                && !$b->member->isDisabledForSubscription;
+
+            if ($aPending && !$bPending) return -1;
+            if (!$aPending && $bPending) return 1;
+
+            // Priority by role
+            $roleOrder = ['member' => 2, 'staff' => 3, 'admin' => 4, 'super_admin' => 5];
+            $aOrder = $roleOrder[$a->role] ?? 6;
+            $bOrder = $roleOrder[$b->role] ?? 6;
+
+            if ($aOrder !== $bOrder) {
+                return $aOrder - $bOrder;
+            }
+
+            // If same priority, sort by created_at desc
+            return $b->created_at <=> $a->created_at;
+        })->values();
+
+        // Manually paginate
+        $perPage = 12;
+        $currentPage = $request->get('page', 1);
+        $offset = ($currentPage - 1) * $perPage;
+        
+        $paginatedItems = $sortedUsers->slice($offset, $perPage)->values();
+        
+        $users = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedItems,
+            $sortedUsers->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        $plans = \App\Models\MembershipPlan::select('plan_id', 'name', 'price')->get();
+        $branches = Branches::select('branch_id', 'name')->orderBy('name')->get();
+
+        return view('admin.user-management', compact(
+            'users',
+            'search',
+            'roles',
+            'statuses',
+            'plans',
+            'branches',
+            'pendingApprovalsCount'
+        ));
+    }
 
     // Staff view - only shows members
     public function viewMembersForStaff(Request $request)
@@ -749,7 +771,7 @@ public function approveSubscription(Request $request, $memberId)
             return redirect()->back()->with('error', 'Cannot approve: Member has no subscription selected.');
         }
 
-        // Get payment details from request
+        // Get payment details
         $paymentMethod = $request->input('payment_method', 'cash');
         $referenceCode = $request->input('reference_code');
         $isRenewal = $member->renewal_pending;
@@ -758,7 +780,6 @@ public function approveSubscription(Request $request, $memberId)
             return redirect()->back()->with('error', 'GCash reference code is required for GCash payments.');
         }
 
-        // Use database transaction for consistency
         \DB::beginTransaction();
         
         try {
@@ -792,22 +813,49 @@ public function approveSubscription(Request $request, $memberId)
                 'timestamp' => now(),
             ]);
 
-            // Update member profile to ACTIVE
-            $member->update([
-                'isApproved' => true,
-                'isApprovedForSubscription' => true,
-                'isDisabled' => false,
-                'isDisabledForSubscription' => false,
-                'subscription_status' => 'active',
-                'status' => 'active',
-                'renewal_pending' => false,
-                'approved_at' => now(),
-                'approved_at_for_subscription' => now(),
-                'start_date_for_subscription' => now(),
-                'end_date_for_subscription' => now()->addDays($subscription->duration_days),
-                'suspended_at' => null,
-                'days_remaining_before_suspend' => null,
-            ]);
+            // Calculate new end dates based on current state
+            $now = now();
+            
+            // For subscription end date
+            if ($isRenewal && $member->end_date_for_subscription && \Carbon\Carbon::parse($member->end_date_for_subscription)->isFuture()) {
+                // If renewing and current subscription hasn't expired, add to existing end date
+                $newSubscriptionEndDate = \Carbon\Carbon::parse($member->end_date_for_subscription)
+                    ->addDays($subscription->duration_days);
+            } else {
+                // If new or expired, start from now
+                $newSubscriptionEndDate = $now->copy()->addDays($subscription->duration_days);
+            }
+
+            // For plan end date
+            if ($isRenewal && $member->end_date && \Carbon\Carbon::parse($member->end_date)->isFuture()) {
+                // If plan hasn't expired, add to existing end date
+                $newPlanEndDate = \Carbon\Carbon::parse($member->end_date)
+                    ->addDays($plan->duration_days);
+            } else {
+                // If new or expired, start from now
+                $newPlanEndDate = $now->copy()->addDays($plan->duration_days);
+            }
+
+            // Update member profile with ALL required fields
+            $member->isApproved = true;
+            $member->isApprovedForSubscription = true;
+            $member->isDisabled = false;
+            $member->isDisabledForSubscription = false;
+            $member->subscription_status = 'active';
+            $member->status = 'active';
+            $member->renewal_pending = false;
+            $member->approved_at = $isRenewal ? $member->approved_at : now(); // Keep original approval date if renewal
+            $member->approved_at_for_subscription = now();
+            $member->start_date_for_subscription = $isRenewal ? $member->start_date_for_subscription : now(); // Keep original start if renewal
+            $member->end_date_for_subscription = $newSubscriptionEndDate;
+            $member->start_date = $isRenewal ? $member->start_date : now(); // Keep original start if renewal
+            $member->end_date = $newPlanEndDate;
+            $member->suspended_at = null;
+            $member->days_remaining_before_suspend = null;
+            $member->plan_days_remaining_before_suspend = null; // Clear paused plan days
+            
+            // Save the member profile
+            $member->save();
 
             Logs::create([
                 'user_id' => $currentUser->user_id,
@@ -818,30 +866,45 @@ public function approveSubscription(Request $request, $memberId)
 
             \DB::commit();
 
-            // OPTIMIZATION: Queue QR code generation instead of doing it synchronously
-            // This prevents timeout issues
-            GenerateMemberQRCode::dispatch($user->user_id, $member->member_id, $plan->plan_id, $subscription->subscription_id);
-
+            // Clear all caches BEFORE generating QR
+            CacheService::forgetPattern('member_profile');
+            CacheService::forgetPattern('recent_attendance');
+            CacheService::forgetPattern('attendance_counts');
+            Cache::forget("member_profile:stats:{$user->user_id}");
+            
+            // Refresh member data before generating QR
+            $member->refresh();
+            
+            // Generate and send QR code
+            $this->generateAndSendQRCode($user, $member, $plan, $subscription);
+            
             $message = $isRenewal
-                ? "Renewal approved! QR code will be sent to {$user->email} shortly."
-                : "Subscription approved! QR code will be sent to {$user->email} shortly.";
+                ? "Renewal approved! QR code sent to {$user->email}"
+                : "Subscription approved! QR code sent to {$user->email}";
 
             return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
             \DB::rollBack();
+            \Log::error("Database transaction failed during approval", [
+                'member_id' => $memberId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             throw $e;
         }
 
     } catch (\Exception $e) {
         \Log::error("Error during subscription approval", [
             'member_id' => $memberId,
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
         ]);
 
         return redirect()->back()->with('error', 'Error approving subscription: ' . $e->getMessage());
     }
 }
+
 
 /**
  * Optimized profile approval - also queue QR if needed
@@ -958,8 +1021,13 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
     }
 
     try {
+        // Reload relationships to ensure we have latest data
+        $memberProfile->refresh();
+        $memberProfile->load(['user', 'plan', 'subscription']);
+        
         // Simplified QR data
         $qrData = json_encode([
+            'email' => $user->email,
             'id' => $memberProfile->member_id,
             'name' => "{$user->first_name} {$user->last_name}",
             'plan' => $plan->name,
@@ -979,13 +1047,13 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
             unlink($fullPath);
         }
 
-        // Generate QR with smaller size for faster generation
+        // Generate QR code
         $result = Builder::create()
             ->writer(new PngWriter())
             ->data($qrData)
             ->encoding(new Encoding('UTF-8'))
-            ->size(250) // Reduced from 300
-            ->margin(5)  // Reduced from 10
+            ->size(250)
+            ->margin(5)
             ->build();
 
         $result->saveToFile($fullPath);
@@ -997,25 +1065,27 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
         $memberProfile->qr_code = $qrRelativePath;
         $memberProfile->save();
 
-        // Send email asynchronously using queue
-        \Mail::to($user->email)->queue(new MemberQRCodeMail($memberProfile, $fullPath));
+        // CHANGE: Send immediately instead of queue
+        Mail::to($user->email)->send(new MemberQRCodeMail($memberProfile, $fullPath));
 
-        \Log::info("QR Code generated and queued for email", [
+        \Log::info("QR Code generated and sent via email", [
             'user_id' => $user->user_id,
+            'email' => $user->email,
             'path' => $qrRelativePath
         ]);
 
     } catch (\Exception $e) {
-        \Log::error("QR Code generation failed", [
+        \Log::error("QR Code generation/email failed", [
             'user_id' => $user->user_id,
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
         ]);
         // Don't throw - allow approval to succeed even if QR fails
     }
 }
 
     /**
-     * Deny member access
+     * Deny member access - WITH SWEETALERT
      */
     public function deny($memberId)
 {
@@ -1032,6 +1102,8 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
         'isDisabled' => true,
         'isApprovedForSubscription' => false,
         'isDisabledForSubscription' => true,
+        'subscription_status' => 'denied',
+        'status' => 'denied',
     ]);
 
     Logs::create([
@@ -1047,51 +1119,153 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
 }
 
     /**
-     * Suspend member
+     * Suspend member - Pause their days
      */
-    public function suspendMember($memberId)
-    {
-        try {
-            $member = MemberProfile::findOrFail($memberId);
-            $user = $member->user;
-            $currentUser = Auth::user();
+public function suspendMember($memberId)
+{
+    try {
+        $member = MemberProfile::findOrFail($memberId);
+        $user = $member->user;
+        $currentUser = Auth::user();
 
-            if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
-                return redirect()->back()->with('error', 'You can only suspend members from your branch.');
-            }
-
-            $member->update([
-                'subscription_status' => 'expired',
-                'suspended_at' => now(),
-                'days_remaining_before_suspend' => $member->end_date_for_subscription
-                    ? max(0, now()->diffInDays($member->end_date_for_subscription, false))
-                    : 0,
-            ]);
-
-            Logs::create([
-                'user_id' => Auth::id(),
-                'branch_id' => $currentUser->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $currentUser->branch_id,
-                'action' => "Suspended membership for: {$user->first_name} {$user->last_name}",
-                'timestamp' => now(),
-            ]);
-
-            return redirect()->back()->with('success', "Member {$user->first_name} {$user->last_name} has been suspended.");
-        } catch (\Exception $e) {
-            \Log::error("Error suspending member", [
-                'member_id' => $memberId,
-                'error' => $e->getMessage()
-            ]);
-
-            return redirect()->back()->with('error', 'Error suspending member: ' . $e->getMessage());
+        if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+            return redirect()->back()->with('error', 'You can only suspend members from your branch.');
         }
+
+        $now = now();
+
+        // Calculate days remaining for SUBSCRIPTION
+        $subscriptionDaysRemaining = 0;
+        if ($member->end_date_for_subscription) {
+            $endDate = \Carbon\Carbon::parse($member->end_date_for_subscription);
+            $subscriptionDaysRemaining = max(0, (int) ceil($now->diffInDays($endDate, false)));
+        }
+
+        // Calculate days remaining for MEMBERSHIP PLAN
+        $planDaysRemaining = 0;
+        if ($member->end_date) {
+            $endDate = \Carbon\Carbon::parse($member->end_date);
+            $planDaysRemaining = max(0, (int) ceil($now->diffInDays($endDate, false)));
+        }
+
+        \Log::info('Suspending member', [
+            'member_id' => $memberId,
+            'subscription_days' => $subscriptionDaysRemaining,
+            'plan_days' => $planDaysRemaining,
+            'subscription_end' => $member->end_date_for_subscription,
+            'plan_end' => $member->end_date,
+        ]);
+
+        // Update member with suspended status and save BOTH remaining days
+        $member->update([
+            'subscription_status' => 'suspended',
+            'status' => 'suspended', // Also suspend the membership status
+            'suspended_at' => $now,
+            'days_remaining_before_suspend' => $subscriptionDaysRemaining, // Subscription days
+            'plan_days_remaining_before_suspend' => $planDaysRemaining, // Plan days
+        ]);
+
+        // Clear caches
+        CacheService::forgetPattern('member_profile');
+        Cache::forget("member_profile:stats:{$user->user_id}");
+
+        Logs::create([
+            'user_id' => Auth::id(),
+            'branch_id' => $currentUser->role === 'super_admin'
+                ? session('selected_branch_id')
+                : $currentUser->branch_id,
+            'action' => "Suspended membership for: {$user->first_name} {$user->last_name} (Subscription: {$subscriptionDaysRemaining} days, Plan: {$planDaysRemaining} days paused)",
+            'timestamp' => now(),
+        ]);
+
+        return redirect()->back()->with('success', "Member {$user->first_name} {$user->last_name} has been suspended. Subscription: {$subscriptionDaysRemaining} days paused, Plan: {$planDaysRemaining} days paused.");
+    } catch (\Exception $e) {
+        \Log::error("Error suspending member", [
+            'member_id' => $memberId,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return redirect()->back()->with('error', 'Error suspending member: ' . $e->getMessage());
     }
+}
+
+/**
+ * Resume member - Restore BOTH subscription AND membership remaining days
+ */
+public function resumeMember($memberId)
+{
+    try {
+        $member = MemberProfile::findOrFail($memberId);
+        $user = $member->user;
+        $currentUser = Auth::user();
+
+        if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
+            return redirect()->back()->with('error', 'You can only resume members from your branch.');
+        }
+
+        // Check if member was suspended
+        if ($member->subscription_status !== 'suspended') {
+            return redirect()->back()->with('error', 'This member is not currently suspended.');
+        }
+
+        // Restore subscription days
+        $subscriptionDaysToRestore = $member->days_remaining_before_suspend ?? 0;
+        $newSubscriptionEndDate = now()->addDays($subscriptionDaysToRestore);
+
+        // Restore membership plan days
+        $planDaysToRestore = $member->plan_days_remaining_before_suspend ?? 0;
+        $newPlanEndDate = now()->addDays($planDaysToRestore);
+
+        \Log::info('Resuming member', [
+            'member_id' => $memberId,
+            'subscription_days_to_restore' => $subscriptionDaysToRestore,
+            'plan_days_to_restore' => $planDaysToRestore,
+            'new_subscription_end' => $newSubscriptionEndDate,
+            'new_plan_end' => $newPlanEndDate,
+        ]);
+
+        $member->update([
+            'subscription_status' => 'active',
+            'status' => 'active',
+            'suspended_at' => null,
+            'end_date_for_subscription' => $newSubscriptionEndDate,
+            'end_date' => $newPlanEndDate,
+            'days_remaining_before_suspend' => null,
+            'plan_days_remaining_before_suspend' => null,
+            'renewal_pending' => false, // Clear renewal pending flag
+        ]);
+
+        // Clear caches
+        CacheService::forgetPattern('member_profile');
+        Cache::forget("member_profile:stats:{$user->user_id}");
+
+        Logs::create([
+            'user_id' => Auth::id(),
+            'branch_id' => $currentUser->role === 'super_admin'
+                ? session('selected_branch_id')
+                : $currentUser->branch_id,
+            'action' => "Resumed membership for: {$user->first_name} {$user->last_name} (Subscription: {$subscriptionDaysToRestore} days, Plan: {$planDaysToRestore} days restored)",
+            'timestamp' => now(),
+        ]);
+
+        return redirect()->back()->with('success', "Member {$user->first_name} {$user->last_name} has been resumed. Subscription: {$subscriptionDaysToRestore} days restored, Plan: {$planDaysToRestore} days restored.");
+    } catch (\Exception $e) {
+        \Log::error("Error resuming member", [
+            'member_id' => $memberId,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return redirect()->back()->with('error', 'Error resuming member: ' . $e->getMessage());
+    }
+}
+
 
     /**
-     * Reactivate member
+     * Cancel Plan - Member needs to renew everything
      */
-    public function reactivateMember($memberId)
+    public function cancelPlan($memberId)
     {
         try {
             $member = MemberProfile::findOrFail($memberId);
@@ -1099,19 +1273,15 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
             $currentUser = Auth::user();
 
             if ($currentUser->role === 'admin' && $user->branch_id !== $currentUser->branch_id) {
-                return redirect()->back()->with('error', 'You can only reactivate members from your branch.');
-            }
-
-            if ($member->days_remaining_before_suspend > 0) {
-                $newEndDate = now()->addDays($member->days_remaining_before_suspend);
-            } else {
-                $newEndDate = $member->end_date_for_subscription;
+                return redirect()->back()->with('error', 'You can only cancel plans for members from your branch.');
             }
 
             $member->update([
-                'subscription_status' => 'active',
+                'subscription_status' => 'cancelled',
+                'status' => 'cancelled',
+                'end_date' => now(),
+                'end_date_for_subscription' => now(),
                 'suspended_at' => null,
-                'end_date_for_subscription' => $newEndDate,
                 'days_remaining_before_suspend' => null,
             ]);
 
@@ -1120,18 +1290,18 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
                 'branch_id' => $currentUser->role === 'super_admin'
                     ? session('selected_branch_id')
                     : $currentUser->branch_id,
-                'action' => "Reactivated membership for: {$user->first_name} {$user->last_name}",
+                'action' => "Cancelled plan for: {$user->first_name} {$user->last_name}",
                 'timestamp' => now(),
             ]);
 
-            return redirect()->back()->with('success', "Member {$user->first_name} {$user->last_name} has been reactivated.");
+            return redirect()->back()->with('success', "Plan cancelled for {$user->first_name} {$user->last_name}. Member needs to renew.");
         } catch (\Exception $e) {
-            \Log::error("Error reactivating member", [
+            \Log::error("Error cancelling plan", [
                 'member_id' => $memberId,
                 'error' => $e->getMessage()
             ]);
 
-            return redirect()->back()->with('error', 'Error reactivating member: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error cancelling plan: ' . $e->getMessage());
         }
     }
 }

@@ -1,61 +1,254 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# EZ Fitness Gym Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A modernized, cloud-hosted Gym Management Platform designed to replace the outdated local XAMPP system previously used by EZ Fitness Gym. Built with Laravel, Blade, TailwindCSS, and MySQL, this system streamlines daily operations, enhances member experience, and introduces secure, role-based workflow automation.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Project Overview
+The EZ Fitness Gym Management System is a full-featured, web-based platform engineered to address the operational issues of the old system. It modernizes workflows such as member registration, attendance tracking, payments, inventory, POS, and staff management — all within a centralized and secure web environment.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+This system removes the limitations of the old single-computer setup and provides remote accessibility, improved UI/UX, accurate membership handling, and a complete administrative suite.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🧩 Key Features
+1. **Role-Based Authentication** (Admin, Staff, Member)
+2. **Secure Login & Logout** with proper session handling
+3. **Integrated Member Registration** within the main dashboard
+4. **Server-Based Membership Tracking** (accurate start/end dates)
+5. **QR-Based Attendance System** with check-in & check-out logs
+6. **Full Inventory Management & Stock Monitoring**
+7. **Point of Sale (POS) Module** with Cash / GCash options
+8. **Sales & Transaction Records** with detailed logs
+9. **Comprehensive Dashboards** for Admin and Members
+10. **Automated Activity Logs** for accountability and auditing
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## 🏗️ System Architecture
+- **Frontend:** Laravel Blade + TailwindCSS
+- **Backend:** Laravel Framework (MVC)
+- **Database:** MySQL (Hosted via Hostinger)
+- **Deployment:** Hostinger Cloud Hosting
+- **Version Control:** Git + GitHub
+- **Design Tools:** Figma for UI/UX prototyping
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+The application follows a **monolithic architecture**, suitable for streamlined development and straightforward deployment.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 📡 Distributed Network (Simulation)
+The system supports distributed hosting behavior via DNS failover.
+- **Primary Server:** Handles all main traffic
+- **Backup Servers:** Triggered automatically if the primary fails
+- **DNS Load Handling:** Ensures continuous uptime
 
-### Premium Partners
+This design improves resiliency and minimizes service downtime.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## 📸 Core Modules (Screenshots in Documentation)
+- Login & Registration
+- Email Verification
+- Member QR Code Generator
+- Admin Dashboard
+- User & Membership Management
+- POS Interface
+- Inventory Control
+- Attendance Scanner
+- Activity Logs
+- Member Dashboard & History
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Refer to the full documentation for visual references.
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 🔧 Installation Guide
+### **1. Clone the Repository**
+```bash
+git clone <repository-link>
+cd gym-management-system
+```
 
-## Security Vulnerabilities
+### **2. Install Dependencies**
+```bash
+composer install
+npm install
+npm run build
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### **3. Configure Environment**
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+Update the following in `.env`:
+- Database Name
+- Database User & Password
+- Mail Configuration (for verification & password resets)
 
-## License
+### **4. Run Migrations**
+```bash
+php artisan migrate --seed
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### **5. Start Local Server**
+```bash
+php artisan serve
+```
+
+---
+
+## 📦 Deployment
+The system is deployed via **Hostinger Cloud Hosting** using:
+- PHP 8+
+- MySQL Database
+- File Storage for QR Codes & Product Images
+
+Upload the project files, configure `.env`, set storage permissions, and run migrations via SSH or PHPMyAdmin.
+
+---
+
+## 🧪 Testing
+The system underwent:
+- **Alpha Testing** (internal module validation)
+- **Beta Testing** (stakeholder evaluation)
+- **Network Simulation Tests** (failover & uptime validation)
+
+---
+
+## 💰 Cost-Benefit Snapshot
+- **Initial Project Cost:** ₱225,000
+- **Annual Net Benefit:** ₱430,000
+- **ROI:** Recovered within Year 1
+- **5-Year NPV:** ₱1.4 Million
+
+---
+
+## 🧑‍💻 Contributors
+- EZ Fitness Gym System Development Team (IT67 — CMU)
+- Development, Design, and Documentation members listed in the main report
+
+---
+
+## 📜 License
+This project is for **academic and developmental use** under IT67 – Integrative Programming Technologies at **Central Mindanao University**.
+
+---
+
+## 📬 Contact
+For inquiries, updates, or deployment concerns, contact the development group or the system administrator.
+
+---
+
+**EZ Fitness Gym Management System — Modern, Secure, and Built for Real Operations.**
+
+---
+
+# EZ Fitness Gym Management System — README v2 (Slightly Chaotic Edition 😎💪)
+
+Welcome to **Version 2** of the README — the same professional system overview, but now enhanced with *exactly 5% quirkiness* for flavor. Just enough to keep readers awake at 2 AM during deployment, but not enough to get flagged by the panel. Perfect.
+
+---
+
+## 🚀 Project Overview
+The EZ Fitness Gym Management System is a web-based solution built to replace the *ancient*, fossil-level XAMPP setup previously used by the gym. If the old system was a Nokia 3310, this one is basically a Samsung S24 Ultra with gym gains.
+
+We modernized everything: roles, sessions, QR attendance, sales, inventory, and UI/UX — all now smooth, scalable, and blessed by Laravel.
+
+---
+
+## 🧩 Key Features (Now With a Hint of Personality)
+1. **Role-Based Authentication** – No more shared accounts like some group project logins.
+2. **Proper Logout** – You can finally switch accounts without rebooting Planet Earth.
+3. **In-System Member Registration** – No more “registration outside the login void.”
+4. **Accurate Membership Dates** – Now pulled from the server, not the computer that’s 7 hours behind.
+5. **QR Attendance** – Because typing your name manually is so 2010.
+6. **Inventory System** – Tracks products better than a tita tracks the neighborhood gossip.
+7. **POS Module** – Cash? GCash? All good.
+8. **Sales & Transaction Logs** – For when the owner wants receipts.
+9. **Dashboards** – Beautiful analytics you can show off to investors.
+10. **Activity Logs** – Someone deleted something? We know. We ALWAYS know.
+
+---
+
+## 🏗️ Architecture Summary
+- **Laravel** – The backbone.
+- **Blade + TailwindCSS** – The face.
+- **MySQL** – The memory.
+- **Hostinger** – The house.
+- **GitHub** – The time machine.
+
+Monolithic by design. Simple. Clean. Not microservices (yet). But definitely not a spaghetti monster.
+
+---
+
+## 📡 Distributed System Simulation
+Yes, we simulated a multi-server failover.
+
+If the main server dies, DNS quietly reroutes to a backup server.
+
+Your users won’t even notice — unlike when Facebook went down for 6 hours.
+
+---
+
+## 🧪 Testing
+- **Alpha Testing** – Dev team breaks it.
+- **Beta Testing** – Stakeholders break it.
+- **Simulation** – Servers break themselves.
+
+All tests passed.
+
+---
+
+## 🛠️ Installation Guide (Now Human-Friendly)
+Clone the repo:
+```bash
+git clone <repo-link>
+```
+Dependencies:
+```bash
+composer install
+npm install
+```
+Generate magic keys:
+```bash
+php artisan key:generate
+```
+Database setup:
+```bash
+php artisan migrate --seed
+```
+Run the system:
+```bash
+php artisan serve
+```
+Deploy on Hostinger. Pray a little. Works like a charm.
+
+---
+
+## 💰 Cost–Benefit Highlights
+- ROI in under 1 year.
+- ₱430,000 annual net benefit.
+- ₱1.4M projected 5-year NPV.
+
+Basically, the system pays for itself faster than a gym newbie buys whey protein.
+
+---
+
+## 🧑‍💻 Contributors
+A squad of CMU IT students who took a broken system and said:
+
+> “Not on our watch.”
+
+---
+
+## 📜 License
+For academic + development use.
+
+If you find bugs, please report.
+If you find features, congratulations — those were intentional.
+
+---
+
+**EZ Fitness Gym Management System — Now with 5% more personality.**

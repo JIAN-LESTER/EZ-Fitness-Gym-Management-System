@@ -117,23 +117,6 @@
             }
         })();
 
-       (function() {
-            'use strict';
-            
-            // Get saved state (default to open if not set)
-            const sidebarOpen = localStorage.getItem('sidebarOpen') !== 'false';
-            
-            // Apply class to HTML element immediately
-            const htmlElement = document.documentElement;
-            if (sidebarOpen) {
-                htmlElement.classList.add('sidebar-init-open');
-                htmlElement.classList.remove('sidebar-init-closed');
-            } else {
-                htmlElement.classList.add('sidebar-init-closed');
-                htmlElement.classList.remove('sidebar-init-open');
-            }
-        })();
-
         // Modal functions - defined early so they're available everywhere
         function openProfileModal() {
             const modal = document.getElementById('profileModal');
@@ -163,6 +146,31 @@
             }
         }
 
+        function openLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                const scrollY = window.scrollY;
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${scrollY}px`;
+                document.body.style.width = '100%';
+                document.body.style.overflowY = 'scroll';
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                const scrollY = document.body.style.top;
+                modal.classList.add('hidden');
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                document.body.style.overflowY = '';
+                window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
+        }
+
         function opencompleteMembershipModal() {
             const modal = document.getElementById('completeMembershipModal');
             if (modal) {
@@ -179,6 +187,7 @@
         }
     </script>
 </head>
+
 
 <body x-data="{ 
         sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false'
@@ -214,7 +223,7 @@ if ($user->role === 'member') {
 
 // Count pending member approvals (only for admins)
 $pendingApprovalsCount = 0;
-if ($user->role === 'admin') {
+if ($user->role === 'admin' || $user->role === 'super_admin' || $user->role === 'staff') {
     $pendingApprovalsCount = \App\Models\MemberProfile::where('isApproved', false)
         ->where('isDisabled', false)
         ->count();
@@ -222,7 +231,7 @@ if ($user->role === 'admin') {
 
 // Count low stock products (for admins and staff)
 $lowStockCount = 0;
-if (in_array($user->role, ['admin', 'staff'])) {
+if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     $lowStockThreshold = 10;
     $lowStockCount = \App\Models\Inventory::where('quantity', '<=', $lowStockThreshold)
         ->where('quantity', '>', 0)
@@ -262,16 +271,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Dashboard</span>
     </a>
 
-       @if(auth()->user()->role === 'super_admin')
- <a href="{{ route('admin.branch_management') }}" @click="profileOpen = false"
-       class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.branch_management') ? 'bg-white/20 text-white' : '' }}">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
-        </svg>
-        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Branches</span>
-    </a>
-
-       @endif
+      
 
     <!-- MEMBERSHIP SECTION -->
     <div x-show="sidebarOpen" x-cloak class="pt-3 pb-1 px-3 sidebar-content">
@@ -279,19 +279,19 @@ if (in_array($user->role, ['admin', 'staff'])) {
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
 
-    <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  
-       class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
-        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm flex-1">Members and Staff</span>
-        @if($pendingApprovalsCount > 0)
-            <span x-show="sidebarOpen" x-cloak class="sidebar-content ml-auto px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
-                {{ $pendingApprovalsCount }}
-            </span>
-            <span x-show="!sidebarOpen" x-cloak class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800"></span>
-        @endif
-    </a>
+<a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  
+   class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+    </svg>
+    <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm flex-1">Accounts</span>
+    @if($pendingApprovalsCount > 0)
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content ml-auto px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
+            {{ $pendingApprovalsCount }}
+        </span>
+        <span x-show="!sidebarOpen" x-cloak class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800"></span>
+    @endif
+</a>
 
     <a href="{{ route('admin.plan_management') }}" @click="profileOpen = false"  
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.plan_management') ? 'bg-white/20 text-white' : '' }}">
@@ -393,6 +393,17 @@ if (in_array($user->role, ['admin', 'staff'])) {
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
 
+     @if(auth()->user()->role === 'super_admin')
+ <a href="{{ route('admin.branch_management') }}" @click="profileOpen = false"
+       class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.branch_management') ? 'bg-white/20 text-white' : '' }}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
+        </svg>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Branches</span>
+    </a>
+
+       @endif
+
     <a href="{{ route('categories.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('categories.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -418,19 +429,19 @@ if (in_array($user->role, ['admin', 'staff'])) {
     </div>
     <div x-show="!sidebarOpen" x-cloak class="border-t border-gray-700 my-1"></div>
 
-    <a href="{{ route('staff.user_management') }}" @click="profileOpen = false"  
-       class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('staff.user_management') ? 'bg-white/20 text-white' : '' }}">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
-        <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm flex-1">Members</span>
-        @if($pendingApprovalsCount > 0)
-            <span x-show="sidebarOpen" x-cloak class="ml-auto px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
-                {{ $pendingApprovalsCount }}
-            </span>
-            <span x-show="!sidebarOpen" x-cloak class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800"></span>
-        @endif
-    </a>
+<a href="{{ route('staff.user_management') }}" @click="profileOpen = false"  
+   class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('staff.user_management') ? 'bg-white/20 text-white' : '' }}">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+    </svg>
+    <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm flex-1">Members</span>
+    @if($pendingApprovalsCount > 0)
+        <span x-show="sidebarOpen" x-cloak class="ml-auto px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
+            {{ $pendingApprovalsCount }}
+        </span>
+        <span x-show="!sidebarOpen" x-cloak class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-gray-800"></span>
+    @endif
+</a>
 
     <a href="{{ route('admin.plan_management') }}" @click="profileOpen = false"  
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.plan_management') ? 'bg-white/20 text-white' : '' }}">
@@ -438,6 +449,14 @@ if (in_array($user->role, ['admin', 'staff'])) {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Membership Plans</span>
+    </a>
+
+         <a href="{{ route('admin.subscription_management') }}" @click="profileOpen = false"  
+       class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.subscription_management') ? 'bg-white/20 text-white' : '' }}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+        </svg>
+        <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Subscriptions</span>
     </a>
 
 
@@ -493,8 +512,8 @@ if (in_array($user->role, ['admin', 'staff'])) {
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Home</span>
     </a>
 
-<a href="{{ route('attendance.member.logs') }}" @click="profileOpen = false"
-       class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('attendance.member.logs') ? 'bg-white/20 text-white' : '' }}">
+<a href="{{ route('member.member.logs') }}" @click="profileOpen = false"
+       class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('member.member.logs') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
@@ -574,7 +593,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
                             <form method="POST" action="{{ route('admin.select-branch') }}">
                                 @csrf
                                 <button type="submit" name="branch_id" value="{{ $branch->branch_id }}"
-                                    class="w-full text-left px-4 py-2 text-sm rounded-md transition-colors
+                                    class="w-full text-left px-4 py-2 mb-2 text-sm rounded-md transition-colors
                                     {{ session('selected_branch_id') == $branch->branch_id ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-2">
@@ -647,26 +666,40 @@ if (in_array($user->role, ['admin', 'staff'])) {
                 <p class="text-sm text-gray-500 truncate">
                     {{ $user->email }}
                 </p>
-                @if($user->role === 'member' && $member && $member->status === 'inactive')
-                    <p class="text-xs text-red-600 mt-1">
-                        Profile incomplete
-                    </p>
-                @endif
+@if($user->role === 'member' && $member)
+    @if(!$member->isFullyApproved())
+        @if($member->hasIncompleteProfile())
+            <p class="text-xs text-red-600 mt-1">
+                Profile incomplete
+            </p>
+        @elseif($member->needsApproval())
+            <p class="text-xs text-yellow-600 mt-1">
+                Pending approval
+            </p>
+        @elseif($member->isDisabled || $member->isDisabledForSubscription)
+            <p class="text-xs text-red-600 mt-1">
+                Access denied
+            </p>
+        @endif
+    @endif
+@endif
             </div>
 
             <div class="py-1">
-            @if($user->role === 'member' && $member && $member->status === 'inactive' && $member->isApproved == true)
-                <button
-                    onclick="opencompleteMembershipModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
-                    class="flex items-center w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                    Complete Profile
-                </button>
-            @endif
+@if($user->role === 'member' && $member && !$member->isFullyApproved())
+    @if($member->hasIncompleteProfile())
+        <button
+            onclick="opencompleteMembershipModal(); document.querySelector('[x-data]').__x.$data.profileOpen = false"
+            class="flex items-center w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            Complete Profile
+        </button>
+    @endif
+@endif
 
                <button
     onclick="openProfileModal()"
@@ -694,15 +727,17 @@ if (in_array($user->role, ['admin', 'staff'])) {
 
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit"
-                        class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Logout
-                    </button>
+             <button 
+    @click="profileOpen = false; setTimeout(() => openLogoutModal(), 100)"
+    type="button"
+    class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-3" fill="none"
+        viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+    </svg>
+    Logout
+</button>
                 </form>
             </div>
         </div>
@@ -713,285 +748,6 @@ if (in_array($user->role, ['admin', 'staff'])) {
             @yield('content')
         </main>
     </div>
-
-
-<!-- @if($user->role === 'member' && $member)
-   
-    {{-- STATE 1: Profile incomplete - needs to fill out form --}}
-    @if(!$member->plan_id || !$member->sex || !$member->birthday || !$member->mobile_number)
-        {{-- Complete Membership Profile Modal - First time setup --}}
-        <div id="completeMembershipModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
-            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
-                <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
-                    <div class="flex items-center space-x-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                        </svg>
-                        <h2 class="text-xl font-semibold">Complete Your Membership Profile</h2>
-                    </div>
-                    <p class="text-gray-100 text-sm mt-1">Please complete your membership information to continue.</p>
-                </div>
-
-                <form id="completeProfileForm" action="{{ route('profile.complete-member-profile') }}" method="POST" class="p-6 md:p-8 space-y-6 relative z-10">
-                    @csrf
-                    @method('PUT')
-
-                    <div x-data="{ open: false, selected: '', selectedId: '' }" class="relative">
-                        <label for="plan_id" class="block text-sm font-medium text-gray-800">
-                            Membership Plan <span class="text-red-500">*</span>
-                        </label>
-
-                        <input type="hidden" name="plan_id" x-model="selectedId">
-
-                        <button type="button" @click="open = !open"
-                            class="mt-2 w-full flex justify-between items-center rounded-xl border border-gray-800 bg-gray-200 px-4 py-3">
-                            <span x-text="selected || 'Select a plan'"></span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-
-                        <div x-show="open" @click.away="open = false"
-                             class="absolute mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-md z-50">
-                            @foreach($plans as $plan)
-                                <div @click="
-                                        selected = '{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }}';
-                                        selectedId = '{{ $plan->plan_id }}';
-                                        open = false
-                                    "
-                                    class="flex justify-between px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                                    <span>{{ $plan->name }}</span>
-                                    <span>₱{{ number_format($plan->price, 2) }}</span>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        @error('plan_id')
-                            <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="mb-4">
-                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-800 mb-2">
-                            Sex <span class="text-red-500">*</span>
-                        </span>
-
-                        <div class="flex items-center space-x-6">
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="sex" value="male" {{ old('sex')=='male' ? 'checked' : '' }} class="peer sr-only">
-                                <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800
-                                            flex items-center justify-center transition duration-200 bg-gray-100 hover:bg-gray-200">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/921/921106.png"
-                                         alt="Male avatar" class="w-10 h-10 object-contain opacity-90">
-                                </div>
-                                <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Male</span>
-                            </label>
-
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="sex" value="female" {{ old('sex')=='female' ? 'checked' : '' }} class="peer sr-only">
-                                <div class="w-16 h-16 rounded-full border-2 border-gray-300 peer-checked:border-gray-800
-                                            flex items-center justify-center transition duration-200 bg-gray-100 hover:bg-gray-200">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/921/921124.png"
-                                         alt="Female avatar" class="w-10 h-10 object-contain opacity-90">
-                                </div>
-                                <span class="block text-center mt-1 text-gray-800 text-sm font-medium">Female</span>
-                            </label>
-                        </div>
-
-                        <div class="mt-1">
-                            @error('sex')
-                                <span class="text-red-500 text-xs block">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="birthday" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
-                            Birthday <span class="text-red-500">*</span>
-                        </label>
-                        <input type="date" name="birthday" id="birthday"
-                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
-                        @error('birthday')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="height" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
-                                Height (cm)
-                            </label>
-                            <input type="number" step="0.1" name="height" id="height"
-                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
-                            @error('height')
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                            @enderror
-                        </div>
-                        <div>
-                            <label for="weight" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
-                                Weight (kg)
-                            </label>
-                            <input type="number" step="0.1" name="weight" id="weight"
-                                class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
-                            @error('weight')
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="mobile_number" class="block text-sm font-medium text-gray-700 dark:text-gray-800">
-                            Mobile Number <span class="text-red-500">*</span>
-                        </label>
-                        <input type="tel" name="mobile_number" id="mobile_number" placeholder="e.g. 09123456789"
-                            pattern="[0-9]{11}"
-                            class="mt-2 block w-full rounded-xl border-gray-800 bg-gray-200 dark:border-gray-600 px-4 py-3 focus:ring-gray-500 focus:border-gray-500">
-                        @error('mobile_number')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <button type="submit"
-                            class="px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium">
-                            Complete Profile
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-    {{-- STATE 2: Profile complete but waiting for admin approval --}}
-    @elseif($member->isApproved == false && $member->isDisabled == false && $member->status === 'inactive')
-        {{-- Waiting for Approval Modal with Retry --}}
-        <div id="waitingApprovalModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
-            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-                <div class="bg-yellow-500 text-white p-5 rounded-t-2xl">
-                    <div class="flex items-center space-x-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <h2 class="text-xl font-semibold">Pending Approval</h2>
-                    </div>
-                </div>
-
-                <div class="p-8 text-center">
-                    <div class="mb-6">
-                        <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Account Under Review</h3>
-                        <p id="approvalStatusMessage" class="text-gray-600 text-lg mb-4">
-                            Your profile has been submitted and is awaiting admin approval.
-                        </p>
-                        <p class="text-gray-500 text-sm">You'll receive an email with your QR code once approved.</p>
-                        
-                        @if($member->plan)
-                            <div class="mt-4 p-3 bg-gray-100 rounded-lg">
-                                <p class="text-sm text-gray-600">Selected Plan:</p>
-                                <p class="font-bold text-gray-800">{{ $member->plan->name }}</p>
-                                <p class="text-sm text-gray-500">₱{{ number_format($member->plan->price, 2) }}</p>
-                            </div>
-                        @endif
-                    </div>
-
-                    <div class="space-y-3">
-                        <button onclick="checkApprovalStatus()" 
-                            class="w-full px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 font-medium transition-colors flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Check Status
-                        </button>
-
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" 
-                                class="w-full px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- QR Code Approved Modal (hidden by default, shown via JavaScript) --}}
-        <div id="qrApprovedModal" class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
-            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-                <div class="bg-green-500 text-white p-5 rounded-t-2xl">
-                    <div class="flex items-center space-x-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <h2 class="text-xl font-semibold">Membership Approved!</h2>
-                    </div>
-                </div>
-
-                <div class="p-8 text-center">
-                    <div class="mb-6">
-                        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Welcome to EZ Fitness!</h3>
-                        <p class="text-gray-600 text-lg mb-4">Your membership has been activated.</p>
-                        <p class="text-gray-500 text-sm mb-4">Your QR code has been sent to your email.</p>
-                        
-                        <div id="qrCodeDisplay" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
-                            <img id="qrCodeImage" src="" alt="QR Code" class="mx-auto w-48 h-48">
-                        </div>
-                    </div>
-
-                    <button onclick="closeQRApprovedModal()" 
-                        class="w-full px-6 py-3 rounded-xl bg-green-500 text-white hover:bg-green-600 font-medium transition-colors">
-                        Continue
-                    </button>
-                </div>
-            </div>
-        </div>
-
-    {{-- STATE 3: Account has been rejected/disabled --}}
-    @elseif($member->isDisabled == true)
-        {{-- Account Rejected Modal --}}
-        <div id="accountRejectedModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
-            <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-                <div class="bg-red-500 text-white p-5 rounded-t-2xl">
-                    <div class="flex items-center space-x-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <h2 class="text-xl font-semibold">Account Not Approved</h2>
-                    </div>
-                </div>
-
-                <div class="p-8 text-center">
-                    <div class="mb-6">
-                        <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Access Denied</h3>
-                        <p class="text-gray-600 text-lg mb-4">Your account was not approved.</p>
-                        <p class="text-gray-500 text-sm">Please contact the administrator for more information.</p>
-                    </div>
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="w-full px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors">
-                            Logout
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    @endif
-
-@endif -->
 
 @if($user->role === 'member')
     @php
@@ -1090,12 +846,12 @@ if (in_array($user->role, ['admin', 'staff'])) {
                         </div>
                     </div>
 
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                         <div class="flex items-start gap-3">
-                            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
-                            <div class="text-sm text-blue-800">
+                            <div class="text-sm text-green-800">
                                 <p class="font-semibold mb-1">Next Steps:</p>
                                 <p>After submitting, you'll select a membership plan and subscription.</p>
                             </div>
@@ -1116,12 +872,12 @@ if (in_array($user->role, ['admin', 'staff'])) {
     @if($member && $member->sex && $member->birthday && $member->mobile_number && $user->branch_id && !$member->plan_id)
         <div id="selectPlanModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
             <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh]">
-                <div class="bg-green-500 text-white p-5 rounded-t-2xl">
+                <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
                     <div class="flex items-center space-x-3">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <h2 class="text-xl font-semibold">Profile Complete!</h2>
+                        <h2 class="text-xl font-semibold">Membership Plan</h2>
                     </div>
                     <p class="text-white text-sm mt-1">Step 2 of 3: Select your membership plan</p>
                 </div>
@@ -1182,7 +938,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
 
                         @if(count($membershipPlans ?? []) > 0)
                             <div class="flex justify-end pt-6 border-t border-gray-200">
-                                <button type="submit" class="px-8 py-3 rounded-xl bg-green-500 text-white hover:bg-green-600 font-medium">
+                                <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium">
                                     Continue to Subscription
                                 </button>
                             </div>
@@ -1197,26 +953,26 @@ if (in_array($user->role, ['admin', 'staff'])) {
     @if($member && $member->plan_id && !$member->subscription_id && $member->subscription_status === 'pending_selection')
         <div id="selectSubscriptionModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
             <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh]">
-                <div class="bg-blue-500 text-white p-5 rounded-t-2xl">
+                <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
                     <div class="flex items-center space-x-3">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <h2 class="text-xl font-semibold">Plan Selected!</h2>
+                        <h2 class="text-xl font-semibold">Subscription</h2>
                     </div>
                     <p class="text-white text-sm mt-1">Step 3 of 3: Select your subscription</p>
                 </div>
 
                 <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
                     <div class="mb-6">
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                             <div class="flex items-center gap-3">
-                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                                 <div>
-                                    <p class="font-semibold text-blue-800">Membership Plan Selected</p>
-                                    <p class="text-sm text-blue-700">{{ $member->plan->name }} - ₱{{ number_format($member->plan->price, 2) }}</p>
+                                    <p class="font-semibold text-green-800">Membership Plan Selected</p>
+                                    <p class="text-sm text-green-700">{{ $member->plan->name }} - ₱{{ number_format($member->plan->price, 2) }}</p>
                                 </div>
                             </div>
                         </div>
@@ -1231,11 +987,11 @@ if (in_array($user->role, ['admin', 'staff'])) {
                             @forelse($subscriptions as $subscription)
                                 <label class="relative cursor-pointer group">
                                     <input type="radio" name="subscription_id" value="{{ $subscription->subscription_id }}" required class="peer sr-only">
-                                    <div class="border-2 border-gray-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 rounded-xl p-6 hover:shadow-lg transition-all">
+                                    <div class="border-2 border-gray-300 peer-checked:border-green-500 peer-checked:bg-green-50 rounded-xl p-6 hover:shadow-lg transition-all">
                                         <div class="flex justify-between items-start mb-3">
                                             <h4 class="text-xl font-bold text-gray-800">{{ $subscription->name }}</h4>
                                             <div class="peer-checked:block hidden">
-                                                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                                 </svg>
                                             </div>
@@ -1258,7 +1014,7 @@ if (in_array($user->role, ['admin', 'staff'])) {
 
                         @if(count($subscriptions ?? []) > 0)
                             <div class="flex justify-end pt-6 border-t border-gray-200">
-                                <button type="submit" class="px-8 py-3 rounded-xl bg-blue-500 text-white hover:bg-blue-600 font-medium">
+                                <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium">
                                     Submit for Approval
                                 </button>
                             </div>
@@ -1331,39 +1087,124 @@ if (in_array($user->role, ['admin', 'staff'])) {
 
     {{-- FINAL: QR Code Approved --}}
     <div id="qrApprovedModal" class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+    <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden">
+
+        <!-- Header -->
+        <div class="bg-green-500 text-white p-5">
+            <div class="flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="text-lg font-semibold">Membership Activated!</h2>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+
+            <!-- Left Column -->
+            <div class="text-center md:text-left">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 mx-auto md:mx-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold mb-1">Welcome to EZ Fitness!</h3>
+                <p class="text-gray-600">Your membership is now active.</p>
+
+                <div class="member-data-section mt-4">
+                    <!-- populated by JS -->
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div id="qrCodeDisplay" class="hidden text-center bg-gray-50 p-4 rounded-lg">
+                <p class="text-sm text-gray-600 mb-2">Your QR Code</p>
+                <img id="qrCodeImage" src="" alt="QR Code" class="mx-auto w-40 h-40 border rounded">
+                <p class="text-xs text-gray-500 mt-2">Also sent to your email</p>
+            </div>
+
+        </div>
+
+        <!-- Footer Button -->
+        <div class="p-6 pt-0">
+            <button onclick="closeQRApprovedModal()"
+                class="w-full px-6 py-3 rounded-xl bg-green-500 text-white hover:bg-green-600 font-medium transition">
+                Continue to Dashboard
+            </button>
+        </div>
+
+    </div>
+</div>
+
+@if($user->role === 'member' && $member && $member->renewal_pending && !$member->isApprovedForSubscription)
+    <div id="renewalCheckStatusModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
         <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-            <div class="bg-green-500 text-white p-5 rounded-t-2xl">
+            <div class="bg-yellow-500 text-white p-5 rounded-t-2xl">
                 <div class="flex items-center space-x-3">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <h2 class="text-xl font-semibold">Membership Activated!</h2>
+                    <h2 class="text-xl font-semibold">Renewal Pending</h2>
                 </div>
             </div>
 
             <div class="p-8 text-center">
                 <div class="mb-6">
-                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Welcome to EZ Fitness!</h3>
-                    <p class="text-gray-600 text-lg mb-4">Your membership is now active.</p>
-                    <p class="text-gray-500 text-sm mb-4">Your QR code has been sent to your email.</p>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Renewal Request Submitted</h3>
+                    <p class="text-gray-600 text-lg mb-4">
+                        Your renewal request is awaiting admin approval.
+                    </p>
                     
-                    <div id="qrCodeDisplay" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
-                        <img id="qrCodeImage" src="" alt="QR Code" class="mx-auto w-48 h-48">
-                    </div>
+                    @if($member->subscription)
+                        <div class="mt-4 p-4 bg-gray-50 rounded-lg text-left space-y-2">
+                            <div>
+                                <p class="text-sm text-gray-600">Subscription:</p>
+                                <p class="font-bold text-gray-800">{{ $member->subscription->name }}</p>
+                                <p class="text-sm text-gray-500">₱{{ number_format($member->subscription->price, 2) }}</p>
+                            </div>
+                            @if($member->plan)
+                            <div class="border-t pt-2">
+                                <p class="text-sm text-gray-600">Plan:</p>
+                                <p class="font-bold text-gray-800">{{ $member->plan->name }}</p>
+                                <p class="text-sm text-gray-500">₱{{ number_format($member->plan->price, 2) }}</p>
+                            </div>
+                            @endif
+                        </div>
+                    @endif
+                    
+                    <p class="text-gray-500 text-sm mt-4">You'll receive your QR code via email once approved.</p>
                 </div>
 
-                <button onclick="closeQRApprovedModal()" 
-                    class="w-full px-6 py-3 rounded-xl bg-green-500 text-white hover:bg-green-600 font-medium transition-colors">
-                    Continue to Dashboard
-                </button>
+                <div class="space-y-3">
+                    <button onclick="checkRenewalStatus()" 
+                        id="renewalCheckBtn"
+                        class="w-full px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 font-medium transition-colors flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Check Renewal Status
+                    </button>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" 
+                            class="w-full px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors">
+                            Logout
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+@endif
+
+
 @endif
 
 
@@ -1371,173 +1212,183 @@ if (in_array($user->role, ['admin', 'staff'])) {
 
     {{-- VIEW PROFILE MODAL --}}
     <div id="profileModal"
-        class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/40">
-        <div
-            class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border border-gray-200 dark:border-gray-700">
+    class="hidden fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/40">
+    <div
+        class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border border-gray-200">
 
-            <div class="flex justify-between items-center p-6 bg-gray-200 text-gray-800 dark:bg-gray-900/50">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">My Profile</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">View your account information</p>
-                </div>
-                <button onclick="closeProfileModal()"
-                    class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Header -->
+        <div class="flex justify-between items-center p-6 bg-gradient-to-r from-gray-800 to-gray-700">
+            <div>
+                <h2 class="text-2xl font-bold text-white">My Profile</h2>
+                <p class="text-sm text-gray-200 mt-1">View your account information</p>
+            </div>
+            <button onclick="closeProfileModal()"
+                class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-gray-200 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 space-y-6 max-h-[calc(100vh-16rem)] overflow-y-auto bg-gray-50">
+
+            <!-- Personal Information Section -->
+            <div class="space-y-4">
+                <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                </button>
+                    Personal Information
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <p class="text-xs font-medium text-gray-500 mb-1">First Name</p>
+                        <p class="text-base font-semibold text-gray-900">{{ $user->first_name }}</p>
+                    </div>
+                    <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <p class="text-xs font-medium text-gray-500 mb-1">Last Name</p>
+                        <p class="text-base font-semibold text-gray-900">{{ $user->last_name }}</p>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                    <p class="text-xs font-medium text-gray-500 mb-1">Username</p>
+                    <p class="text-base font-semibold text-gray-900">{{ $user->username }}</p>
+                </div>
+
+                <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                    <p class="text-xs font-medium text-gray-500 mb-1">Email Address</p>
+                    <p class="text-base font-semibold text-gray-900">{{ $user->email }}</p>
+                </div>
+
+                <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                    <p class="text-xs font-medium text-gray-500 mb-2">Role</p>
+                    <span
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full
+                        {{ $user->role === 'admin' ? 'bg-red-100 text-red-700 border border-red-200' :
+                        ($user->role === 'staff' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-green-100 text-green-700 border border-green-200') }}">
+                        @if($user->role === 'admin')
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        @elseif($user->role === 'staff')
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        @else
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        @endif
+                        {{ ucfirst($user->role) }}
+                    </span>
+                </div>
             </div>
 
-            <div class="p-6 space-y-6 max-h-[calc(100vh-16rem)] overflow-y-auto">
+            <!-- MEMBER PROFILE DETAILS -->
+            @if($user->role === 'member')
+                @if($member)
+                    <div class="space-y-4 pt-4 border-t-2 border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Membership Details
+                        </h3>
 
-                {{-- Personal Information Section --}}
-                <div class="space-y-4">
-                    <h3
-                        class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Personal Information
-                    </h3>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
-                            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">First Name</p>
-                            <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $user->first_name }}</p>
+                        <div class="p-5 bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl shadow-lg">
+                            <p class="text-xs font-medium text-gray-300 mb-2">Current Plan</p>
+                            <p class="text-2xl font-bold text-white">{{ $plan->name ?? 'N/A' }}</p>
+                            @if($plan)
+                                <p class="text-sm text-gray-300 mt-1">₱{{ number_format($plan->price, 2) }}</p>
+                            @endif
                         </div>
-                        <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
-                            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Last Name</p>
-                            <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $user->last_name }}</p>
-                        </div>
-                    </div>
 
-                    <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
-                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Username</p>
-                        <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $user->username }}</p>
-                    </div>
-
-                    <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
-                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email Address</p>
-                        <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $user->email }}</p>
-                    </div>
-
-                    <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
-                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Role</p>
-                        <span
-                            class="inline-block px-3 py-1 text-sm rounded-full
-                        {{ $user->role === 'admin' ? 'bg-red-100 text-red-700' :
-    ($user->role === 'staff' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700') }}">
-                            {{ ucfirst($user->role) }}
-                        </span>
-                    </div>
-                </div>
-
-                {{-- MEMBER PROFILE DETAILS - Only show if user is a member --}}
-                @if($user->role === 'member')
-                    @if($member)
-                        <div class="space-y-4">
-                            <h3
-                                class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Membership Details
-                            </h3>
-
-                            <div
-                                class="p-4 bg-gray-200 text-gray-800  dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800">
-                                <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Current Plan</p>
-                                <p class="text-lg font-bold text-gray-900 dark:text-white">
-                                    {{ $plan->name ?? 'N/A' }}</p>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-4">
-                                @if($member->sex)
-                                    <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
-                                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sex</p>
-                                        <p class="text-base font-semibold text-gray-900 dark:text-white capitalize">
-                                            {{ $member->sex }}</p>
-                                    </div>
-                                @endif
-                                @if($member->birthday)
-                                    <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
-                                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Birthday</p>
-                                        <p class="text-base font-semibold text-gray-900 dark:text-white">
-                                            {{ \Carbon\Carbon::parse($member->birthday)->format('M d, Y') }}</p>
-                                    </div>
-                                @endif
-                            </div>
-
-                            @if($member->height || $member->weight || $member->mobile_number)
-                                <div class="space-y-4">
-                                    <h4
-                                        class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                        </svg>
-                                        Physical Information
-                                    </h4>
-
-                                    <div class="grid grid-cols-2 gap-4">
-                                        @if($member->height)
-                                            <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
-                                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Height</p>
-                                                <p class="text-base font-semibold text-gray-900 dark:text-white">
-                                                    {{ $member->height }} <span class="text-sm font-normal">cm</span></p>
-                                            </div>
-                                        @endif
-                                        @if($member->weight)
-                                            <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
-                                                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Weight</p>
-                                                <p class="text-base font-semibold text-gray-900 dark:text-white">
-                                                    {{ $member->weight }} <span class="text-sm font-normal">kg</span></p>
-                                            </div>
-                                        @endif
-                                    </div>
-
-                                    @if($member->mobile_number)
-                                        <div class="p-4 bg-gray-200 text-gray-800 dark:bg-gray-900/50 rounded-xl">
-                                            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Mobile Number</p>
-                                            <p class="text-base font-semibold text-gray-900 dark:text-white">
-                                                {{ $member->mobile_number }}</p>
-                                        </div>
-                                    @endif
+                        <div class="grid grid-cols-2 gap-4">
+                            @if($member->sex)
+                                <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <p class="text-xs font-medium text-gray-500 mb-1">Sex</p>
+                                    <p class="text-base font-semibold text-gray-900 capitalize">{{ $member->sex }}</p>
+                                </div>
+                            @endif
+                            @if($member->birthday)
+                                <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <p class="text-xs font-medium text-gray-500 mb-1">Birthday</p>
+                                    <p class="text-base font-semibold text-gray-900">{{ \Carbon\Carbon::parse($member->birthday)->format('M d, Y') }}</p>
                                 </div>
                             @endif
                         </div>
-                    @else
-                        <div
-                            class="p-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                                <div>
-                                    <p class="text-sm font-semibold text-amber-900 dark:text-amber-800">Profile Incomplete</p>
-                                    <p class="text-sm text-amber-700 dark:text-amber-400 mt-1">Please complete your membership
-                                        profile to access all features.</p>
+
+                        @if($member->height || $member->weight || $member->mobile_number)
+                            <div class="space-y-4 pt-4">
+                                <h4 class="text-sm font-semibold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                    Physical Information
+                                </h4>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    @if($member->height)
+                                        <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                            <p class="text-xs font-medium text-gray-500 mb-1">Height</p>
+                                            <p class="text-base font-semibold text-gray-900">
+                                                {{ $member->height }} <span class="text-sm font-normal text-gray-600">cm</span>
+                                            </p>
+                                        </div>
+                                    @endif
+                                    @if($member->weight)
+                                        <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                            <p class="text-xs font-medium text-gray-500 mb-1">Weight</p>
+                                            <p class="text-base font-semibold text-gray-900">
+                                                {{ $member->weight }} <span class="text-sm font-normal text-gray-600">kg</span>
+                                            </p>
+                                        </div>
+                                    @endif
                                 </div>
+
+                                @if($member->mobile_number)
+                                    <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                        <p class="text-xs font-medium text-gray-500 mb-1">Mobile Number</p>
+                                        <p class="text-base font-semibold text-gray-900">{{ $member->mobile_number }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                @else
+                    <div class="p-6 bg-amber-50 rounded-xl border-2 border-amber-200">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <div>
+                                <p class="text-sm font-semibold text-amber-900">Profile Incomplete</p>
+                                <p class="text-sm text-amber-800 mt-1">Please complete your membership profile to access all features.</p>
                             </div>
                         </div>
-                    @endif
+                    </div>
                 @endif
-            </div>
-
-            <div
-                class="flex justify-end gap-3 p-6 bg-gray-200 text-gray-800 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
-                <button onclick="closeProfileModal()"
-                    class="px-6 py-2.5 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-800 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 font-medium transition-colors">
-                    Close
-                </button>
-            </div>
+            @endif
         </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end gap-3 p-6 bg-white border-t border-gray-200">
+            <button onclick="closeProfileModal()"
+                class="px-8 py-2.5 rounded-xl bg-gray-800 text-white hover:bg-gray-700 font-medium transition-colors shadow-lg hover:shadow-xl">
+                Close
+            </button>
+        </div>
+
     </div>
+</div>
 
     {{-- EDIT PROFILE MODAL - Updated for non-members --}}
     <div id="editProfileModal"
@@ -1836,62 +1687,44 @@ if (in_array($user->role, ['admin', 'staff'])) {
     </div>
 @endif
 
-{{-- Renewal Pending Modal --}}
-@if($user->role === 'member' && $member && $member->renewal_pending && $member->status === 'expired')
-    <div id="renewalPendingModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
-        <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-            <div class="bg-yellow-500 text-white p-5 rounded-t-2xl">
-                <div class="flex items-center space-x-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h2 class="text-xl font-semibold">Renewal Pending</h2>
-                </div>
+<div id="logoutModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+    <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeLogoutModal()"></div>
+
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
             </div>
 
-            <div class="p-8 text-center">
-                <div class="mb-6">
-                    <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Renewal Request Submitted</h3>
-                    <p class="text-gray-600 text-lg mb-4">
-                        Your renewal request is awaiting admin approval.
-                    </p>
-                    <p class="text-gray-500 text-sm">You'll receive an email once your renewal is approved.</p>
-                    
-                    @if($member->plan)
-                        <div class="mt-4 p-3 bg-gray-100 rounded-lg">
-                            <p class="text-sm text-gray-600">Selected Plan:</p>
-                            <p class="font-bold text-gray-800">{{ $member->plan->name }}</p>
-                            <p class="text-sm text-gray-500">₱{{ number_format($member->plan->price, 2) }}</p>
-                        </div>
-                    @endif
-                </div>
+            <h3 class="text-xl font-bold text-center text-gray-900 mb-2">
+                Logout Confirmation
+            </h3>
 
-                <div class="space-y-3">
-                    <button onclick="checkApprovalStatus()" 
-                        class="w-full px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 font-medium transition-colors flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Check Status
+            <p class="text-center text-gray-600 mb-6">
+                Are you sure you want to logout? You will be redirected to the login page.
+            </p>
+
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeLogoutModal()"
+                        class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                        Cancel
                     </button>
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" 
-                            class="w-full px-6 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors">
-                            Logout
-                        </button>
-                    </form>
+                    <button type="submit"
+                        class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
+                        Logout
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
-@endif
+</div>
+
+
 
 
 
@@ -2271,6 +2104,112 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
+function checkRenewalStatus() {
+    const button = document.getElementById('renewalCheckBtn');
+    const originalContent = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = `
+        <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+    `;
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    
+    if (!csrfToken) {
+        Toastify({
+            text: 'Security token not found. Please refresh the page.',
+            duration: 3000,
+            gravity: "top",
+            position: "right",
+            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
+        }).showToast();
+        button.disabled = false;
+        button.innerHTML = originalContent;
+        return;
+    }
+
+    fetch('/member/check-approval', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': csrfToken.content,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Renewal approval status:', data);
+        
+        if (data.status === 'approved') {
+            // Show success message
+            Toastify({
+                text: 'Your renewal has been approved! Redirecting...',
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "linear-gradient(to right, #10b981, #059669)",
+            }).showToast();
+            
+            // Reload page after 2 seconds to show updated status
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+            
+        } else if (data.status === 'rejected') {
+            // Hide renewal modal and show rejection message
+            const renewalModal = document.getElementById('renewalCheckStatusModal');
+            if (renewalModal) renewalModal.classList.add('hidden');
+            
+            Toastify({
+                text: data.message || 'Renewal was not approved',
+                duration: 5000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
+            }).showToast();
+            
+            // Reload to show updated state
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+            
+        } else {
+            // Still pending
+            Toastify({
+                text: 'Renewal still pending approval. Please try again in a moment.',
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "linear-gradient(to right, #f59e0b, #d97706)",
+            }).showToast();
+        }
+    })
+    .catch(error => {
+        console.error('Error checking renewal status:', error);
+        
+        Toastify({
+            text: 'Error checking status. Please try again.',
+            duration: 5000,
+            gravity: "top",
+            position: "right",
+            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
+        }).showToast();
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    });
+}
 
 function checkApprovalStatus() {
     const button = event.target;
@@ -2316,7 +2255,10 @@ function checkApprovalStatus() {
         return response.json();
     })
     .then(data => {
+        console.log('Approval status:', data);
+        
         if (data.status === 'approved') {
+            // Hide waiting modal
             const waitingModal = document.getElementById('waitingSubscriptionApprovalModal');
             if (waitingModal) waitingModal.classList.add('hidden');
             
@@ -2325,22 +2267,67 @@ function checkApprovalStatus() {
             if (approvedModal) {
                 approvedModal.classList.remove('hidden');
                 
+                // Update member data display
+                if (data.member_data) {
+                    const memberDataHTML = `
+                        <div class="mt-4 p-4 bg-gray-50 rounded-lg text-left space-y-2">
+                            <div>
+                                <p class="text-sm text-gray-600">Plan:</p>
+                                <p class="font-bold text-gray-800">${data.member_data.plan}</p>
+                                <p class="text-sm text-gray-500">${data.member_data.plan_price}</p>
+                            </div>
+                            <div class="border-t pt-2">
+                                <p class="text-sm text-gray-600">Subscription:</p>
+                                <p class="font-bold text-gray-800">${data.member_data.subscription}</p>
+                                <p class="text-sm text-gray-500">${data.member_data.subscription_price}</p>
+                            </div>
+                            <div class="border-t pt-2">
+                                <p class="text-sm text-gray-600">Valid Until:</p>
+                                <p class="font-bold text-gray-800">${data.member_data.end_date}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Find and update the member data section
+                    const memberDataSection = approvedModal.querySelector('.member-data-section');
+                    if (memberDataSection) {
+                        memberDataSection.innerHTML = memberDataHTML;
+                    }
+                }
+                
                 // Show QR code if available
                 if (data.qr_code_url) {
                     const qrDisplay = document.getElementById('qrCodeDisplay');
                     const qrImage = document.getElementById('qrCodeImage');
                     
                     if (qrDisplay && qrImage) {
-                        qrImage.src = data.qr_code_url + '?t=' + new Date().getTime();
+                        qrImage.src = data.qr_code_url;
                         qrDisplay.classList.remove('hidden');
                         
                         qrImage.onerror = function() {
+                            console.error('Failed to load QR code image');
                             qrDisplay.innerHTML = `
                                 <div class="text-center py-4">
                                     <p class="text-sm text-gray-600">QR code has been sent to your email</p>
+                                    <p class="text-xs text-gray-500 mt-1">Please check your inbox</p>
                                 </div>
                             `;
                         };
+                        
+                        qrImage.onload = function() {
+                            console.log('QR code loaded successfully');
+                        };
+                    }
+                } else {
+                    const qrDisplay = document.getElementById('qrCodeDisplay');
+                    if (qrDisplay) {
+                        qrDisplay.innerHTML = `
+                            <div class="text-center py-4">
+                                <p class="text-sm text-gray-600">QR code has been sent to your email</p>
+                                <p class="text-xs text-gray-500 mt-1">Please check your inbox</p>
+                            </div>
+                        `;
+                        qrDisplay.classList.remove('hidden');
                     }
                 }
             }
@@ -2376,7 +2363,7 @@ function checkApprovalStatus() {
         console.error('Error checking approval status:', error);
         
         Toastify({
-            text: 'Error checking status: ' + error.message,
+            text: 'Error checking status. Please try again.',
             duration: 5000,
             gravity: "top",
             position: "right",

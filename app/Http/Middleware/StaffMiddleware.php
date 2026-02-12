@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Auth;
+
 class StaffMiddleware
 {
     /**
@@ -13,16 +13,35 @@ class StaffMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-public function handle(Request $request, Closure $next)
-{
-    if (Auth::check() && Auth::user()->role === 'staff') {
+    public function handle(Request $request, Closure $next): Response
+    {
+        if (!auth()->check()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Authentication required',
+                    'error' => 'You must be logged in to access this resource.'
+                ], 401);
+            }
+            abort(403, 'Authentication required - Please login to access this resource.');
+        }
+
+        $user = auth()->user();
+        
+        if ($user->role !== 'staff') {
+            $message = 'Access Denied - This area is restricted to staff members only. Your current role: ' . ucfirst($user->role);
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access Denied',
+                    'error' => $message
+                ], 403);
+            }
+            
+            abort(403, $message);
+        }
+
         return $next($request);
     }
-    
-    if (Auth::check() && Auth::user()->role === 'member') {
-        return redirect()->route('member.dashboard');
-    }
-    
-    return redirect('/')->with('error', 'You do not have staff access.');
-}
 }

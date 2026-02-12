@@ -9,24 +9,48 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
   <style>
-    body {
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+
+
+    .info-section {
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      position: relative;
+      overflow: hidden;
     }
 
-    .logo-container {
-      width: 120px;
-      height: 120px;
-      margin: 0 auto 1.5rem;
+    .decorative-shape {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.3;
     }
 
-    .logo-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+    .shape-1 {
+      width: 200px;
+      height: 200px;
+      background: linear-gradient(45deg, #ff6b6b, #feca57);
+      top: 10%;
+      left: -50px;
+      transform: rotate(45deg);
+    }
+
+    .shape-2 {
+      width: 150px;
+      height: 150px;
+      background: linear-gradient(45deg, #feca57, #ff6b6b);
+      bottom: 20%;
+      left: 10%;
+      transform: rotate(-30deg);
+    }
+
+    .shape-3 {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(45deg, #ff9ff3, #feca57);
+      top: 50%;
+      left: 30%;
+      transform: rotate(15deg);
     }
 
     @keyframes shake {
-
       0%,
       100% {
         transform: translateX(0);
@@ -47,110 +71,183 @@
         transform: translateX(5px);
       }
     }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(5deg); }
+    }
+
+    .decorative-shape {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .shape-2 {
+      animation-delay: 1s;
+      animation-duration: 8s;
+    }
+
+    .shape-3 {
+      animation-delay: 2s;
+      animation-duration: 7s;
+    }
   </style>
 </head>
 
-<body class="flex items-center justify-center min-h-screen py-8">
-  <main class="w-full max-w-md bg-white shadow-2xl rounded-2xl p-8">
-    <header class="mb-6 text-center">
-      <div class="logo-container">
-        <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}" alt="EZ Fitness Logo" />
+<body class="flex items-center bg-gray-300 justify-center min-h-screen p-4 py-8">
+  <main class="w-full max-w-6xl bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col md:flex-row min-h-[700px]">
+    
+    <!-- Left Side - Info Section -->
+    <section class="hidden md:flex md:w-1/2 info-section text-white p-12 flex-col justify-center relative">
+      <div class="decorative-shape shape-1"></div>
+      <div class="decorative-shape shape-2"></div>
+      <div class="decorative-shape shape-3"></div>
+      
+      <div class="relative z-10">
+        <h2 class="text-4xl font-bold mb-6">
+          <span class="text-red-400">EZ</span> FITNESS GYM
+        </h2>
+        <h3 class="text-2xl font-semibold mb-4">Digitalize Your Membership</h3>
+        <p class="text-lg leading-relaxed mb-6">
+       Create an account to access your digital gym membership. Members can check in using QR codes and view gym occupancy, while administrators manage records, inventory, and point-of-sale transactions efficiently.  </p>
+        <ul class="space-y-3">
+          <li class="flex items-center">
+            <svg class="w-6 h-6 mr-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            Digital Membership Access
+          </li>
+          <li class="flex items-center">
+            <svg class="w-6 h-6 mr-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+           Real-Time Gym Occupancy Viewing
+          </li>
+          <li class="flex items-center">
+            <svg class="w-6 h-6 mr-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            View Dashboard
+          </li>
+          <li class="flex items-center">
+            <svg class="w-6 h-6 mr-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            Attendance Logs for Members
+          </li>
+        </ul>
       </div>
-      <h1 class="text-2xl font-bold text-gray-800">
-        <span class="text-red-600">EZ</span> FITNESS GYM
-      </h1>
-    </header>
+    </section>
 
-    <form method="POST" action="{{ route('register') }}" class="space-y-4">
-      @csrf
+    <!-- Right Side - Registration Form -->
+    <section class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+      <header class="mb-8">
+        <div class="flex items-center justify-center md:justify-start mb-4">
+          <div class="w-16 h-16">
+            <img src="{{ asset('logo_image/ez_fitness_gym_logo.png') }}" alt="EZ Fitness Logo" class="w-full h-full object-contain" />
+          </div>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-800 text-center md:text-left">
+          CREATE ACCOUNT
+        </h1>
+        <p class="text-gray-600 mt-2 text-center md:text-left">Sign up to get started with EZ Fitness</p>
+      </header>
 
-      <section class="grid grid-cols-2 gap-3">
+      <form method="POST" action="{{ route('register') }}" class="space-y-4">
+        @csrf
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+            <input type="text" id="first_name" name="first_name" placeholder="John"
+              class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
+            @error('first_name')
+              <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+            @enderror
+          </div>
+          <div>
+            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+            <input type="text" id="last_name" name="last_name" placeholder="Doe"
+              class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
+            @error('last_name')
+              <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+            @enderror
+          </div>
+        </div>
+
         <div>
-          <input type="text" id="first_name" name="first_name" placeholder="Firstname"
+          <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <input type="text" id="username" name="username" placeholder="johndoe123"
             class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
-          @error('first_name')
+          @error('username')
             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
           @enderror
         </div>
+
         <div>
-          <input type="text" id="last_name" name="last_name" placeholder="Firstname"
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="john@example.com"
             class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
-          @error('last_name')
+          @error('email')
             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
           @enderror
         </div>
-      </section>
 
-      <section>
-        <input type="text" id="username" name="username" placeholder="Username"
-          class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
-        @error('username')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
-      </section>
+        <div class="relative">
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input type="password" id="password" name="password" placeholder="••••••••"
+            class="w-full border border-gray-300 rounded-lg p-3 pr-10 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
+          <button type="button" id="togglePassword"
+            class="absolute right-3 top-[40px] text-gray-500 hover:text-gray-700">
+            <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </button>
+          @error('password')
+            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+          @enderror
+        </div>
 
-      <section>
-        <input type="email" id="email" name="email" placeholder="Email"
-          class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
-        @error('email')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
-      </section>
+        <div class="relative">
+          <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+          <input type="password" id="password_confirmation" name="password_confirmation" placeholder="••••••••"
+            class="w-full border border-gray-300 rounded-lg p-3 pr-10 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
+          <button type="button" id="toggleConfirmPassword"
+            class="absolute right-3 top-[40px] text-gray-500 hover:text-gray-700">
+            <svg id="eyeIconConfirm" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </button>
+          @error('password_confirmation')
+            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+          @enderror
+        </div>
 
-      <section class="relative">
-        <input type="password" id="password" name="password" placeholder="Password"
-          class="w-full border border-gray-300 rounded-lg p-3 pr-10 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
-        <button type="button" id="togglePassword"
-          class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
-          <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        </button>
-        @error('password')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
-      </section>
+        <div class="pt-2">
+          <button type="submit"
+            class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition-all shadow-lg hover:shadow-xl">
+            CREATE ACCOUNT
+          </button>
+        </div>
 
-      <section class="relative">
-        <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Confirm Password"
-          class="w-full border border-gray-300 rounded-lg p-3 pr-10 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
-        <button type="button" id="toggleConfirmPassword"
-          class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
-          <svg id="eyeIconConfirm" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        </button>
-        @error('password_confirmation')
-          <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
-      </section>
-
-      <section class="pt-2">
-        <button type="submit"
-          class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition-colors">
-          Create Account
-        </button>
-      </section>
-
-      <footer class="text-center mt-4 text-sm">
-        <p class="text-gray-600">Already have an Account?
-          <a href="{{ route('login') }}" class="text-blue-600 hover:underline font-medium">Login</a>
+        <p class="text-center text-sm text-gray-600 mt-4">
+          Already have an account?
+          <a href="{{ route('login') }}" class="text-gray-800 hover:underline font-medium">Login</a>
         </p>
-      </footer>
-    </form>
+      </form>
+    </section>
+
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
-    // Toast notifications - Only show success, skip error messages
     @if(session('success'))
       Toastify({
         text: "{{ session('success') }}",
@@ -297,7 +394,6 @@
       input.classList.add('border-red-500');
       input.classList.remove('border-gray-300');
 
-      // Add shake animation
       input.style.animation = 'shake 0.5s';
       setTimeout(() => {
         input.style.animation = '';

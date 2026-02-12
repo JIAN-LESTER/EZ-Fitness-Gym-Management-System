@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Categories Management')
+@section('title', 'Categories')
 @section('header', 'Categories Management')
 
 <style>
@@ -108,62 +108,46 @@
             </form>
         </div>
 
-        <!-- Categories Table -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full">
-                <thead>
-                    <tr class="bg-gray-100 border-b border-gray-200">
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category Name</th>
-                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
+        <div class="p-6">
+            @forelse($categories as $category)
+                @if($loop->first)
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @endif
 
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($categories as $category)
-                        <tr class="hover:bg-gray-50 transition-colors group">
-                            <td class="px-6 py-4">
-                                <button onclick="showCategory('{{ $category->category_id }}')" class="hover:text-gray-900 transition-colors text-left w-full">
-                                    <p class="font-semibold text-gray-900">{{ $category->name }}</p>
-                                </button>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <div class="flex items-center justify-center gap-3">
-                                    <button onclick="showCategory('{{ $category->category_id }}')" class="text-gray-500 hover:text-gray-700" title="View">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
+                <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200">
+                    <!-- Category Header -->
+                    <div class="mb-4">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $category->name }}</h3>
+                    </div>
 
-                                    <button onclick="editCategory('{{ $category->category_id }}')" class="text-blue-500 hover:text-blue-700" title="Edit">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
-                                        </svg>
-                                    </button>
+                   
 
-                                    <button onclick="openDeleteModal('{{ route('categories.destroy', $category->category_id) }}')" class="text-red-500 hover:text-red-700" title="Delete">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="2" class="px-6 py-12 text-center text-gray-500">
-                                <div class="flex flex-col items-center justify-center">
-                                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    <p class="text-lg font-medium">No categories found</p>
-                                    <p class="text-sm mt-1">Try adjusting your search criteria</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    <!-- Action Buttons -->
+                    <div class="flex gap-2">
+                        <button onclick='editCategory(@json($category->category_id))'
+                            class="flex-1 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-all text-sm shadow-md">
+                            Edit
+                        </button>
+                        <button onclick='openDeleteModal(@json($category->category_id))'
+                            class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all text-sm shadow-md">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+
+                @if($loop->last)
+                    </div>
+                @endif
+            @empty
+                <div class="flex flex-col items-center justify-center py-16">
+                    <svg class="w-20 h-20 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <p class="text-lg font-medium text-gray-500">No categories found</p>
+                    <p class="text-sm mt-1 text-gray-400">Try adjusting your search criteria</p>
+                </div>
+            @endforelse
         </div>
 
         <!-- Pagination -->
@@ -260,6 +244,44 @@
                         <button type="submit"
                             class="px-6 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 w-full sm:w-auto">
                             Update Category
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+         <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+        <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeDeleteModal()"></div>
+
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+
+                <h3 class="text-xl font-bold text-center text-gray-900 mb-2">
+                    Delete Category
+                </h3>
+
+                <p class="text-center text-gray-600 mb-6">
+                    Are you sure you want to delete <span class="font-bold">{{ $category->name }}</span>? This action cannot be undone.
+                </p>
+
+                <form id="deleteForm" method="POST" action="">
+                    @csrf
+                    @method('DELETE')
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeDeleteModal()"
+                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
+                            Delete
                         </button>
                     </div>
                 </form>
@@ -414,33 +436,36 @@
     }
 
     // Delete Modal with SweetAlert
-    function openDeleteModal(actionUrl) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel',
-                customClass: {
-                    popup: 'swal-custom-popup',
-                    confirmButton: 'swal-confirm-btn',
-                    cancelButton: 'swal-cancel-btn'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    submitDeleteForm(actionUrl);
-                }
-            });
-        } else {
-            if (confirm('Are you sure you want to delete this category?')) {
-                submitDeleteForm(actionUrl);
-            }
-        }
-    }
+            function openDeleteModal(actionUrl) {
+    const form = document.getElementById('deleteForm');
+    form.action = actionUrl;
+
+    const modal = document.getElementById('deleteModal');
+    const scrollY = window.scrollY;
+
+    // Prevent body scroll
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflowY = 'scroll';
+
+    modal.classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    const scrollY = document.body.style.top;
+
+    modal.classList.add('hidden');
+
+    // Restore body scroll
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.style.overflowY = '';
+
+    window.scrollTo(0, parseInt(scrollY || '0') * -1);
+}
 
     function submitDeleteForm(actionUrl) {
         const form = document.createElement('form');
