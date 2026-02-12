@@ -2404,336 +2404,326 @@ function toggleEditReferenceCode() {
         // MEMBER ACTIONS
         // ===========================
 
-        function approveProfile(memberId) {
-            if (typeof Swal === 'undefined') {
-                const payment = prompt('Enter payment method (cash/gcash):');
-                if (payment) {
-                    if (payment.toLowerCase() === 'gcash') {
-                        const reference = prompt('Enter GCash reference code:');
-                        if (reference) {
-                            submitProfileApprovalForm(memberId, payment, reference);
-                        }
-                    } else {
-                        submitProfileApprovalForm(memberId, payment, null);
-                    }
-                }
-                return;
-            }
-            Swal.fire({
-                title: 'Approve Profile & Process Payment?',
-                html: `
-                        <div class="mb-4">
-                            <p class="text-gray-700 mb-4">Process membership plan payment:</p>
-                            <input type="hidden" id="selected-payment" value="">
+    // ===========================
+// MODERN PAYMENT APPROVAL MODALS
+// ===========================
 
-                            <div class="space-y-3">
-                                <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer" data-payment="cash">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                </svg>
-                                            </div>
-                                            <div class="text-left">
-                                                <div class="font-semibold text-gray-800">Cash Payment</div>
-                                                <div class="text-sm text-gray-500">Direct cash payment</div>
-                                            </div>
-                                        </div>
-                                        <div class="checkmark hidden w-6 h-6 bg-green-500 rounded-full items-center justify-center">
-                                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
+function approveProfile(memberId) {
+    openPaymentApprovalModal(memberId, 'profile');
+}
 
-                                <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer" data-payment="gcash">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                                </svg>
-                                            </div>
-                                            <div class="text-left">
-                                                <div class="font-semibold text-gray-800">GCash Payment</div>
-                                                <div class="text-sm text-gray-500">Mobile wallet</div>
-                                            </div>
-                                        </div>
-                                        <div class="checkmark hidden w-6 h-6 bg-blue-500 rounded-full items-center justify-center">
-                                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+function approveSubscription(memberId) {
+    openPaymentApprovalModal(memberId, 'subscription');
+}
+
+function openPaymentApprovalModal(memberId, type) {
+    // Create modal HTML
+    const modalHTML = `
+        <div id="paymentApprovalModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="absolute inset-0" onclick="closePaymentApprovalModal()"></div>
+            
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-green-600 to-green-700 text-white p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold">Approve ${type === 'profile' ? 'Profile' : 'Subscription'}</h2>
+                            <p class="text-green-100 text-sm mt-1">Select payment method</p>
                         </div>
-                    `,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Process Payment',
-                cancelButtonText: 'Cancel',
-                didOpen: () => {
-                    const options = document.querySelectorAll('.payment-option');
-                    const hiddenInput = document.getElementById('selected-payment');
+                        <button onclick="closePaymentApprovalModal()" class="text-white/80 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
 
-                    options.forEach(option => {
-                        option.addEventListener('click', function () {
-                            options.forEach(opt => {
-                                opt.classList.remove('selected');
-                                opt.style.borderColor = '#e5e7eb';
-                                opt.style.background = 'white';
-                                opt.querySelector('.checkmark').style.display = 'none';
-                            });
-
-                            this.classList.add('selected');
-                            const payment = this.getAttribute('data-payment');
-                            hiddenInput.value = payment;
-
-                            if (payment === 'cash') {
-                                this.style.borderColor = '#10b981';
-                                this.style.background = 'linear-gradient(to bottom, #f0fdf4, white)';
-                            } else {
-                                this.style.borderColor = '#3b82f6';
-                                this.style.background = 'linear-gradient(to bottom, #eff6ff, white)';
-                            }
-
-                            this.querySelector('.checkmark').style.display = 'flex';
-                        });
-                    });
-                },
-                preConfirm: () => {
-                    const selectedPayment = document.getElementById('selected-payment').value;
-                    if (!selectedPayment) {
-                        Swal.showValidationMessage('Please select a payment method');
-                        return false;
-                    }
-                    return selectedPayment;
-                }
-            }).then((result) => {
-                if (result.isConfirmed && result.value) {
-                    const payment = result.value;
-
-                    if (payment === 'gcash') {
-                        Swal.fire({
-                            title: 'GCash Reference',
-                            html: `
-                                    <div class="text-left">
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">Enter GCash Reference Number:</label>
-                                        <input type="text" id="gcash-reference" class="w-full px-4 py-2 border-2 rounded-lg" placeholder="e.g., 1234567890123">
-                                    </div>
-                                `,
-                            showCancelButton: true,
-                            confirmButtonColor: '#3b82f6',
-                            preConfirm: () => {
-                                const reference = document.getElementById('gcash-reference').value;
-                                if (!reference) {
-                                    Swal.showValidationMessage('Reference number is required');
-                                    return false;
-                                }
-                                return reference;
-                            }
-                        }).then((refResult) => {
-                            if (refResult.isConfirmed) {
-                                submitProfileApprovalForm(memberId, 'gcash', refResult.value);
-                            }
-                        });
-                    } else {
-                        submitProfileApprovalForm(memberId, 'cash', null);
-                    }
-                }
-            });
-        }
-        // Helper function to submit the profile approval form
-        function submitProfileApprovalForm(memberId, paymentMethod, referenceCode) {
-            const form = document.createElement('form');
-            form.method = 'GET';
-            let url = `/admin/user_crud/approve-profile/${memberId}?payment_method=${paymentMethod}`;
-            if (referenceCode) {
-                url += `&reference_code=${encodeURIComponent(referenceCode)}`;
-            }
-
-            form.action = url;
-
-            document.body.appendChild(form);
-            form.submit();
-        }
-
-        function approveSubscription(memberId) {
-            if (typeof Swal === 'undefined') {
-                const payment = prompt('Enter payment method (cash/gcash):');
-                if (payment) {
-                    if (payment.toLowerCase() === 'gcash') {
-                        const reference = prompt('Enter GCash reference code:');
-                        if (reference) {
-                            submitSubscriptionApprovalForm(memberId, payment, reference);
-                        }
-                    } else {
-                        submitSubscriptionApprovalForm(memberId, payment, null);
-                    }
-                }
-                return;
-            }
-
-            Swal.fire({
-                title: 'Approve & Process Payment?',
-                html: `
-                <div class="mb-4">
-                    <p class="text-gray-700 mb-4">Process subscription payment:</p>
-                    <input type="hidden" id="selected-payment" value="">
-
-                    <div class="space-y-3">
-                        <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer" data-payment="cash">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                        </svg>
-                                    </div>
-                                    <div class="text-left">
-                                        <div class="font-semibold text-gray-800">Cash Payment</div>
-                                        <div class="text-sm text-gray-500">Direct cash payment</div>
-                                    </div>
-                                </div>
-                                <div class="checkmark hidden w-6 h-6 bg-green-500 rounded-full items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                <!-- Content -->
+                <div class="p-6">
+                    <p class="text-gray-700 mb-6 text-center">Choose how the customer will pay:</p>
+                    
+                    <div class="space-y-3 mb-6">
+                        <!-- Cash Option -->
+                        <button type="button" onclick="selectPaymentForApproval('cash', '${memberId}', '${type}')" 
+                            class="w-full p-5 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all text-left group">
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                                    <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="payment-option border-2 border-gray-200 rounded-xl p-4 cursor-pointer" data-payment="gcash">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                        </svg>
-                                    </div>
-                                    <div class="text-left">
-                                        <div class="font-semibold text-gray-800">GCash Payment</div>
-                                        <div class="text-sm text-gray-500">Mobile wallet</div>
-                                    </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold text-gray-800 mb-1">Cash Payment</h3>
+                                    <p class="text-sm text-gray-600">Accept direct cash payment</p>
                                 </div>
-                                <div class="checkmark hidden w-6 h-6 bg-blue-500 rounded-full items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                <svg class="w-6 h-6 text-gray-400 group-hover:text-green-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </button>
+
+                        <!-- GCash Option -->
+                        <button type="button" onclick="selectPaymentForApproval('gcash', '${memberId}', '${type}')" 
+                            class="w-full p-5 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all text-left group">
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                                    <svg class="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                     </svg>
                                 </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold text-gray-800 mb-1">GCash Payment</h3>
+                                    <p class="text-sm text-gray-600">Mobile wallet payment</p>
+                                </div>
+                                <svg class="w-6 h-6 text-gray-400 group-hover:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+
+                    <button type="button" onclick="closePaymentApprovalModal()" 
+                        class="w-full px-6 py-3 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Prevent body scroll
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+}
+
+function closePaymentApprovalModal() {
+    const modal = document.getElementById('paymentApprovalModal');
+    if (modal) {
+        // Restore body scroll
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        
+        // Remove modal
+        modal.remove();
+    }
+}
+
+function selectPaymentForApproval(paymentMethod, memberId, type) {
+    if (paymentMethod === 'cash') {
+        closePaymentApprovalModal();
+        // Submit directly for cash
+        if (type === 'profile') {
+            submitProfileApprovalForm(memberId, 'cash', null);
+        } else {
+            submitSubscriptionApprovalForm(memberId, 'cash', null);
+        }
+    } else if (paymentMethod === 'gcash') {
+        closePaymentApprovalModal();
+        // Show GCash reference modal
+        showGcashReferenceModal(memberId, type);
+    }
+}
+
+function showGcashReferenceModal(memberId, type) {
+    const modalHTML = `
+        <div id="gcashReferenceModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="absolute inset-0" onclick="closeGcashReferenceModal()"></div>
+            
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold">GCash Payment</h2>
+                                <p class="text-purple-100 text-sm">Enter reference code</p>
+                            </div>
+                        </div>
+                        <button onclick="closeGcashReferenceModal()" class="text-white/80 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="p-6">
+                    <div class="mb-6">
+                        <label for="gcashRefCode" class="block text-sm font-semibold text-gray-700 mb-2">
+                            GCash Reference Number <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                            id="gcashRefCode"
+                            placeholder="Enter reference code"
+                            maxlength="13"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-800 font-mono text-base transition-all"
+                            oninput="validateGcashRefCode()">
+                        <p class="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Enter the transaction reference code from GCash
+                        </p>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-semibold mb-1">How to find your reference code:</p>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li>Check GCash transaction history</li>
+                                    <li>Look for the 13-digit reference number</li>
+                                    <li>Or check SMS confirmation</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeGcashReferenceModal()" 
+                            class="flex-1 px-6 py-3 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold transition-colors">
+                            Cancel
+                        </button>
+                        <button type="button" id="confirmGcashRef" onclick="confirmGcashReference('${memberId}', '${type}')"
+                            class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 font-semibold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled>
+                            Confirm
+                        </button>
+                    </div>
                 </div>
-            `,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Process Payment',
-                cancelButtonText: 'Cancel',
-                didOpen: () => {
-                    const options = document.querySelectorAll('.payment-option');
-                    const hiddenInput = document.getElementById('selected-payment');
+            </div>
+        </div>
+    `;
 
-                    options.forEach(option => {
-                        option.addEventListener('click', function () {
-                            options.forEach(opt => {
-                                opt.classList.remove('selected');
-                                opt.style.borderColor = '#e5e7eb';
-                                opt.style.background = 'white';
-                                opt.querySelector('.checkmark').style.display = 'none';
-                            });
-
-                            this.classList.add('selected');
-                            const payment = this.getAttribute('data-payment');
-                            hiddenInput.value = payment;
-
-                            if (payment === 'cash') {
-                                this.style.borderColor = '#10b981';
-                                this.style.background = 'linear-gradient(to bottom, #f0fdf4, white)';
-                            } else {
-                                this.style.borderColor = '#3b82f6';
-                                this.style.background = 'linear-gradient(to bottom, #eff6ff, white)';
-                            }
-
-                            this.querySelector('.checkmark').style.display = 'flex';
-                        });
-                    });
-                },
-                preConfirm: () => {
-                    const selectedPayment = document.getElementById('selected-payment').value;
-                    if (!selectedPayment) {
-                        Swal.showValidationMessage('Please select a payment method');
-                        return false;
-                    }
-                    return selectedPayment;
-                }
-            }).then((result) => {
-                if (result.isConfirmed && result.value) {
-                    const payment = result.value;
-
-                    if (payment === 'gcash') {
-                        Swal.fire({
-                            title: 'GCash Reference',
-                            html: `
-                            <div class="text-left">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Enter GCash Reference Number:</label>
-                                <input type="text" id="gcash-reference" class="w-full px-4 py-2 border-2 rounded-lg" placeholder="e.g., 1234567890123">
-                            </div>
-                        `,
-                            showCancelButton: true,
-                            confirmButtonColor: '#3b82f6',
-                            preConfirm: () => {
-                                const reference = document.getElementById('gcash-reference').value;
-                                if (!reference) {
-                                    Swal.showValidationMessage('Reference number is required');
-                                    return false;
-                                }
-                                return reference;
-                            }
-                        }).then((refResult) => {
-                            if (refResult.isConfirmed) {
-                                submitSubscriptionApprovalForm(memberId, 'gcash', refResult.value);
-                            }
-                        });
-                    } else {
-                        submitSubscriptionApprovalForm(memberId, 'cash', null);
-                    }
-                }
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-    const editPlanSelect = document.getElementById('edit_plan_id');
-    const editSubscriptionSelect = document.getElementById('edit_subscription_id');
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
     
-    if (editPlanSelect) {
-        editPlanSelect.addEventListener('change', updateEditPaymentSection);
+    // Prevent body scroll
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    
+    // Focus on input
+    setTimeout(() => document.getElementById('gcashRefCode').focus(), 100);
+}
+
+function closeGcashReferenceModal() {
+    const modal = document.getElementById('gcashReferenceModal');
+    if (modal) {
+        // Restore body scroll
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        
+        modal.remove();
+    }
+}
+
+function validateGcashRefCode() {
+    const input = document.getElementById('gcashRefCode');
+    const confirmBtn = document.getElementById('confirmGcashRef');
+    const refCode = input.value.trim();
+    
+    // Enable button if reference code is at least 6 characters
+    confirmBtn.disabled = refCode.length < 6;
+    
+    // Visual feedback
+    if (refCode.length > 0 && refCode.length < 6) {
+        input.classList.add('border-red-500');
+        input.classList.remove('border-gray-300', 'border-green-500');
+    } else if (refCode.length >= 6) {
+        input.classList.remove('border-red-500', 'border-gray-300');
+        input.classList.add('border-green-500');
+    } else {
+        input.classList.remove('border-red-500', 'border-green-500');
+        input.classList.add('border-gray-300');
+    }
+}
+
+function confirmGcashReference(memberId, type) {
+    const refCode = document.getElementById('gcashRefCode').value.trim();
+    
+    if (!refCode || refCode.length < 6) {
+        if (typeof toastr !== 'undefined') {
+            toastr.error('Please enter a valid GCash reference code');
+        } else {
+            alert('Please enter a valid GCash reference code');
+        }
+        return;
     }
     
-    if (editSubscriptionSelect) {
-        editSubscriptionSelect.addEventListener('change', updateEditPaymentSection);
+    closeGcashReferenceModal();
+    
+    if (type === 'profile') {
+        submitProfileApprovalForm(memberId, 'gcash', refCode);
+    } else {
+        submitSubscriptionApprovalForm(memberId, 'gcash', refCode);
+    }
+}
+
+// Keep the existing submit functions
+function submitProfileApprovalForm(memberId, paymentMethod, referenceCode) {
+    const form = document.createElement('form');
+    form.method = 'GET';
+    let url = `/admin/user_crud/approve-profile/${memberId}?payment_method=${paymentMethod}`;
+    if (referenceCode) {
+        url += `&reference_code=${encodeURIComponent(referenceCode)}`;
+    }
+    form.action = url;
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function submitSubscriptionApprovalForm(memberId, paymentMethod, referenceCode) {
+    const form = document.createElement('form');
+    form.method = 'GET';
+    let url = `/admin/user_crud/approve-subscription/${memberId}?payment_method=${paymentMethod}`;
+    if (referenceCode) {
+        url += `&reference_code=${encodeURIComponent(referenceCode)}`;
+    }
+    form.action = url;
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// Allow Enter key to confirm
+document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        const gcashInput = document.getElementById('gcashRefCode');
+        const confirmBtn = document.getElementById('confirmGcashRef');
+        
+        if (gcashInput && document.activeElement === gcashInput && confirmBtn && !confirmBtn.disabled) {
+            confirmBtn.click();
+        }
     }
 });
 
-        function submitSubscriptionApprovalForm(memberId, paymentMethod, referenceCode) {
-            const form = document.createElement('form');
-            form.method = 'GET';
-            let url = `/admin/user_crud/approve-subscription/${memberId}?payment_method=${paymentMethod}`;
-            if (referenceCode) {
-                url += `&reference_code=${encodeURIComponent(referenceCode)}`;
-            }
-
-            form.action = url;
-            document.body.appendChild(form);
-            form.submit();
-        }
+// Close modals on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeGcashReferenceModal();
+        closePaymentApprovalModal();
+    }
+});
 
 
         function denyMember(memberId) {

@@ -25,7 +25,7 @@
                     <tr>
                         <td style="padding: 40px 30px;">
                             <h2 style="margin: 0 0 10px 0; color: #1f2937; font-size: 24px; font-weight: 600;">
-                                Welcome, {{ $name }}! 🎉
+                                Welcome, {{ $name }}!
                             </h2>
                             
                             <p style="margin: 0 0 25px 0; color: #4b5563; font-size: 16px; line-height: 1.6;">

@@ -406,25 +406,16 @@
 
     </div>
 
-<!-- Renewal Modal -->
+<!-- Renewal Modal with Modern Design -->
 <div id="renewalModal" class="fixed inset-0 z-50 hidden flex items-center justify-center backdrop-blur-sm bg-black/50">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         <div class="bg-gradient-to-r from-gray-600 to-gray-600 text-white p-6">
-            <h3 class="text-2xl font-bold" id="renewalModalTitle">Renew Membership</h3>
-            <p class="text-gray-100 text-sm mt-1" id="renewalModalSubtitle">Select a plan to continue</p>
+            <h3 class="text-2xl font-bold" id="renewalModalTitle">Select Plan</h3>
+            <p class="text-gray-100 text-sm mt-1" id="renewalModalSubtitle">Choose your options</p>
         </div>
 
         <!-- Step 1: Membership Plan Selection -->
         <div id="step1-membership" class="p-6">
-            <div class="mb-4" id="membership-back-btn" style="display: none;">
-                <button type="button" onclick="backToSubscriptionStep()" class="flex items-center text-gray-600 hover:text-gray-800 font-medium text-sm">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                    Back to Subscription
-                </button>
-            </div>
-
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-3">Choose Membership Plan</label>
                 <div class="space-y-3 max-h-64 overflow-y-auto">
@@ -462,20 +453,20 @@
                 <button type="button" onclick="closeRenewalModal()" class="flex-1 px-4 py-3 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold transition-colors">
                     Cancel
                 </button>
-                <button type="button" id="membership-next-btn" onclick="proceedToSubscriptionStep()" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 font-semibold transition-colors shadow-lg">
-                    Next: Subscription
+                <button type="button" id="membership-next-btn" onclick="proceedToNextStep()" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 font-semibold transition-colors shadow-lg">
+                    Next
                 </button>
             </div>
         </div>
 
         <!-- Step 2: Subscription Selection -->
         <div id="step2-subscription" class="p-6 hidden">
-            <div class="mb-4" id="subscription-back-btn-top">
-                <button type="button" onclick="backToMembershipStep()" class="flex items-center text-gray-600 hover:text-gray-800 font-medium text-sm">
+            <div class="mb-4">
+                <button type="button" onclick="backToPreviousStep()" class="flex items-center text-gray-600 hover:text-gray-800 font-medium text-sm">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>
-                    Back to Plan
+                    Back
                 </button>
             </div>
 
@@ -525,14 +516,10 @@
                 <input type="hidden" name="subscription_id" id="final_subscription_id">
 
                 <div class="flex gap-3">
-                    <button type="button" id="subscription-back-btn-bottom" onclick="backToMembershipStep()" class="flex-1 px-4 py-3 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold transition-colors">
+                    <button type="button" onclick="backToPreviousStep()" class="flex-1 px-4 py-3 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold transition-colors">
                         Back
                     </button>
-                    
-                    <button type="button" id="subscription-next-btn" onclick="proceedToMembershipStep()" style="display: none;" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 font-semibold transition-colors shadow-lg">
-                        Next: Membership
-                    </button>
-                    <button type="submit" id="subscription-submit-btn" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 font-semibold transition-colors shadow-lg">
+                    <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 font-semibold transition-colors shadow-lg">
                         Submit Renewal
                     </button>
                 </div>
@@ -543,43 +530,33 @@
 
 <script>
     let renewalFlow = 'membership-first';
+    let currentStep = 1;
 
     function openRenewalModal(flowType = 'membership-first') {
         renewalFlow = flowType;
+        currentStep = 1;
         document.getElementById('renewalModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
         
+        // Clear selections
         document.querySelectorAll('.plan-radio').forEach(radio => radio.checked = false);
         document.querySelectorAll('.subscription-radio').forEach(radio => radio.checked = false);
         document.getElementById('final_plan_id').value = '';
         document.getElementById('final_subscription_id').value = '';
         
+        // Show appropriate step based on flow
         if (flowType === 'subscription-first') {
+            currentStep = 2;
             document.getElementById('step1-membership').classList.add('hidden');
             document.getElementById('step2-subscription').classList.remove('hidden');
             document.getElementById('renewalModalTitle').textContent = 'Subscribe';
             document.getElementById('renewalModalSubtitle').textContent = 'Select a subscription to continue';
-            
-            document.getElementById('subscription-next-btn').style.display = 'block';
-            document.getElementById('subscription-submit-btn').style.display = 'none';
-            document.getElementById('subscription-back-btn-top').style.display = 'none';
-            document.getElementById('subscription-back-btn-bottom').style.display = 'none';
-            
-            document.getElementById('membership-next-btn').style.display = 'none';
-            document.getElementById('membership-back-btn').style.display = 'block';
         } else {
+            currentStep = 1;
             document.getElementById('step1-membership').classList.remove('hidden');
             document.getElementById('step2-subscription').classList.add('hidden');
             document.getElementById('renewalModalTitle').textContent = 'Renew Membership';
             document.getElementById('renewalModalSubtitle').textContent = 'Select a plan to continue';
-            
-            document.getElementById('membership-next-btn').style.display = 'block';
-            document.getElementById('membership-back-btn').style.display = 'none';
-            
-            document.getElementById('subscription-next-btn').style.display = 'none';
-            document.getElementById('subscription-submit-btn').style.display = 'block';
-            document.getElementById('subscription-back-btn-top').style.display = 'block';
-            document.getElementById('subscription-back-btn-bottom').style.display = 'block';
         }
     }
 
@@ -588,68 +565,67 @@
         document.body.style.overflow = 'auto';
     }
 
-function proceedToSubscriptionStep() {
-    const selectedPlan = document.querySelector('input[name="selected_plan_id"]:checked');
-
-    if (!selectedPlan) {
-        toastr?.error('Please select a membership plan first') || alert('Please select a membership plan first');
-        return;
-    }
-
-    document.getElementById('final_plan_id').value = selectedPlan.value;
-
-    document.getElementById('step1-membership').classList.add('hidden');
-    document.getElementById('step2-subscription').classList.remove('hidden');
-
-    document.getElementById('renewalModalTitle').textContent = 'Choose Subscription';
-    document.getElementById('renewalModalSubtitle').textContent = 'Complete your renewal';
-
-
-    document.getElementById('subscription-submit-btn').style.display = 'block';
-    document.getElementById('subscription-next-btn').style.display = 'none';
-    document.getElementById('subscription-back-btn-top').style.display = 'block';
-    document.getElementById('subscription-back-btn-bottom').style.display = 'block';
-}
-
-
-    function proceedToMembershipStep() {
-        const selectedSubscription = document.querySelector('input[name="selected_subscription_id"]:checked');
-        
-        if (!selectedSubscription) {
-            if (typeof toastr !== 'undefined') {
-                toastr.error('Please select a subscription first');
-            } else {
-                alert('Please select a subscription first');
+    function proceedToNextStep() {
+        if (currentStep === 1) {
+            // Validate membership selection
+            const selectedPlan = document.querySelector('input[name="selected_plan_id"]:checked');
+            if (!selectedPlan) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Please select a membership plan first');
+                } else {
+                    alert('Please select a membership plan first');
+                }
+                return;
             }
-            return;
+            
+            document.getElementById('final_plan_id').value = selectedPlan.value;
+            
+            // Move to subscription step
+            currentStep = 2;
+            document.getElementById('step1-membership').classList.add('hidden');
+            document.getElementById('step2-subscription').classList.remove('hidden');
+            document.getElementById('renewalModalTitle').textContent = 'Choose Subscription';
+            document.getElementById('renewalModalSubtitle').textContent = 'Complete your renewal';
+        } else {
+            // Validate subscription selection
+            const selectedSubscription = document.querySelector('input[name="selected_subscription_id"]:checked');
+            if (!selectedSubscription) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Please select a subscription first');
+                } else {
+                    alert('Please select a subscription first');
+                }
+                return;
+            }
+            
+            document.getElementById('final_subscription_id').value = selectedSubscription.value;
+            
+            // Move to membership step
+            currentStep = 1;
+            document.getElementById('step2-subscription').classList.add('hidden');
+            document.getElementById('step1-membership').classList.remove('hidden');
+            document.getElementById('renewalModalTitle').textContent = 'Choose Membership Plan';
+            document.getElementById('renewalModalSubtitle').textContent = 'Complete your subscription';
         }
-
-        document.getElementById('final_subscription_id').value = selectedSubscription.value;
-        
-        document.getElementById('step2-subscription').classList.add('hidden');
-        document.getElementById('step1-membership').classList.remove('hidden');
-        document.getElementById('renewalModalTitle').textContent = 'Choose Membership Plan';
-        document.getElementById('renewalModalSubtitle').textContent = 'Complete your subscription';
     }
 
-    function backToMembershipStep() {
-        document.getElementById('step1-membership').classList.remove('hidden');
-        document.getElementById('step2-subscription').classList.add('hidden');
-        document.getElementById('renewalModalTitle').textContent = 'Renew Membership';
-        document.getElementById('renewalModalSubtitle').textContent = 'Select a plan to continue';
+    function backToPreviousStep() {
+        if (currentStep === 2 && renewalFlow === 'membership-first') {
+            // Go back to membership
+            currentStep = 1;
+            document.getElementById('step2-subscription').classList.add('hidden');
+            document.getElementById('step1-membership').classList.remove('hidden');
+            document.getElementById('renewalModalTitle').textContent = 'Renew Membership';
+            document.getElementById('renewalModalSubtitle').textContent = 'Select a plan to continue';
+        } else if (currentStep === 1 && renewalFlow === 'subscription-first') {
+            // Go back to subscription
+            currentStep = 2;
+            document.getElementById('step1-membership').classList.add('hidden');
+            document.getElementById('step2-subscription').classList.remove('hidden');
+            document.getElementById('renewalModalTitle').textContent = 'Subscribe';
+            document.getElementById('renewalModalSubtitle').textContent = 'Select a subscription to continue';
+        }
     }
-
-function backToSubscriptionStep() {
-    document.getElementById('step2-subscription').classList.remove('hidden');
-    document.getElementById('step1-membership').classList.add('hidden');
-
-    document.getElementById('renewalModalTitle').textContent = 'Subscribe';
-    document.getElementById('renewalModalSubtitle').textContent = 'Select a subscription to continue';
-
-    document.getElementById('subscription-submit-btn').style.display = 'block';
-    document.getElementById('subscription-next-btn').style.display = 'none';
-}
-
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
@@ -679,16 +655,6 @@ function backToSubscriptionStep() {
                 alert('Please select a subscription');
             }
             return false;
-        }
-        
-        const selectedPlan = document.querySelector('input[name="selected_plan_id"]:checked');
-        const selectedSubscription = document.querySelector('input[name="selected_subscription_id"]:checked');
-        
-        if (selectedPlan) {
-            document.getElementById('final_plan_id').value = selectedPlan.value;
-        }
-        if (selectedSubscription) {
-            document.getElementById('final_subscription_id').value = selectedSubscription.value;
         }
     });
 </script>
