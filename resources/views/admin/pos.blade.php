@@ -307,791 +307,640 @@
             </div>
         </div>
     </div>
-    {{-- ============================================================================== --}}
-    {{-- JAVA SCRIPT - BUSINESS LOGIC OF POS --}}
-    {{-- ============================================================================== --}}
 
 
     <script>
-        let cartItems = [];
-        let isAddingToCart = false;
-        let stockData = {};
 
 
-        // Add payment method functionality
-        document.addEventListener('DOMContentLoaded', function () {
-            const paymentButtons = document.querySelectorAll('.payment-button');
-            let selectedPaymentMethod = 'cash'; // Set cash as default
+let cartItems   = [];          
+let pendingUpdates = new Map(); 
+let stockAdjustments = new Map(); 
 
-            // Set cash as default selected on page load
-            const cashButton = document.querySelector('[data-payment-method="cash"]');
-if (cashButton) {
-    cashButton.classList.add('border-gray-500', 'bg-gray-50');
-}
+document.addEventListener('DOMContentLoaded', function () {
+    const paymentButtons = document.querySelectorAll('.payment-button');
 
-            paymentButtons.forEach(button => {
-                button.addEventListener('click', function () {
-                    const paymentMethod = this.getAttribute('data-payment-method');
+    // Activate Cash by default
+    const cashBtn = document.querySelector('[data-payment-method="cash"]');
+    if (cashBtn) cashBtn.classList.add('border-gray-500', 'bg-gray-50');
 
-                    // Remove active styles from all payment buttons
-paymentButtons.forEach(btn => {
-    btn.classList.remove(
-        'border-gray-500', 'border-blue-500', 'border-purple-500',
-        'bg-gray-50', 'bg-blue-50', 'bg-purple-50'
-    );
+    paymentButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const method = this.dataset.paymentMethod;
+
+            paymentButtons.forEach(b => b.classList.remove(
+                'border-gray-500', 'border-blue-500', 'border-purple-500',
+                'bg-gray-50',      'bg-blue-50',      'bg-purple-50'
+            ));
+
+            if (method === 'cash')         this.classList.add('border-gray-500',   'bg-gray-50');
+            else if (method === 'credit_card') this.classList.add('border-blue-500',  'bg-blue-50');
+            else if (method === 'gcash')    this.classList.add('border-purple-500', 'bg-purple-50');
+
+            updateCheckoutButtonState();
+        });
+    });
+
+    window.getSelectedPaymentMethod = function () {
+        const active = document.querySelector(
+            '.payment-button.border-gray-500, .payment-button.border-blue-500, .payment-button.border-purple-500'
+        );
+        return active ? active.dataset.paymentMethod : null;
+    };
+
+    window.updateCheckoutButtonState = function () {
+        const btn = document.getElementById('checkoutBtn');
+        btn.disabled = !(cartItems.length > 0 && !!getSelectedPaymentMethod());
+    };
 });
 
-                    // Add active style to selected button
-                   if (paymentMethod === 'cash') {
-    this.classList.add('border-gray-500', 'bg-gray-50');
-                    } else if (paymentMethod === 'credit_card') {
-                        this.classList.add('border-blue-500', 'bg-blue-50');
-                    } else if (paymentMethod === 'gcash') {
-                        this.classList.add('border-purple-500', 'bg-purple-50');
-                    }
 
-                    // Store the selected payment method
-                    selectedPaymentMethod = paymentMethod;
+function updateStockDisplay(productId, deltaQty) {
 
-                    // Update checkout button state if cart has items
-                    updateCheckoutButtonState();
-                });
-            });
+    const badge = document.querySelector(`.stock-badge[data-product-id="${productId}"]`);
+    if (!badge) return;
 
-            // Function to get the selected payment method from buttons
-            function getSelectedPaymentMethod() {
-    const activeButton = document.querySelector('.payment-button.border-gray-500, .payment-button.border-blue-500, .payment-button.border-purple-500');
-                return activeButton ? activeButton.getAttribute('data-payment-method') : null;
-            }
+    const initial = parseInt(badge.dataset.initialStock, 10) || 0;
+    const prev    = stockAdjustments.get(productId) || 0;
+    const next    = prev + deltaQty;
+    stockAdjustments.set(productId, next);
 
-            // Function to update checkout button state based on cart items and payment method
-            function updateCheckoutButtonState() {
-                const checkoutBtn = document.getElementById('checkoutBtn');
-                const hasItems = cartItems && cartItems.length > 0;
-                const hasPaymentMethod = !!getSelectedPaymentMethod();
+    const displayed = Math.max(0, initial - next);
+    badge.textContent = `Stock: ${displayed}`;
 
-                checkoutBtn.disabled = !(hasItems && hasPaymentMethod);
-            }
+    badge.className = 'absolute top-1 right-1 text-xs font-semibold px-1.5 py-0.5 rounded stock-badge';
+    if (displayed === 0)     badge.classList.add('bg-red-100',    'text-red-800');
+    else if (displayed < 5)  badge.classList.add('bg-yellow-100', 'text-yellow-800');
+    else                     badge.classList.add('bg-blue-100',   'text-blue-800');
 
-            // Make functions available globally
-            window.getSelectedPaymentMethod = getSelectedPaymentMethod;
-            window.updateCheckoutButtonState = updateCheckoutButtonState;
-        });
+    return displayed;
+}
 
-        // Function to update stock display with static calculation
-        function updateStockDisplay(productId, quantityChange = 0) {
-            const stockBadge = document.querySelector(`.stock-badge[data-product-id="${productId}"]`);
-            if (!stockBadge) return;
-
-            // Get current displayed stock from the badge
-            const currentText = stockBadge.textContent;
-            const currentStock = parseInt(currentText.replace('Stock: ', '')) || 0;
-
-            // Calculate new stock
-            let newStock = currentStock - quantityChange;
-
-            // Ensure stock doesn't go below 0
-            newStock = Math.max(0, newStock);
-
-            // Update display
-            stockBadge.textContent = `Stock: ${newStock}`;
-
-            // Update badge color based on new stock
-            if (newStock === 0) {
-                // Out of stock - RED
-                stockBadge.className = 'absolute top-1 right-1 bg-red-100 text-red-800 text-xs font-semibold px-1.5 py-0.5 rounded stock-badge';
-            } else if (newStock > 0 && newStock < 5) {
-                // Low stock - YELLOW
-                stockBadge.className = 'absolute top-1 right-1 bg-yellow-100 text-yellow-800 text-xs font-semibold px-1.5 py-0.5 rounded stock-badge';
-            } else {
-                // Good stock - BLUE
-                stockBadge.className = 'absolute top-1 right-1 bg-blue-100 text-blue-800 text-xs font-semibold px-1.5 py-0.5 rounded stock-badge';
-            }
-
-            return newStock;
-        }
-
-        // Function to get current stock from display
-        function getCurrentStock(productId) {
-            const stockBadge = document.querySelector(`.stock-badge[data-product-id="${productId}"]`);
-            if (!stockBadge) return 0;
-
-            const currentText = stockBadge.textContent;
-            return parseInt(currentText.replace('Stock: ', '')) || 0;
-        }
-
-        function showConfirmModal(title, message, onConfirm) {
-            const modal = document.getElementById('confirmModal');
-            const titleEl = document.getElementById('confirmTitle');
-            const messageEl = document.getElementById('confirmMessage');
-            const cancelBtn = document.getElementById('cancelConfirm');
-            const okBtn = document.getElementById('okConfirm');
-
-            titleEl.textContent = title;
-            messageEl.innerHTML = message;
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-
-            cancelBtn.onclick = () => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            };
-
-            okBtn.onclick = () => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                if (typeof onConfirm === "function") onConfirm();
-            };
-        }
+function getDisplayedStock(productId) {
+    const badge = document.querySelector(`.stock-badge[data-product-id="${productId}"]`);
+    if (!badge) return 0;
+    const initial = parseInt(badge.dataset.initialStock, 10) || 0;
+    return Math.max(0, initial - (stockAdjustments.get(productId) || 0));
+}
 
 
-       function addToCart(productId) {
+function showConfirmModal(title, message, onConfirm) {
+    const modal  = document.getElementById('confirmModal');
+    document.getElementById('confirmTitle').textContent  = title;
+    document.getElementById('confirmMessage').innerHTML  = message;
+    modal.classList.replace('hidden', 'flex');
+
+    document.getElementById('cancelConfirm').onclick = () => modal.classList.replace('flex', 'hidden');
+    document.getElementById('okConfirm').onclick = () => {
+        modal.classList.replace('flex', 'hidden');
+        if (typeof onConfirm === 'function') onConfirm();
+    };
+}
+
+
+let isAddingToCart = false;
+
+function addToCart(productId) {
     if (isAddingToCart) return;
 
-    const currentStock = getCurrentStock(productId);
-    if (currentStock <= 0) {
+    if (getDisplayedStock(productId) <= 0) {
         showToast('error', 'Product is out of stock');
         return;
     }
 
-    const button = document.querySelector(`button[data-product-id="${productId}"]`);
-    if (button) {
-        button.disabled = true;
-    }
-
+    const btn = document.querySelector(`button[data-product-id="${productId}"]`);
+    if (btn) btn.disabled = true;
     isAddingToCart = true;
 
-    // OPTIMISTIC UPDATE - Update UI immediately
-    updateStockDisplay(productId, 1);
-    
-    fetch('{{ route("pos.addToCart") }}', {
+    updateStockDisplay(productId, 1); // optimistic
+
+    fetch('/pos/add-to-cart', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
         body: JSON.stringify({ product_id: productId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            loadCart();
-            updateCheckoutButtonState();
-        } else {
-            // Revert optimistic update on error
-            updateStockDisplay(productId, -1);
-            showToast('error', data.message || 'Failed to add to cart');
-        }
-    })
-    .catch(error => {
-        // Revert optimistic update on error
-        updateStockDisplay(productId, -1);
-        console.error('Error:', error);
-        showToast('error', error.message || 'An error occurred');
-    })
-    .finally(() => {
-        isAddingToCart = false;
-        if (button) {
-            button.disabled = false;
-        }
-    });
-}
-
-        function loadCart() {
-            fetch('{{ route("pos.getCart") }}')
-                .then(response => {
-                    if (!response.ok) throw new Error('Failed to load cart');
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        cartItems = data.items;
-                        renderCart(data.items, data.total);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading cart:', error);
-                });
-        }
-
-        // Render Cart
-        function renderCart(items, total) {
-            const cartContainer = document.getElementById('cart-items');
-            const cartTotal = document.getElementById('cart-total');
-            const cartCount = document.getElementById('cart-count');
-            const checkoutBtn = document.getElementById('checkoutBtn');
-
-            // Update cart count
-            cartCount.textContent = items.length;
-
-            if (items.length === 0) {
-                cartContainer.innerHTML = `
-                    <div class="text-center py-8 text-gray-500">
-                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H19M7 13l-1.5 6m0 0H19m-11 0a1 1 0 11-2 0 1 1 0 012 0zm12 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                        </svg>
-                        <p class="text-sm">Cart is empty</p>
-                    </div>
-                `;
-                cartTotal.textContent = '₱0.00';
-                checkoutBtn.disabled = true;
-                updateCartTotals();
-
-            } else {
-               cartContainer.innerHTML = items.map(item => `
-    <div class="bg-gray-50 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-100 transition shadow-sm hover:shadow-md border border-gray-100" data-cart-item-id="${item.cart_item_id}">
-        <div class="w-12 h-12 bg-gray-100 rounded flex-shrink-0 overflow-hidden shadow-sm">
-            ${item.image ?
-                `<img src="/storage/${item.image}" alt="${item.name}" class="w-full h-full object-cover">` :
-                `<svg class="w-6 h-6 text-gray-400 m-auto mt-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>`
-            }
-        </div>
-        <div class="flex-1 min-w-0">
-            <h4 class="font-semibold text-sm text-gray-900 truncate" title="${item.name}">${item.name}</h4>
-            <p class="text-xs text-gray-600">Qty: ${item.quantity}</p>
-            <p class="text-sm font-semibold text-green-700 subtotal">₱${parseFloat(item.subtotal).toFixed(2)}</p>
-        </div>
-        <div class="flex items-center gap-1">
-            <button onclick="updateQuantity(${item.cart_item_id}, ${item.product_id}, ${item.quantity - 1})"
-                    class="w-7 h-7 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center transition shadow-sm hover:shadow ${item.quantity <= 1 ? 'hover:bg-red-50 hover:border-red-300' : ''}"
-                    title="${item.quantity <= 1 ? 'Remove from cart' : 'Decrease quantity'}">
-                ${item.quantity <= 1 ? 
-                    `<svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>` :
-                    `<svg class="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                    </svg>`
-                }
-            </button>
-            <input type="number"
-                    value="${item.quantity}"
-                    onchange="updateQuantity(${item.cart_item_id}, ${item.product_id}, this.value)"
-                    class="w-14 text-center border text-gray-800 border-gray-300 rounded px-1 py-1 text-sm focus:ring-2 focus:ring-gray-500 focus:outline-none shadow-sm"
-                    min="1"
-                    title="Quantity">
-            <button onclick="updateQuantity(${item.cart_item_id}, ${item.product_id}, ${item.quantity + 1})"
-                    class="w-7 h-7 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center transition shadow-sm hover:shadow"
-                    title="Increase quantity">
-                <svg class="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-            </button>
-        </div>
-        <button onclick="removeFromCart(${item.cart_item_id}, ${item.product_id})"
-                class="text-red-500 hover:text-red-700 ml-1 transition p-1 rounded hover:bg-red-50"
-                title="Remove item">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-        </button>
-    </div>
-`).join('');
-                cartTotal.textContent = `₱${parseFloat(total).toFixed(2)}`;
-
-                updateCartTotals();
-                // Use the new function instead of directly setting disabled
-                updateCheckoutButtonState();
-            }
-        }
-
-        // Update Quantity
-let updateTimeout = null;
-let pendingUpdates = new Map(); // Track pending updates
-
-function updateQuantity(cartItemId, productId, newQuantity) {
-    newQuantity = parseInt(newQuantity);
-
-    // If quantity becomes 0, remove immediately
-    if (newQuantity === 0) {
-        removeFromCart(cartItemId, productId);
-        return;
-    }
-
-    if (isNaN(newQuantity) || newQuantity < 1) {
-        showToast('error', 'Invalid quantity');
-        loadCart();
-        return;
-    }
-
-    const currentItem = cartItems.find(item => item.cart_item_id === cartItemId);
-    if (!currentItem) {
-        showToast('error', 'Item not found in cart');
-        return;
-    }
-
-    const quantityDifference = newQuantity - currentItem.quantity;
-
-    // Check stock availability
-    if (quantityDifference > 0) {
-        const currentStock = getCurrentStock(productId);
-        if (currentStock < quantityDifference) {
-            showToast('error', `Not enough stock available. Only ${currentStock} left.`);
-            loadCart();
-            return;
-        }
-    }
-
-    // INSTANT UI UPDATE - Update cart item display immediately
-    const cartItemElement = document.querySelector(`[data-cart-item-id="${cartItemId}"]`);
-    if (cartItemElement) {
-        const quantityInput = cartItemElement.querySelector('input[type="number"]');
-        const subtotalElement = cartItemElement.querySelector('.subtotal');
-        
-        if (quantityInput) quantityInput.value = newQuantity;
-        
-        // Update subtotal display
-        const price = currentItem.subtotal / currentItem.quantity;
-        const newSubtotal = price * newQuantity;
-        if (subtotalElement) {
-            subtotalElement.textContent = `₱${newSubtotal.toFixed(2)}`;
-        }
-        
-        // Update cart totals immediately
-        updateCartTotalsOptimistic(cartItemId, newQuantity);
-    }
-
-    // Update stock display immediately
-    updateStockDisplay(productId, quantityDifference);
-
-    // DEBOUNCED SERVER UPDATE - Only send to server after user stops clicking
-    if (pendingUpdates.has(cartItemId)) {
-        clearTimeout(pendingUpdates.get(cartItemId));
-    }
-
-    const timeoutId = setTimeout(() => {
-        sendQuantityUpdateToServer(cartItemId, productId, newQuantity, quantityDifference);
-        pendingUpdates.delete(cartItemId);
-    }, 500); // Wait 500ms after last change
-
-    pendingUpdates.set(cartItemId, timeoutId);
-}
-
-// Helper function for optimistic cart total update
-function updateCartTotalsOptimistic(cartItemId, newQuantity) {
-    const item = cartItems.find(i => i.cart_item_id === cartItemId);
-    if (!item) return;
-
-    const oldQuantity = item.quantity;
-    const price = item.subtotal / oldQuantity;
-    const oldSubtotal = item.subtotal;
-    const newSubtotal = price * newQuantity;
-    
-    // Update the item in memory
-    item.quantity = newQuantity;
-    item.subtotal = newSubtotal;
-
-    // Recalculate total
-    const total = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-    const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-
-    // Update displays
-    document.getElementById('cart-total').textContent = `₱${total.toFixed(2)}`;
-    document.getElementById('total-items-count').textContent = totalQuantity;
-    document.getElementById('items-count').textContent = `${cartItems.length} ${cartItems.length === 1 ? 'item' : 'items'}`;
-}
-
-// Separate function to send update to server
-function sendQuantityUpdateToServer(cartItemId, productId, newQuantity, quantityDifference) {
-    fetch('{{ route("pos.updateCartItem") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            cart_item_id: cartItemId,
-            quantity: newQuantity
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Sync with server response
-            loadCart();
-        } else {
-            // Revert on error
-            updateStockDisplay(productId, -quantityDifference);
-            showToast('error', data.message || 'Failed to update quantity');
-            loadCart();
-        }
-    })
-    .catch(error => {
-        // Revert on error
-        updateStockDisplay(productId, -quantityDifference);
-        console.error('Error:', error);
-        showToast('error', 'An error occurred');
-        loadCart();
-    });
-}
-
-
-
-        // Remove from Cart
-        function removeFromCart(cartItemId, productId) {
-            // Get the item being removed to know how much quantity to add back to stock
-            const itemToRemove = cartItems.find(item => item.cart_item_id === cartItemId);
-
-            if (!itemToRemove) {
-                showToast('error', 'Item not found in cart');
-                return;
-            }
-            fetch('{{ route("pos.removeCartItem") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ cart_item_id: cartItemId })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Add back the quantity to stock
-                        updateStockDisplay(productId, -itemToRemove.quantity);
-
-                        loadCart();
-                        updateCheckoutButtonState();
-                    } else {
-                        showToast('error', data.message || 'Failed to remove item');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('error', 'An error occurred');
-                });
-        }
-
-        // Clear Cart
-        function clearCart() {
-            if (cartItems.length === 0) {
-                showToast('error', 'Cart is already empty');
-                return;
-            }
-
-            showConfirmModal(
-                "Clear Cart",
-                "Are you sure you want to clear all items from the cart?",
-                () => {
-                    // Add back all quantities to stock before clearing
-                    cartItems.forEach(item => {
-                        updateStockDisplay(item.product_id, -item.quantity);
-                    });
-
-                    const itemsToRemove = cartItems.map(item => ({
-                        id: item.cart_item_id,
-                        product_id: item.product_id
-                    }));
-
-                    Promise.all(itemsToRemove.map(item =>
-                        fetch('{{ route("pos.removeCartItem") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify({ cart_item_id: item.id })
-                        })
-                    ))
-                        .then(() => {
-                            loadCart();
-                            updateCheckoutButtonState();
-                            showToast('success', 'Cart cleared');
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            showToast('error', 'Failed to clear cart');
-                        });
-                }
-            );
-        }
-
-        // Checkout
-        function checkout() {
-            if (cartItems.length === 0) {
-                showToast('error', 'Cart is empty');
-                return;
-            }
-
-            // Get selected payment method from the button interface
-            const selectedPaymentMethod = getSelectedPaymentMethod();
-
-            if (!selectedPaymentMethod) {
-                return showToast('error', 'Please select a payment method');
-            }
-
-            const paymentMethodDisplay = selectedPaymentMethod === 'credit_card' ? 'Credit/Debit Card' :
-                selectedPaymentMethod === 'gcash' ? 'QR Code' : 'Cash';
-
-            // If payment method is GCash (gcash), show reference code modal
-            if (selectedPaymentMethod === 'gcash') {
-                showGcashModal();
-            }
-            else if (selectedPaymentMethod === 'cash') {
-                showCashModal();
-            }
-            else {
-                // For other payment methods, proceed directly to confirmation
-                showConfirmModal(
-                    "Confirm Checkout",
-                    `Are you sure you want to proceed with checkout using ${paymentMethodDisplay}?`,
-                    () => {
-                        processCheckout(selectedPaymentMethod); // pass payment method to checkout
-                    }
-                );
-            }
-        }
-
-        // GCash Modal Function
-        function showGcashModal() {
-            const modal = document.getElementById('gcashModal');
-            const referenceInput = document.getElementById('gcashReferenceCode');
-            const cancelBtn = document.getElementById('cancelGcash');
-            const confirmBtn = document.getElementById('confirmGcash');
-
-            // Clear previous input
-            referenceInput.value = '';
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-
-            cancelBtn.onclick = () => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            };
-
-            confirmBtn.onclick = () => {
-                const referenceCode = referenceInput.value.trim();
-
-                if (!referenceCode) {
-                    showToast('error', 'Please enter GCash reference code');
-                    return;
-                }
-
-                if (referenceCode.length < 6) {
-                    showToast('error', 'Reference code must be at least 6 characters');
-                    return;
-                }
-
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-
-                // Show final confirmation with reference code
-                showConfirmModal(
-                    "Confirm GCash Payment",
-                    `Proceed with GCash payment? <br> <strong> Reference Code: ${referenceCode} </strong>`,
-                    () => {
-                        processCheckout('gcash', referenceCode); // pass reference code to checkout
-                    }
-                );
-            };
-
-            // Allow Enter key to confirm
-            referenceInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    confirmBtn.click();
-                }
-            });
-
-            // Focus on input
-            setTimeout(() => referenceInput.focus(), 100);
-        }
-
-        // Cash Modal Function
-function showCashModal() {
-    const modal = document.getElementById('cashModal');
-    const cashInput = document.getElementById('cashAmount');
-    const cashTotal = document.getElementById('cashTotalAmount');
-    const changeSection = document.getElementById('changeSection');
-    const changeAmount = document.getElementById('changeAmount');
-    const insufficientWarning = document.getElementById('insufficientWarning');
-    const remainingAmount = document.getElementById('remainingAmount');
-    const cancelBtn = document.getElementById('cancelCash');
-    const confirmBtn = document.getElementById('confirmCash');
-
-    // Calculate total amount
-    const totalAmount = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-
-    // Update display
-    cashTotal.textContent = `₱${totalAmount.toFixed(2)}`;
-    cashInput.value = '';
-    cashInput.min = totalAmount.toFixed(2);
-
-    // Reset UI
-    changeSection.classList.add('hidden');
-    insufficientWarning.classList.add('hidden');
-    confirmBtn.disabled = true;
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-    cancelBtn.onclick = () => {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    };
-
-    confirmBtn.onclick = () => {
-        const cashPaid = parseFloat(cashInput.value);
-        const totalDue = totalAmount;
-
-        if (!cashPaid || cashPaid < totalDue) {
-            showToast('error', 'Insufficient payment amount');
-            return;
-        }
-
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-
-        // Show final confirmation with cash details
-        const change = cashPaid - totalDue;
-        showConfirmModal(
-            "Confirm Cash Payment",
-            `<strong> Total: ₱${totalDue.toFixed(2)}</strong> <br> Amount Paid: ₱${cashPaid.toFixed(2)} <br> Change: ₱${change.toFixed(2)}`,
-            () => {
-                processCheckout('cash', null, cashPaid, change);
-            }
-        );
-    };
-
-    // Focus on input
-    setTimeout(() => cashInput.focus(), 100);
-}
-
-// Calculate change when cash amount is entered
-function calculateChange() {
-    const cashInput = document.getElementById('cashAmount');
-    const cashTotal = document.getElementById('cashTotalAmount');
-    const changeSection = document.getElementById('changeSection');
-    const changeAmount = document.getElementById('changeAmount');
-    const insufficientWarning = document.getElementById('insufficientWarning');
-    const remainingAmount = document.getElementById('remainingAmount');
-    const confirmBtn = document.getElementById('confirmCash');
-
-    const cashPaid = parseFloat(cashInput.value) || 0;
-    const totalDue = parseFloat(cashTotal.textContent.replace('₱', '')) || 0;
-
-    if (cashPaid >= totalDue) {
-        // Sufficient payment - show change
-        const change = cashPaid - totalDue;
-        changeAmount.textContent = `₱${change.toFixed(2)}`;
-        changeSection.classList.remove('hidden');
-        insufficientWarning.classList.add('hidden');
-        confirmBtn.disabled = false;
-    } else if (cashPaid > 0) {
-        // Insufficient payment - show remaining amount
-        const remaining = totalDue - cashPaid;
-        remainingAmount.textContent = `₱${remaining.toFixed(2)}`;
-        changeSection.classList.add('hidden');
-        insufficientWarning.classList.remove('hidden');
-        confirmBtn.disabled = true;
-    } else {
-        // No payment entered
-        changeSection.classList.add('hidden');
-        insufficientWarning.classList.add('hidden');
-        confirmBtn.disabled = true;
-    }
-}
-
-
-        // Updated processCheckout to handle reference code
-function processCheckout(paymentMethod, referenceCode = null, cashAmount = null, change = null) {
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    checkoutBtn.disabled = true;
-    checkoutBtn.innerHTML = '<span class="animate-pulse">Processing...</span>';
-
-    // Prepare checkout data
-    const checkoutData = {
-        payment_method: paymentMethod,
-    };
-
-    // Add reference code for GCash payments
-    if (paymentMethod === 'gcash' && referenceCode) {
-        checkoutData.reference_code = referenceCode;
-    }
-
-        // Add cash details for cash payments
-    if (paymentMethod === 'cash' && cashAmount !== null) {
-        checkoutData.cash_amount = cashAmount;
-        checkoutData.change = change;
-    }
-
-    fetch('{{ route("pos.checkout") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify(checkoutData)
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            let successMessage = 'Checkout completed successfully!';
-            if (paymentMethod === 'gcash') {
-                successMessage = `GCash payment completed! Reference: ${referenceCode}`;
-            } else if (paymentMethod === 'cash') {
-                successMessage = `Cash payment completed! Change: ₱${change.toFixed(2)}`;
-            }
-            showToast('success', successMessage);
-            setTimeout(() => window.location.reload(), 1500);
+            loadCart(); // full sync only on add (new item row needed)
         } else {
-            showToast('error', data.message || 'Checkout failed');
-            checkoutBtn.disabled = false;
-            checkoutBtn.textContent = 'Checkout';
+            updateStockDisplay(productId, -1); // revert
+            showToast('error', data.message || 'Failed to add to cart');
         }
     })
     .catch(() => {
-        showToast('error', 'An error occurred during checkout');
-        checkoutBtn.disabled = false;
-        checkoutBtn.textContent = 'Checkout';
+        updateStockDisplay(productId, -1);
+        showToast('error', 'An error occurred');
+    })
+    .finally(() => {
+        isAddingToCart = false;
+        if (btn) btn.disabled = false;
     });
 }
 
 
-        function showToast(type, message) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: type,
-                    title: message,
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000,
-                    timerProgressBar: true
+function loadCart() {
+    fetch('/pos/get-cart')
+        .then(r => { if (!r.ok) throw new Error('Network error'); return r.json(); })
+        .then(data => {
+            if (data.success) {
+                cartItems = data.items;
+                // Re-sync stock adjustments from authoritative server data
+                stockAdjustments.clear();
+                data.items.forEach(item => {
+                    stockAdjustments.set(item.product_id,
+                        (stockAdjustments.get(item.product_id) || 0) + item.quantity);
                 });
-            } else {
-                alert(message);
+                // Re-render badges from new adjustments
+                data.items.forEach(item => {
+                    const badge = document.querySelector(`.stock-badge[data-product-id="${item.product_id}"]`);
+                    if (badge) {
+                        const init = parseInt(badge.dataset.initialStock, 10) || 0;
+                        const shown = Math.max(0, init - (stockAdjustments.get(item.product_id) || 0));
+                        badge.textContent = `Stock: ${shown}`;
+                        badge.className = 'absolute top-1 right-1 text-xs font-semibold px-1.5 py-0.5 rounded stock-badge';
+                        if (shown === 0)    badge.classList.add('bg-red-100',    'text-red-800');
+                        else if (shown < 5) badge.classList.add('bg-yellow-100', 'text-yellow-800');
+                        else                badge.classList.add('bg-blue-100',   'text-blue-800');
+                    }
+                });
+                renderCart(data.items, data.total);
             }
-        }
+        })
+        .catch(err => console.error('loadCart error:', err));
+}
 
-        // Auto-submit search after typing stops (debounced)
-        let searchTimeout;
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', function () {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    document.getElementById('searchForm').submit();
-                }, 500);
+
+function renderCart(items, total) {
+    const container   = document.getElementById('cart-items');
+    const cartTotal   = document.getElementById('cart-total');
+    const cartCount   = document.getElementById('cart-count');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+
+    cartCount.textContent = items.length;
+
+    if (items.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H19M7 13l-1.5 6m0 0H19m-11 0a1 1 0 11-2 0 1 1 0 012 0zm12 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                </svg>
+                <p class="text-sm">Cart is empty</p>
+            </div>`;
+        cartTotal.textContent = '₱0.00';
+        checkoutBtn.disabled  = true;
+    } else {
+        container.innerHTML = items.map(item => `
+            <div class="bg-gray-50 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-100 transition shadow-sm hover:shadow-md border border-gray-100"
+                 data-cart-item-id="${item.cart_item_id}"
+                 data-product-id="${item.product_id}">
+                <div class="w-12 h-12 bg-gray-100 rounded flex-shrink-0 overflow-hidden shadow-sm">
+                    ${item.image
+                        ? `<img src="/storage/${item.image}" alt="${item.name}" class="w-full h-full object-cover">`
+                        : `<svg class="w-6 h-6 text-gray-400 m-auto mt-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                           </svg>`}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="font-semibold text-sm text-gray-900 truncate" title="${item.name}">${item.name}</h4>
+                    <p class="text-xs text-gray-600">Qty: <span class="item-quantity">${item.quantity}</span></p>
+                    <p class="text-sm font-semibold text-green-700 item-subtotal">₱${parseFloat(item.subtotal).toFixed(2)}</p>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button onclick="decreaseQuantity(${item.cart_item_id}, ${item.product_id})"
+                            class="w-7 h-7 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center transition shadow-sm">
+                        <svg class="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                        </svg>
+                    </button>
+                    <input type="number"
+                           value="${item.quantity}"
+                           onchange="handleQuantityInput(${item.cart_item_id}, ${item.product_id}, this.value, ${item.quantity})"
+                           class="w-14 text-center border text-gray-800 border-gray-300 rounded px-1 py-1 text-sm focus:ring-2 focus:ring-gray-500 focus:outline-none shadow-sm item-quantity-input"
+                           min="1">
+                    <button onclick="increaseQuantity(${item.cart_item_id}, ${item.product_id})"
+                            class="w-7 h-7 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center transition shadow-sm">
+                        <svg class="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                    </button>
+                </div>
+                <button onclick="removeFromCart(${item.cart_item_id}, ${item.product_id})"
+                        class="text-red-500 hover:text-red-700 ml-1 transition p-1 rounded hover:bg-red-50">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </button>
+            </div>`).join('');
+
+        cartTotal.textContent = `₱${parseFloat(total).toFixed(2)}`;
+    }
+
+    refreshTotalsDisplay();
+    updateCheckoutButtonState();
+}
+
+
+function increaseQuantity(cartItemId, productId) {
+    const item = cartItems.find(i => i.cart_item_id === cartItemId);
+    if (!item) return;
+    if (getDisplayedStock(productId) < 1) {
+        showToast('error', 'Not enough stock available');
+        return;
+    }
+    applyQuantityChange(cartItemId, productId, item.quantity + 1); // item.quantity is always live
+}
+
+function decreaseQuantity(cartItemId, productId) {
+    const item = cartItems.find(i => i.cart_item_id === cartItemId);
+    if (!item) return;
+    const currentQty = item.quantity; // always read from live in-memory state
+    if (currentQty <= 1) {
+        removeFromCart(cartItemId, productId, currentQty);
+        return;
+    }
+    applyQuantityChange(cartItemId, productId, currentQty - 1);
+}
+
+function handleQuantityInput(cartItemId, productId, rawValue, oldQty) {
+    const newQty = parseInt(rawValue, 10);
+    const input  = document.querySelector(`[data-cart-item-id="${cartItemId}"] .item-quantity-input`);
+
+    if (isNaN(newQty) || newQty < 1) {
+        showToast('error', 'Invalid quantity');
+        if (input) input.value = oldQty;
+        return;
+    }
+    if (newQty === oldQty) return;
+
+    const delta = newQty - oldQty;
+    if (delta > 0 && getDisplayedStock(productId) < delta) {
+        showToast('error', `Only ${getDisplayedStock(productId)} in stock`);
+        if (input) input.value = oldQty;
+        return;
+    }
+
+    applyQuantityChange(cartItemId, productId, newQty);
+}
+
+
+function applyQuantityChange(cartItemId, productId, newQty) {
+    const item = cartItems.find(i => i.cart_item_id === cartItemId);
+    if (!item) return;
+
+    const oldQty   = item.quantity;
+    const delta    = newQty - oldQty;               // +ve = more items taken
+    const unitPrice = item.subtotal / oldQty;
+
+    // ── 1. Mutate in-memory cart immediately ──────────────────────────────
+    item.quantity = newQty;
+    item.subtotal = unitPrice * newQty;
+
+    // ── 2. Patch DOM for this row (no re-render) ──────────────────────────
+    const row = document.querySelector(`[data-cart-item-id="${cartItemId}"]`);
+    if (row) {
+        const qtySpan    = row.querySelector('.item-quantity');
+        const qtyInput   = row.querySelector('.item-quantity-input');
+        const subtotalEl = row.querySelector('.item-subtotal');
+        if (qtySpan)    qtySpan.textContent   = newQty;
+        if (qtyInput)   qtyInput.value        = newQty;
+        if (subtotalEl) subtotalEl.textContent = `₱${item.subtotal.toFixed(2)}`;
+    }
+
+    // ── 3. Update stock badge ─────────────────────────────────────────────
+    updateStockDisplay(productId, delta);
+
+    // ── 4. Refresh footer totals ──────────────────────────────────────────
+    refreshTotalsDisplay();
+
+    // ── 5. Debounce server call (200 ms) ──────────────────────────────────
+    if (pendingUpdates.has(cartItemId)) clearTimeout(pendingUpdates.get(cartItemId));
+
+    const tid = setTimeout(() => {
+        pendingUpdates.delete(cartItemId);
+        syncQtyWithServer(cartItemId, productId, newQty, oldQty, delta, unitPrice);
+    }, 200);
+
+    pendingUpdates.set(cartItemId, tid);
+}
+
+
+function syncQtyWithServer(cartItemId, productId, newQty, oldQty, delta, unitPrice) {
+    fetch('/pos/update-cart-item', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ cart_item_id: cartItemId, quantity: newQty })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Only do a hard sync if server total diverges (e.g. concurrent change)
+            const localTotal = cartItems.reduce((s, i) => s + i.subtotal, 0);
+            if (Math.abs(data.total - localTotal) > 0.01) {
+                loadCart();
+            }
+            // Otherwise: nothing — the DOM is already correct
+        } else {
+            revertQuantityChange(cartItemId, productId, oldQty, delta, unitPrice);
+            showToast('error', data.message || 'Failed to update quantity');
+        }
+    })
+    .catch(() => {
+        revertQuantityChange(cartItemId, productId, oldQty, delta, unitPrice);
+        showToast('error', 'Network error — quantity reverted');
+    });
+}
+
+
+function revertQuantityChange(cartItemId, productId, oldQty, delta, unitPrice) {
+    const item = cartItems.find(i => i.cart_item_id === cartItemId);
+    if (!item) return;
+
+    item.quantity = oldQty;
+    item.subtotal = unitPrice * oldQty;
+
+    const row = document.querySelector(`[data-cart-item-id="${cartItemId}"]`);
+    if (row) {
+        const qtySpan    = row.querySelector('.item-quantity');
+        const qtyInput   = row.querySelector('.item-quantity-input');
+        const subtotalEl = row.querySelector('.item-subtotal');
+        if (qtySpan)    qtySpan.textContent   = oldQty;
+        if (qtyInput)   qtyInput.value        = oldQty;
+        if (subtotalEl) subtotalEl.textContent = `₱${item.subtotal.toFixed(2)}`;
+    }
+
+    updateStockDisplay(productId, -delta); // undo the badge change
+    refreshTotalsDisplay();
+}
+
+
+function refreshTotalsDisplay() {
+    const total     = cartItems.reduce((s, i) => s + i.subtotal, 0);
+    const totalQty  = cartItems.reduce((s, i) => s + i.quantity, 0);
+    const itemCount = cartItems.length;
+
+    const cartTotalEl     = document.getElementById('cart-total');
+    const itemsCountEl    = document.getElementById('items-count');
+    const totalItemsEl    = document.getElementById('total-items-count');
+
+    if (cartTotalEl)  cartTotalEl.textContent  = `₱${total.toFixed(2)}`;
+    if (itemsCountEl) itemsCountEl.textContent = `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`;
+    if (totalItemsEl) totalItemsEl.textContent = totalQty;
+}
+
+function removeFromCart(cartItemId, productId) {
+    const item = cartItems.find(i => i.cart_item_id === cartItemId);
+    if (!item) { showToast('error', 'Item not found'); return; }
+    const quantity = item.quantity; // always live
+
+    // Fade row optimistically
+    const row = document.querySelector(`[data-cart-item-id="${cartItemId}"]`);
+    if (row) row.style.opacity = '0.4';
+
+    updateStockDisplay(productId, -quantity); // put back on shelf display
+
+    fetch('/pos/remove-cart-item', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ cart_item_id: cartItemId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Remove from in-memory array and reload render
+            cartItems = cartItems.filter(i => i.cart_item_id !== cartItemId);
+            const newTotal = cartItems.reduce((s, i) => s + i.subtotal, 0);
+            renderCart(cartItems, newTotal);
+        } else {
+            if (row) row.style.opacity = '1';
+            updateStockDisplay(productId, quantity); // revert badge
+            showToast('error', data.message || 'Failed to remove item');
+        }
+    })
+    .catch(() => {
+        if (row) row.style.opacity = '1';
+        updateStockDisplay(productId, quantity);
+        showToast('error', 'An error occurred');
+    });
+}
+
+
+function clearCart() {
+    if (cartItems.length === 0) { showToast('error', 'Cart is already empty'); return; }
+
+    showConfirmModal(
+        'Clear Cart',
+        'Are you sure you want to clear all items from the cart?',
+        () => {
+            const snapshot = [...cartItems];
+            snapshot.forEach(item => updateStockDisplay(item.product_id, -item.quantity));
+
+            Promise.all(snapshot.map(item =>
+                fetch('/pos/remove-cart-item', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ cart_item_id: item.cart_item_id })
+                })
+            ))
+            .then(() => {
+                cartItems = [];
+                renderCart([], 0);
+                showToast('success', 'Cart cleared');
+            })
+            .catch(() => {
+                showToast('error', 'Failed to clear cart');
+                loadCart(); // fall back to hard sync
             });
         }
-        function updateCartTotals() {
-            const cartTotal = document.getElementById('cart-total');
-            const itemsCount = document.getElementById('items-count');
-            const totalItemsCount = document.getElementById('total-items-count');
+    );
+}
 
-            // Calculate total amount and total quantity
-            const totalAmount = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-            const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-            // Update displays
-            cartTotal.textContent = `₱${totalAmount.toFixed(2)}`;
-            itemsCount.textContent = `${cartItems.length} ${cartItems.length === 1 ? 'item' : 'items'}`;
-            totalItemsCount.textContent = totalQuantity;
+function checkout() {
+    if (cartItems.length === 0) { showToast('error', 'Cart is empty'); return; }
+
+    const method = getSelectedPaymentMethod();
+    if (!method) { showToast('error', 'Please select a payment method'); return; }
+
+    if (method === 'gcash')     showGcashModal();
+    else if (method === 'cash') showCashModal();
+    else {
+        showConfirmModal(
+            'Confirm Checkout',
+            `Proceed with ${method === 'credit_card' ? 'Credit/Debit Card' : method}?`,
+            () => processCheckout(method)
+        );
+    }
+}
+
+
+function showGcashModal() {
+    const modal  = document.getElementById('gcashModal');
+    const input  = document.getElementById('gcashReferenceCode');
+    const cancel = document.getElementById('cancelGcash');
+    const confirm = document.getElementById('confirmGcash');
+
+    input.value = '';
+    modal.classList.replace('hidden', 'flex');
+
+    cancel.onclick = () => modal.classList.replace('flex', 'hidden');
+
+    confirm.onclick = () => {
+        const code = input.value.trim();
+        if (!code)          { showToast('error', 'Please enter GCash reference code'); return; }
+        if (code.length < 6){ showToast('error', 'Reference code must be at least 6 characters'); return; }
+
+        modal.classList.replace('flex', 'hidden');
+        showConfirmModal(
+            'Confirm GCash Payment',
+            `Proceed with GCash payment?<br><strong>Reference Code: ${code}</strong>`,
+            () => processCheckout('gcash', code)
+        );
+    };
+
+    input.onkeypress = e => { if (e.key === 'Enter') confirm.click(); };
+    setTimeout(() => input.focus(), 100);
+}
+
+
+function showCashModal() {
+    const modal      = document.getElementById('cashModal');
+    const cashInput  = document.getElementById('cashAmount');
+    const totalLabel = document.getElementById('cashTotalAmount');
+    const changeBox  = document.getElementById('changeSection');
+    const warnBox    = document.getElementById('insufficientWarning');
+    const cancelBtn  = document.getElementById('cancelCash');
+    const confirmBtn = document.getElementById('confirmCash');
+
+    const totalDue = cartItems.reduce((s, i) => s + i.subtotal, 0);
+
+    totalLabel.textContent = `₱${totalDue.toFixed(2)}`;
+    cashInput.value        = '';
+    cashInput.min          = totalDue.toFixed(2);
+    changeBox.classList.add('hidden');
+    warnBox.classList.add('hidden');
+    confirmBtn.disabled = true;
+
+    modal.classList.replace('hidden', 'flex');
+
+    cancelBtn.onclick = () => modal.classList.replace('flex', 'hidden');
+
+    confirmBtn.onclick = () => {
+        const paid   = parseFloat(cashInput.value);
+        const change = paid - totalDue;
+        if (!paid || paid < totalDue) { showToast('error', 'Insufficient payment'); return; }
+
+        modal.classList.replace('flex', 'hidden');
+        showConfirmModal(
+            'Confirm Cash Payment',
+            `<strong>Total: ₱${totalDue.toFixed(2)}</strong><br>Paid: ₱${paid.toFixed(2)}<br>Change: ₱${change.toFixed(2)}`,
+            () => processCheckout('cash', null, paid, change)
+        );
+    };
+
+    setTimeout(() => cashInput.focus(), 100);
+}
+
+function calculateChange() {
+    const paid      = parseFloat(document.getElementById('cashAmount').value) || 0;
+    const totalDue  = parseFloat(document.getElementById('cashTotalAmount').textContent.replace('₱','')) || 0;
+    const changeBox = document.getElementById('changeSection');
+    const warnBox   = document.getElementById('insufficientWarning');
+    const confirmBtn = document.getElementById('confirmCash');
+
+    if (paid >= totalDue && paid > 0) {
+        document.getElementById('changeAmount').textContent = `₱${(paid - totalDue).toFixed(2)}`;
+        changeBox.classList.remove('hidden');
+        warnBox.classList.add('hidden');
+        confirmBtn.disabled = false;
+    } else if (paid > 0) {
+        document.getElementById('remainingAmount').textContent = `₱${(totalDue - paid).toFixed(2)}`;
+        changeBox.classList.add('hidden');
+        warnBox.classList.remove('hidden');
+        confirmBtn.disabled = true;
+    } else {
+        changeBox.classList.add('hidden');
+        warnBox.classList.add('hidden');
+        confirmBtn.disabled = true;
+    }
+}
+
+
+function processCheckout(method, referenceCode = null, cashAmount = null, change = null) {
+    const btn = document.getElementById('checkoutBtn');
+    btn.disabled   = true;
+    btn.innerHTML  = '<span class="animate-pulse">Processing…</span>';
+
+    const payload = { payment_method: method };
+    if (method === 'gcash' && referenceCode) payload.reference_code = referenceCode;
+    if (method === 'cash'  && cashAmount !== null) {
+        payload.cash_amount = cashAmount;
+        payload.change      = change;
+    }
+
+    fetch('/pos/checkout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const msg = method === 'gcash'
+                ? `GCash payment completed! Ref: ${referenceCode}`
+                : method === 'cash'
+                ? `Cash payment completed! Change: ₱${change.toFixed(2)}`
+                : 'Checkout completed!';
+            showToast('success', msg);
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showToast('error', data.message || 'Checkout failed');
+            btn.disabled  = false;
+            btn.textContent = 'Checkout';
         }
+    })
+    .catch(() => {
+        showToast('error', 'An error occurred during checkout');
+        btn.disabled    = false;
+        btn.textContent = 'Checkout';
+    });
+}
+
+function showToast(type, message) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({ icon: type, title: message, toast: true, position: 'top-end',
+                    showConfirmButton: false, timer: 3000, timerProgressBar: true });
+    } else {
+        alert(message);
+    }
+}
+
+
+let searchTimeout;
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => document.getElementById('searchForm').submit(), 500);
+    });
+}
     </script>
 
 @endsection
