@@ -293,7 +293,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('admin.dashboard') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.dashboard') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Dashboard</span>
     </a>
@@ -309,7 +309,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  
    class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
     </svg>
     <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm flex-1">Accounts</span>
     @if($pendingApprovalsCount > 0)
@@ -323,7 +323,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('admin.plan_management') }}" @click="profileOpen = false"  
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.plan_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Membership Plans</span>
     </a>
@@ -331,7 +331,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
         <a href="{{ route('admin.subscription_management') }}" @click="profileOpen = false"  
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.subscription_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Subscriptions</span>
     </a>
@@ -359,7 +359,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('products.index') }}" @click="profileOpen = false"
        class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('products.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm flex-1">Inventory</span>
         @if($lowStockCount > 0)
@@ -373,7 +373,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('pos.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('pos.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">POS</span>
     </a>
@@ -387,7 +387,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('sales.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('sales.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Sales</span>
     </a>
@@ -395,7 +395,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('transactions.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('transactions.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Transactions</span>
     </a>
@@ -409,7 +409,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('logs.show') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Activity Logs</span>
     </a>
@@ -424,7 +424,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
  <a href="{{ route('admin.branch_management') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.branch_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Branches</span>
     </a>
@@ -434,17 +434,18 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('categories.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('categories.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6h.008v.008H6V6z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Categories</span>
     </a>
 
 @elseif(auth()->user()->role === 'staff')
-    <!-- Staff Section -->
+    <!-- Staff Section - Similar structure -->
    <a href="{{ route('staff.dashboard') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('staff.dashboard') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Dashboard</span>
     </a>
@@ -458,7 +459,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  
    class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
     </svg>
     <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm flex-1">Members</span>
     @if($pendingApprovalsCount > 0)
@@ -472,7 +473,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('admin.plan_management') }}" @click="profileOpen = false"  
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.plan_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Membership Plans</span>
     </a>
@@ -480,7 +481,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
          <a href="{{ route('admin.subscription_management') }}" @click="profileOpen = false"  
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.subscription_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Subscriptions</span>
     </a>
@@ -509,7 +510,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('products.index') }}" @click="profileOpen = false"
        class="relative flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('products.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="transition-opacity flex-1">Inventory</span>
         @if($lowStockCount > 0)
@@ -523,7 +524,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('pos.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('pos.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="transition-opacity">POS</span>
     </a>
@@ -533,7 +534,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
    <a href="{{ route('member.dashboard') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('member.dashboard') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Home</span>
     </a>
@@ -541,7 +542,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 <a href="{{ route('member.member.logs') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('member.member.logs') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Attendance History</span>
     </a>
