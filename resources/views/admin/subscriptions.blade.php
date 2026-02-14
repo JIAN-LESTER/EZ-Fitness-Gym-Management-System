@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Subscriptions')
+@section('title', 'Subscriptions | EZ Fitness')
 @section('header', 'Subscriptions')
 
 <style>
@@ -72,17 +72,7 @@
                             class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all">
                     </div>
                 </div>
-                <div class="w-full sm:w-auto min-w-[200px]">
-                    <select name="branch_id" id="branch_filter"
-                        class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 shadow-sm transition-all">
-                        <option value="">All Branches</option>
-                        @foreach($branches as $branch)
-                            <option value="{{ $branch->branch_id }}" {{ ($branch_filter ?? '') == $branch->branch_id ? 'selected' : '' }}>
-                                {{ $branch->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                
                 <button type="submit"
                     class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,7 +132,7 @@
                             class="flex-1 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-all text-sm shadow-md">
                             Edit
                         </button>
-                        <button onclick='openDeleteModal(@json($subscription))'
+                        <button onclick="openDeleteModal('{{ route('subscriptions.destroy', $subscription->subscription_id) }}', '{{ $subscription->name }}')"
                             class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all text-sm shadow-md">
                             Delete
                         </button>
@@ -350,7 +340,7 @@
                 </h3>
 
                 <p class="text-center text-gray-600 mb-6">
-                    Are you sure you want to delete <span class="font-bold">{{ $subscription->name }}</span>? This action cannot be undone.
+                    Are you sure you want to delete <span id="deleteSubscriptionName" class="font-bold text-red-600"></span>? This action cannot be undone.
                 </p>
 
                 <form id="deleteForm" method="POST" action="">
@@ -488,9 +478,12 @@
             openModal('editSubscriptionModal');
         }
 
-         function openDeleteModal(actionUrl) {
+         function openDeleteModal(actionUrl, subscriptionName) {
     const form = document.getElementById('deleteForm');
+    const nameSpan = document.getElementById('deleteSubscriptionName');
     form.action = actionUrl;
+
+        nameSpan.textContent = subscriptionName;
 
     const modal = document.getElementById('deleteModal');
     const scrollY = window.scrollY;

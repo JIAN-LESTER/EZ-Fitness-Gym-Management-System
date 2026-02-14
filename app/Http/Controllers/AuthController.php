@@ -86,72 +86,72 @@ class AuthController extends Controller
 
 
     public function login(Request $request)
-{
-    $request->validate([
-        'login' => 'required|string|max:100',
-        'password' => 'required|string',
-    ], [
-        'login.required' => 'Username or email is required',
-        'password.required' => 'Password is required',
-    ]);
+    {
+        $request->validate([
+            'login' => 'required|string|max:100',
+            'password' => 'required|string',
+        ], [
+            'login.required' => 'Username or email is required',
+            'password.required' => 'Password is required',
+        ]);
 
-    // Determine if input is email or username
-    $fieldType = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-    
-    // Find user by email or username (case-insensitive)
-    if ($fieldType === 'email') {
-        $user = User::whereRaw('LOWER(email) = ?', [strtolower($request->login)])->first();
-    } else {
-        $user = User::whereRaw('LOWER(username) = ?', [strtolower($request->login)])->first();
-    }
+        // Determine if input is email or username
+        $fieldType = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-    if (!$user) {
-        return back()->with('error', 'No account found')->withInput();
-    }
-
-    if (!Hash::check($request->password, $user->password)) {
-        return back()
-            ->with('error', 'Incorrect credentials.')
-            ->withInput();
-    }
-
-    if (!$user->hasVerifiedEmail()) {
-        return back()->withInput()
-            ->with('error', 'Your email is not verified.')
-            ->with('resend_user_id', $user->user_id);
-    }
-
-    Auth::login($user);
-
-    $currentUser = Auth::user();
-    $branchId = $currentUser->role === 'super_admin'
-        ? session('selected_branch_id')
-        : $currentUser->branch_id;
-
-    Logs::create([
-        'user_id' => $user->user_id,
-        'branch_id' => $branchId,
-        'action' => "{$user->last_name} has logged in successfully.",
-        'timestamp' => now(),
-    ]);
-
-    // Role-based dashboard redirection
-    if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
-        return redirect()->route('admin.dashboard')->with('success', 'Logged in successfully');
-    }
-
-    if ($user->role === 'member') {
-        $profile = MemberProfile::where('user_id', $user->user_id)->first();
-
-        if ($profile && $profile->status === 'inactive') {
-            return redirect()->route('member.dashboard')->with('completeMembershipModal', true);
+        // Find user by email or username (case-insensitive)
+        if ($fieldType === 'email') {
+            $user = User::whereRaw('LOWER(email) = ?', [strtolower($request->login)])->first();
+        } else {
+            $user = User::whereRaw('LOWER(username) = ?', [strtolower($request->login)])->first();
         }
 
-        return redirect()->route('member.dashboard')->with('success', 'Login successful!');
-    }
+        if (!$user) {
+            return back()->with('error', 'No account found')->withInput();
+        }
 
-    return redirect()->route('admin.dashboard')->with('success', 'Logged in successfully');
-}
+        if (!Hash::check($request->password, $user->password)) {
+            return back()
+                ->with('error', 'Incorrect credentials.')
+                ->withInput();
+        }
+
+        if (!$user->hasVerifiedEmail()) {
+            return back()->withInput()
+                ->with('error', 'Your email is not verified.')
+                ->with('resend_user_id', $user->user_id);
+        }
+
+        Auth::login($user);
+
+        $currentUser = Auth::user();
+        $branchId = $currentUser->role === 'super_admin'
+            ? session('selected_branch_id')
+            : $currentUser->branch_id;
+
+        Logs::create([
+            'user_id' => $user->user_id,
+            'branch_id' => $branchId,
+            'action' => "{$user->last_name} has logged in successfully.",
+            'timestamp' => now(),
+        ]);
+
+        // Role-based dashboard redirection
+        if (in_array($user->role, ['admin', 'super_admin'])) {
+            return redirect()->route('admin.dashboard')->with('success', 'Logged in successfully');
+        }
+
+        if ($user->role === 'member') {
+            $profile = MemberProfile::where('user_id', $user->user_id)->first();
+
+            if ($profile && $profile->status === 'inactive') {
+                return redirect()->route('member.dashboard')->with('completeMembershipModal', true);
+            }
+
+            return redirect()->route('member.dashboard')->with('success', 'Login successful!');
+        } elseif ($user->role === 'staff') {
+            return redirect()->route('staff.dashboard')->with('success', 'Logged in successfully');
+        }
+    }
 
 
     public function checkUsername(Request $request)
@@ -308,7 +308,7 @@ class AuthController extends Controller
         ]);
             }
 
-            return back()->with('status', 'Password reset link sent! Please check your email.');
+            return back()->with('success', 'Password reset link sent! Please check your email.');
         }
 
         return back()->with('error', 'Unable to send password reset link. Please try again.');

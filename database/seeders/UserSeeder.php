@@ -16,16 +16,18 @@ class UserSeeder extends Seeder
     {
         $users = [
 
-                    [
+            [
                 "first_name" => "Super",
                 "last_name" => "Admin",
-                "username" => "adminuser",
-                "email" => "a3.marbuk@gmail.com",
-                "password" => bcrypt("adminuser"),
+                "username" => "sueradmin",
+                "email" => "superadmin@gmail.com",
+                "password" => bcrypt("superadmin"),
                 "role" => "super_admin",
                 "status" => "active",
-          
+                "branch_id" => null,
                 "email_verified_at" => now(),
+                "created_at" => now(),
+                "updated_at" => now(),
             ],
             [
                 "first_name" => "Admin",
@@ -37,6 +39,9 @@ class UserSeeder extends Seeder
                 "status" => "active",
                 "branch_id" => 1,
                 "email_verified_at" => now(),
+                "created_at" => now(),
+                "updated_at" => now(),
+
             ],
             [
                 "first_name" => "Staff",
@@ -48,9 +53,11 @@ class UserSeeder extends Seeder
                 "status" => "active",
                 "branch_id" => 1,
                 "email_verified_at" => now(),
+                "created_at" => now(),
+                "updated_at" => now(),
             ],
 
-              [
+            [
                 "first_name" => "Admin2",
                 "last_name" => "User",
                 "username" => "adminuser2",
@@ -60,6 +67,8 @@ class UserSeeder extends Seeder
                 "status" => "active",
                 "branch_id" => 2,
                 "email_verified_at" => now(),
+                "created_at" => now(),
+                "updated_at" => now(),
             ],
             [
                 "first_name" => "Staff2",
@@ -71,6 +80,8 @@ class UserSeeder extends Seeder
                 "status" => "active",
                 "branch_id" => 2,
                 "email_verified_at" => now(),
+                "created_at" => now(),
+                "updated_at" => now(),
             ]
 
         ];

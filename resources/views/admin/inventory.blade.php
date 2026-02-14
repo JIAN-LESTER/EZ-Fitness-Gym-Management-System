@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Inventory')
-@section('header', 'Products Management')
+@section('title', 'Inventory | EZ Fitness')
+@section('header', 'Inventory')
 
 <style>
 /* Custom Scrollbar for Modals */
@@ -293,7 +293,7 @@
                                                 Edit Product
                                             </button>
 
-                                            <button onclick="openDeleteModal('{{ route('products.destroy', $inventory->product->product_id) }}')"
+                                            <button onclick="openDeleteModal('{{ route('products.destroy', $inventory->product->product_id) }}', '{{ $inventory->product->name }}')"
                                                 class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                     stroke="currentColor" class="w-4 h-4">
@@ -630,7 +630,7 @@
                 </h3>
 
                 <p class="text-center text-gray-600 mb-6">
-                    Are you sure you want to delete <span class="font-bold" id="modal-product-name"></span>? This action cannot be undone.
+                    Are you sure you want to delete <span id="deleteProductName" class="font-bold text-red-600"></span>? This action cannot be undone.
                 </p>
 
                 <form id="deleteForm" method="POST" action="">
@@ -696,9 +696,11 @@
     }
 
     // Delete Modal Functions
-    function openDeleteModal(actionUrl) {
+    function openDeleteModal(actionUrl, productName) {
         const form = document.getElementById('deleteForm');
+        const nameSpan = document.getElementById('deleteProductName');
         form.action = actionUrl;
+        nameSpan.textContent = productName;
 
         const modal = document.getElementById('deleteModal');
         const scrollY = window.scrollY;

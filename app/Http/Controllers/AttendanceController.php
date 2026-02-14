@@ -52,7 +52,7 @@ class AttendanceController extends Controller
             ->orderBy('check_in_time', 'desc')
             ->get();
 
-        return view('attendance.scanner', compact('todayAttendances'));
+        return view('admin.scanner', compact('todayAttendances'));
     }
 
     /**

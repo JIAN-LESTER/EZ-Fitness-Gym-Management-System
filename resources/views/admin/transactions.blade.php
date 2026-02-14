@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Transactions')
+@section('title', 'Transactions | EZ Fitness')
 @section('header', 'Transactions')
 
 <style>
@@ -205,9 +205,7 @@
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Quantity</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                        @if(Auth::user()->role === 'admin')
-                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                        @endif
+          
                     </tr>
                 </thead>
 
@@ -301,18 +299,7 @@
                                 <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($transaction->created_at)->format('h:i A') }}</p>
                             </td>
 
-                            <!-- Actions -->
-                            @if(Auth::user()->role === 'admin')
-                            <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
-                                <button onclick="confirmDelete('{{ $transaction->transaction_id }}')"
-                                    class="text-red-500 hover:text-red-700"
-                                    title="Delete Transaction">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
-                                    </svg>
-                                </button>
-                            </td>
-                            @endif
+                          
                         </tr>
                     @empty
                         <tr>
@@ -383,44 +370,7 @@
         </div>
     </div>
 
-    <!-- Delete Modal -->
-    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
-        <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeDeleteModal()"></div>
 
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
-            <div class="p-6">
-                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
-                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
-                </div>
-
-                <h3 class="text-xl font-bold text-center text-gray-900 mb-2">
-                    Delete Transaction
-                </h3>
-
-                <p class="text-center text-gray-600 mb-6">
-                    Are you sure you want to delete this transaction? This action cannot be undone.
-                </p>
-
-                <form id="deleteForm" method="POST" action="">
-                    @csrf
-                    @method('DELETE')
-
-                    <div class="flex gap-3">
-                        <button type="button" onclick="closeDeleteModal()"
-                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
-                            Delete
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <script>
         @if(session('success'))
@@ -435,34 +385,7 @@
             }
         @endif
 
-        window.confirmDelete = function(transactionId) {
-            const form = document.getElementById('deleteForm');
-            form.action = '/transactions/' + transactionId;
-
-            const modal = document.getElementById('deleteModal');
-            const scrollY = window.scrollY;
-
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollY}px`;
-            document.body.style.width = '100%';
-            document.body.style.overflowY = 'scroll';
-
-            modal.classList.remove('hidden');
-        };
-
-        window.closeDeleteModal = function() {
-            const modal = document.getElementById('deleteModal');
-            const scrollY = document.body.style.top;
-
-            modal.classList.add('hidden');
-
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            document.body.style.overflowY = '';
-
-            window.scrollTo(0, parseInt(scrollY || '0') * -1);
-        };
+        
 
         window.toggleFilterDropdown = function(event) {
             event.preventDefault();
@@ -1143,7 +1066,7 @@ function renderTransactionDetails(transaction) {
                     }
 
                     window.closeModal('transactionShowModal');
-                    window.closeDeleteModal();
+              
                 }
             });
         });

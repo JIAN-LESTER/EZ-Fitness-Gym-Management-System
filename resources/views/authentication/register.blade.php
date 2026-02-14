@@ -4,13 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register - EZ Fitness</title>
+  <title>EZ Fitness</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('logo_image/ez_fitness_gym_logo.png') }}">
+  
+  <!-- Load SweetAlert2 CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
   <style>
-
-
     .info-section {
       background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
       position: relative;
@@ -152,14 +153,15 @@
         <p class="text-gray-600 mt-2 text-center md:text-left">Sign up to get started with EZ Fitness</p>
       </header>
 
-      <form method="POST" action="{{ route('register') }}" class="space-y-4">
+      <form id="registerForm" method="POST" action="{{ route('register') }}" class="space-y-4">
         @csrf
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
             <input type="text" id="first_name" name="first_name" placeholder="John"
-              class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
+              class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" 
+              value="{{ old('first_name') }}" />
             @error('first_name')
               <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
             @enderror
@@ -167,7 +169,8 @@
           <div>
             <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
             <input type="text" id="last_name" name="last_name" placeholder="Doe"
-              class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
+              class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" 
+              value="{{ old('last_name') }}" />
             @error('last_name')
               <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
             @enderror
@@ -177,7 +180,8 @@
         <div>
           <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
           <input type="text" id="username" name="username" placeholder="johndoe123"
-            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
+            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" 
+            value="{{ old('username') }}" />
           @error('username')
             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
           @enderror
@@ -186,7 +190,8 @@
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
           <input type="email" id="email" name="email" placeholder="john@example.com"
-            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" />
+            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" 
+            value="{{ old('email') }}" />
           @error('email')
             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
           @enderror
@@ -229,7 +234,7 @@
         </div>
 
         <div class="pt-2">
-          <button type="submit"
+          <button type="submit" id="registerBtn"
             class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition-all shadow-lg hover:shadow-xl">
             CREATE ACCOUNT
           </button>
@@ -244,140 +249,170 @@
 
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <!-- Scripts - Load in correct order -->
+  <!-- 1. SweetAlert2 Library -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- 2. Notifications Module -->
+  <script src="{{ asset('js/notifications.js') }}"></script>
 
+  <!-- 3. Your Custom Scripts -->
   <script>
-    @if(session('success'))
-      Toastify({
-        text: "{{ session('success') }}",
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        backgroundColor: "linear-gradient(to right, #008000 , #008080)",
-        stopOnFocus: true,
-      }).showToast();
-    @endif
+    document.addEventListener('DOMContentLoaded', function() {
+      // Show session messages as toasts
+      @if(session('success'))
+        Notifications.toast('success', '{{ session('success') }}');
+      @endif
+
+      @if(session('error'))
+        Notifications.toast('error', '{{ session('error') }}');
+      @endif
+
+      @if(session('warning'))
+        Notifications.toast('warning', '{{ session('warning') }}');
+      @endif
+
+      @if(session('info'))
+        Notifications.toast('info', '{{ session('info') }}');
+      @endif
+
+      @if(session('status'))
+        Notifications.toast('success', '{{ session('status') }}');
+      @endif
+    });
 
     // Toggle password visibility
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
     const eyeIcon = document.getElementById('eyeIcon');
 
-    togglePassword.addEventListener('click', function () {
-      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      passwordInput.setAttribute('type', type);
+    if (togglePassword && passwordInput && eyeIcon) {
+      togglePassword.addEventListener('click', function () {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
 
-      if (type === 'text') {
-        eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
-      } else {
-        eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
-      }
-    });
+        if (type === 'text') {
+          eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
+        } else {
+          eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
+        }
+      });
+    }
 
     // Toggle confirm password visibility
     const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
     const confirmPasswordInput = document.getElementById('password_confirmation');
     const eyeIconConfirm = document.getElementById('eyeIconConfirm');
 
-    toggleConfirmPassword.addEventListener('click', function () {
-      const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      confirmPasswordInput.setAttribute('type', type);
+    if (toggleConfirmPassword && confirmPasswordInput && eyeIconConfirm) {
+      toggleConfirmPassword.addEventListener('click', function () {
+        const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        confirmPasswordInput.setAttribute('type', type);
 
-      if (type === 'text') {
-        eyeIconConfirm.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
-      } else {
-        eyeIconConfirm.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
-      }
-    });
+        if (type === 'text') {
+          eyeIconConfirm.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
+        } else {
+          eyeIconConfirm.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
+        }
+      });
+    }
 
     // Form validation
-    const form = document.querySelector('form');
+    const form = document.getElementById('registerForm');
     const firstNameInput = document.getElementById('first_name');
     const lastNameInput = document.getElementById('last_name');
     const usernameInput = document.getElementById('username');
     const emailInput = document.getElementById('email');
+    const registerBtn = document.getElementById('registerBtn');
 
-    form.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      let isValid = true;
+    if (form) {
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        let isValid = true;
 
-      // First name
-      if (!firstNameInput.value.trim()) {
-        showError(firstNameInput, 'First name is required');
-        isValid = false;
-      } else {
-        clearError(firstNameInput);
-      }
-
-      // Last name
-      if (!lastNameInput.value.trim()) {
-        showError(lastNameInput, 'Last name is required');
-        isValid = false;
-      } else {
-        clearError(lastNameInput);
-      }
-
-      // Username
-      if (!usernameInput.value.trim()) {
-        showError(usernameInput, 'Username is required');
-        isValid = false;
-      } else if (usernameInput.value.length < 4) {
-        showError(usernameInput, 'Username must be at least 4 characters');
-        isValid = false;
-      } else {
-        const usernameTaken = await checkIfTaken('{{ route('check.username') }}', 'username', usernameInput.value);
-        if (usernameTaken) {
-          showError(usernameInput, 'Username is already taken');
+        // First name
+        if (!firstNameInput.value.trim()) {
+          showError(firstNameInput, 'First name is required');
           isValid = false;
         } else {
-          clearError(usernameInput);
+          clearError(firstNameInput);
         }
-      }
 
-      // Email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailInput.value.trim()) {
-        showError(emailInput, 'Email is required');
-        isValid = false;
-      } else if (!emailRegex.test(emailInput.value)) {
-        showError(emailInput, 'Please enter a valid email address');
-        isValid = false;
-      } else {
-        const emailTaken = await checkIfTaken('{{ route('check.email') }}', 'email', emailInput.value);
-        if (emailTaken) {
-          showError(emailInput, 'Email is already taken');
+        // Last name
+        if (!lastNameInput.value.trim()) {
+          showError(lastNameInput, 'Last name is required');
           isValid = false;
         } else {
-          clearError(emailInput);
+          clearError(lastNameInput);
         }
-      }
 
-      // Password
-      if (!passwordInput.value.trim()) {
-        showError(passwordInput, 'Password is required');
-        isValid = false;
-      } else if (passwordInput.value.length < 6) {
-        showError(passwordInput, 'Password must be at least 6 characters');
-        isValid = false;
-      } else {
-        clearError(passwordInput);
-      }
+        // Username
+        if (!usernameInput.value.trim()) {
+          showError(usernameInput, 'Username is required');
+          isValid = false;
+        } else if (usernameInput.value.length < 4) {
+          showError(usernameInput, 'Username must be at least 4 characters');
+          isValid = false;
+        } else {
+          const usernameTaken = await checkIfTaken('{{ route('check.username') }}', 'username', usernameInput.value);
+          if (usernameTaken) {
+            showError(usernameInput, 'Username is already taken');
+            isValid = false;
+          } else {
+            clearError(usernameInput);
+          }
+        }
 
-      // Confirm Password
-      if (!confirmPasswordInput.value.trim()) {
-        showError(confirmPasswordInput, 'Password confirmation is required');
-        isValid = false;
-      } else if (confirmPasswordInput.value !== passwordInput.value) {
-        showError(confirmPasswordInput, 'Password confirmation does not match');
-        isValid = false;
-      } else {
-        clearError(confirmPasswordInput);
-      }
+        // Email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailInput.value.trim()) {
+          showError(emailInput, 'Email is required');
+          isValid = false;
+        } else if (!emailRegex.test(emailInput.value)) {
+          showError(emailInput, 'Please enter a valid email address');
+          isValid = false;
+        } else {
+          const emailTaken = await checkIfTaken('{{ route('check.email') }}', 'email', emailInput.value);
+          if (emailTaken) {
+            showError(emailInput, 'Email is already taken');
+            isValid = false;
+          } else {
+            clearError(emailInput);
+          }
+        }
 
-      if (!isValid) return;
-      form.submit();
-    });
+        // Password
+        if (!passwordInput.value.trim()) {
+          showError(passwordInput, 'Password is required');
+          isValid = false;
+        } else if (passwordInput.value.length < 6) {
+          showError(passwordInput, 'Password must be at least 6 characters');
+          isValid = false;
+        } else {
+          clearError(passwordInput);
+        }
+
+        // Confirm Password
+        if (!confirmPasswordInput.value.trim()) {
+          showError(confirmPasswordInput, 'Password confirmation is required');
+          isValid = false;
+        } else if (confirmPasswordInput.value !== passwordInput.value) {
+          showError(confirmPasswordInput, 'Password confirmation does not match');
+          isValid = false;
+        } else {
+          clearError(confirmPasswordInput);
+        }
+
+        if (!isValid) return;
+
+        // Show loading state
+        registerBtn.disabled = true;
+        registerBtn.innerHTML = '<span class="animate-pulse">Creating account...</span>';
+        Notifications.loading('Creating your account...');
+        
+        form.submit();
+      });
+    }
 
     async function checkIfTaken(url, param, value) {
       try {

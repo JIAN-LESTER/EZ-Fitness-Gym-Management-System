@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Home')
+@section('title', 'Home | EZ Fitness')
 @section('header', 'Home')
 
 @section('content')
@@ -300,7 +300,18 @@
             
             <div class="lg:col-span-2">
                 <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-6">Available Plans</h3>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800">Available Plans</h3>
+                        @if(Auth::user()->branch)
+                            <span class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                {{ Auth::user()->branch->name }}
+                            </span>
+                        @endif
+                    </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         
@@ -327,7 +338,13 @@
                                     </div>
                                 </div>
                                 @empty
-                                <p class="text-gray-500 text-center py-4 text-sm">No plans available</p>
+                                <div class="text-center py-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                    <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    <p class="text-gray-500 font-medium text-sm">No plans available</p>
+                                    <p class="text-gray-400 text-xs mt-1">for your branch</p>
+                                </div>
                                 @endforelse
                             </div>
                         </div>
@@ -355,7 +372,13 @@
                                     </div>
                                 </div>
                                 @empty
-                                <p class="text-gray-500 text-center py-4 text-sm">No subscriptions available</p>
+                                <div class="text-center py-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                    <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    <p class="text-gray-500 font-medium text-sm">No subscriptions available</p>
+                                    <p class="text-gray-400 text-xs mt-1">for your branch</p>
+                                </div>
                                 @endforelse
                             </div>
                         </div>
@@ -409,6 +432,62 @@
     </div>
     
 
+<!-- Renewal Modal -->
+<div id="renewalModal" class="fixed inset-0 z-50 hidden flex items-center justify-center backdrop-blur-sm bg-black/50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-gray-600 to-gray-700 text-white p-6">
+            <div class="flex items-start justify-between">
+                <div>
+                    <h3 class="text-2xl font-bold" id="renewalModalTitle">Select Plan</h3>
+                    <p class="text-gray-200 text-sm mt-1" id="renewalModalSubtitle">Choose your options</p>
+                </div>
+                @if(Auth::user()->branch)
+                    <span class="inline-flex items-center gap-1 bg-white/20 text-white text-xs font-semibold px-2.5 py-1.5 rounded-full mt-1 flex-shrink-0">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {{ Auth::user()->branch->name }}
+                    </span>
+                @endif
+            </div>
+        </div>
+
+        {{-- ================================================ --}}
+        {{-- MEMBERSHIP-FIRST FLOW                           --}}
+        {{-- Step A1: Pick a plan                            --}}
+        {{-- ================================================ --}}
+        <div id="flow-membership-step1" class="p-6 hidden">
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-3">Choose Membership Plan</label>
+                <div class="space-y-3 max-h-64 overflow-y-auto">
+                    @forelse($plans as $plan)
+                        <label class="block cursor-pointer">
+                            <input type="radio" name="mem_plan_id" value="{{ $plan->plan_id }}" class="peer sr-only">
+                            <div class="border-2 border-gray-200 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 rounded-xl p-4 transition-all hover:shadow-md">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h4 class="font-bold text-gray-800">{{ $plan->name }}</h4>
+                                </div>
+                                @if($plan->details)
+                                    <p class="text-xs text-gray-600 mb-2">{{ $plan->details }}</p>
+                                @endif
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="font-bold text-emerald-600">₱{{ number_format($plan->price, 2) }}</span>
+                                    <span class="text-gray-500">{{ $plan->duration_days }} days</span>
+                                </div>
+                            </div>
+                        </label>
+                    @empty
+                        <div class="text-center py-6 text-gray-500">
+                            <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <p class="font-medium text-sm">No plans available for your branch</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeRenewalModal()" class="flex-1 px-4 py-3 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold transition-colors">Cancel</button>
+                <button type="button" onclick="membershipGoToStep2()" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 font-semibold transition-colors shadow-lg">Next</button>
     <!-- Renewal Modal -->
     <div id="renewalModal" class="fixed inset-0 z-50 hidden flex items-center justify-center backdrop-blur-sm bg-black/50">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
@@ -471,6 +550,144 @@
                 </div>
             </div>
 
+        {{-- Step A2: Pick a subscription --}}
+        <div id="flow-membership-step2" class="p-6 hidden">
+            <div class="mb-4">
+                <button type="button" onclick="membershipBackToStep1()" class="flex items-center text-gray-600 hover:text-gray-800 font-medium text-sm">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    Back
+                </button>
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-3">Choose Subscription</label>
+                <div class="space-y-3 max-h-64 overflow-y-auto">
+                    @forelse($subscriptions as $subscription)
+                        <label class="block cursor-pointer">
+                            <input type="radio" name="mem_subscription_id" value="{{ $subscription->subscription_id }}" class="peer sr-only">
+                            <div class="border-2 border-gray-200 peer-checked:border-gray-500 peer-checked:bg-gray-50 rounded-xl p-4 transition-all hover:shadow-md">
+                                <h4 class="font-bold text-gray-800 mb-1">{{ $subscription->name }}</h4>
+                                @if($subscription->details)
+                                    <p class="text-xs text-gray-600 mb-2">{{ $subscription->details }}</p>
+                                @endif
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="font-bold text-gray-600">₱{{ number_format($subscription->price, 2) }}</span>
+                                    <span class="text-gray-500">{{ $subscription->duration_days }} days</span>
+                                </div>
+                            </div>
+                        </label>
+                    @empty
+                        <div class="text-center py-6 text-gray-500">
+                            <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <p class="font-medium text-sm">No subscriptions available for your branch</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+                <div class="flex items-start gap-2">
+                    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <p class="text-sm text-amber-800">Your renewal request will be sent to admin for approval. You'll receive a QR code via email once approved.</p>
+                </div>
+            </div>
+            <form action="{{ route('member.request-renewal') }}" method="POST" id="membershipRenewalForm">
+                @csrf
+                <input type="hidden" name="action" value="renew">
+                <input type="hidden" name="plan_id" id="membership_final_plan_id">
+                <input type="hidden" name="subscription_id" id="membership_final_subscription_id">
+                <div class="flex gap-3">
+                    <button type="button" onclick="membershipBackToStep1()" class="flex-1 px-4 py-3 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold transition-colors">Back</button>
+                    <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 font-semibold transition-colors shadow-lg">Submit Renewal</button>
+                </div>
+            </form>
+        </div>
+
+        {{-- ================================================ --}}
+        {{-- SUBSCRIPTION-FIRST FLOW                         --}}
+        {{-- Step B1: Pick a subscription                    --}}
+        {{-- ================================================ --}}
+        <div id="flow-subscription-step1" class="p-6 hidden">
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-3">Choose Subscription</label>
+                <div class="space-y-3 max-h-64 overflow-y-auto">
+                    @forelse($subscriptions as $subscription)
+                        <label class="block cursor-pointer">
+                            <input type="radio" name="sub_subscription_id" value="{{ $subscription->subscription_id }}" class="peer sr-only">
+                            <div class="border-2 border-gray-200 peer-checked:border-gray-500 peer-checked:bg-gray-50 rounded-xl p-4 transition-all hover:shadow-md">
+                                <h4 class="font-bold text-gray-800 mb-1">{{ $subscription->name }}</h4>
+                                @if($subscription->details)
+                                    <p class="text-xs text-gray-600 mb-2">{{ $subscription->details }}</p>
+                                @endif
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="font-bold text-gray-600">₱{{ number_format($subscription->price, 2) }}</span>
+                                    <span class="text-gray-500">{{ $subscription->duration_days }} days</span>
+                                </div>
+                            </div>
+                        </label>
+                    @empty
+                        <div class="text-center py-6 text-gray-500">
+                            <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <p class="font-medium text-sm">No subscriptions available for your branch</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeRenewalModal()" class="flex-1 px-4 py-3 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold transition-colors">Cancel</button>
+                <button type="button" onclick="subscriptionGoToStep2()" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 font-semibold transition-colors shadow-lg">Next</button>
+            </div>
+        </div>
+
+        {{-- Step B2: Pick a membership plan --}}
+        <div id="flow-subscription-step2" class="p-6 hidden">
+            <div class="mb-4">
+                <button type="button" onclick="subscriptionBackToStep1()" class="flex items-center text-gray-600 hover:text-gray-800 font-medium text-sm">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    Back
+                </button>
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-3">Choose Membership Plan</label>
+                <div class="space-y-3 max-h-64 overflow-y-auto">
+                    @forelse($plans as $plan)
+                        <label class="block cursor-pointer">
+                            <input type="radio" name="sub_plan_id" value="{{ $plan->plan_id }}" class="peer sr-only">
+                            <div class="border-2 border-gray-200 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 rounded-xl p-4 transition-all hover:shadow-md">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h4 class="font-bold text-gray-800">{{ $plan->name }}</h4>
+                                </div>
+                                @if($plan->details)
+                                    <p class="text-xs text-gray-600 mb-2">{{ $plan->details }}</p>
+                                @endif
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="font-bold text-emerald-600">₱{{ number_format($plan->price, 2) }}</span>
+                                    <span class="text-gray-500">{{ $plan->duration_days }} days</span>
+                                </div>
+                            </div>
+                        </label>
+                    @empty
+                        <div class="text-center py-6 text-gray-500">
+                            <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <p class="font-medium text-sm">No plans available for your branch</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+                <div class="flex items-start gap-2">
+                    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <p class="text-sm text-amber-800">Your renewal request will be sent to admin for approval. You'll receive a QR code via email once approved.</p>
+                </div>
+            </div>
+            <form action="{{ route('member.request-renewal') }}" method="POST" id="subscriptionRenewalForm">
+                @csrf
+                <input type="hidden" name="action" value="renew">
+                <input type="hidden" name="plan_id" id="subscription_final_plan_id">
+                <input type="hidden" name="subscription_id" id="subscription_final_subscription_id">
+                <div class="flex gap-3">
+                    <button type="button" onclick="subscriptionBackToStep1()" class="flex-1 px-4 py-3 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold transition-colors">Back</button>
+                    <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 font-semibold transition-colors shadow-lg">Submit Renewal</button>
+                </div>
+            </form>
             <!-- Step 2: Subscription Selection -->
             <div id="step2-subscription" class="p-6 hidden">
                 <div class="mb-4" id="subscription-back-btn-top">
@@ -542,8 +759,87 @@
                 </form>
             </div>
         </div>
+
     </div>
 
+<script>
+    // ── Notification helper (uses toastr if loaded, else a styled inline alert) ──
+    function notify(type, message) {
+        if (typeof toastr !== 'undefined') {
+            toastr[type](message);
+            return;
+        }
+        // Fallback: inject a temporary inline banner above the active step
+        const activeStep = document.querySelector('#renewalModal [id^="flow-"]:not(.hidden)');
+        if (!activeStep) { alert(message); return; }
+
+        // Remove any existing banner
+        const old = activeStep.querySelector('.inline-alert');
+        if (old) old.remove();
+
+        const colours = { error: 'bg-red-50 border-red-300 text-red-800', warning: 'bg-amber-50 border-amber-300 text-amber-800' };
+        const div = document.createElement('div');
+        div.className = `inline-alert flex items-center gap-2 text-sm font-medium border rounded-lg px-4 py-2 mb-4 ${colours[type] ?? colours.error}`;
+        div.innerHTML = `<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg><span>${message}</span>`;
+        activeStep.insertBefore(div, activeStep.firstChild);
+        setTimeout(() => div.remove(), 4000);
+    }
+
+    // ── Loading state on submit buttons ─────────────────────
+    function setSubmitLoading(btn) {
+        btn.disabled = true;
+        btn.dataset.originalText = btn.textContent;
+        btn.innerHTML = `<svg class="animate-spin w-4 h-4 inline mr-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+        </svg>Submitting…`;
+    }
+
+    // ── Panel switcher ───────────────────────────────────────
+    function showOnly(id) {
+        ['flow-membership-step1', 'flow-membership-step2',
+         'flow-subscription-step1', 'flow-subscription-step2']
+            .forEach(el => document.getElementById(el).classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+
+        // Clear inline alerts from the newly-shown panel
+        document.getElementById(id).querySelectorAll('.inline-alert').forEach(a => a.remove());
+    }
+
+    function setModalHeader(title, subtitle) {
+        document.getElementById('renewalModalTitle').textContent    = title;
+        document.getElementById('renewalModalSubtitle').textContent = subtitle;
+    }
+
+    // ── Open / close ─────────────────────────────────────────
+    function closeRenewalModal() {
+        document.getElementById('renewalModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+
+        // Re-enable any locked submit buttons (e.g. if user navigates back)
+        document.querySelectorAll('#renewalModal [type="submit"]').forEach(btn => {
+            btn.disabled = false;
+            if (btn.dataset.originalText) btn.textContent = btn.dataset.originalText;
+        });
+    }
+
+    function openRenewalModal(flowType = 'membership-first') {
+        // Clear all selections and inline alerts
+        document.querySelectorAll('#renewalModal input[type="radio"]').forEach(r => r.checked = false);
+        document.querySelectorAll('#renewalModal .inline-alert').forEach(a => a.remove());
+
+        document.getElementById('renewalModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        if (flowType === 'subscription-first') {
+            setModalHeader('Renew Subscription', 'Select a subscription to continue');
+            showOnly('flow-subscription-step1');
+        } else {
+            setModalHeader('Renew Membership', 'Select a plan to continue');
+            showOnly('flow-membership-step1');
     <script>
         let renewalFlow = 'membership-first';
 
@@ -586,6 +882,98 @@
             }
         }
 
+    // ── Membership-first flow ────────────────────────────────
+    function membershipGoToStep2() {
+        const selected = document.querySelector('input[name="mem_plan_id"]:checked');
+        if (!selected) {
+            notify('error', 'Please select a membership plan to continue.');
+            return;
+        }
+        // Lock the plan value into the hidden field immediately
+        document.getElementById('membership_final_plan_id').value = selected.value;
+        setModalHeader('Choose Subscription', 'Step 2 of 2 – complete your renewal');
+        showOnly('flow-membership-step2');
+    }
+
+    function membershipBackToStep1() {
+        setModalHeader('Renew Membership', 'Select a plan to continue');
+        showOnly('flow-membership-step1');
+    }
+
+    // ── Subscription-first flow ──────────────────────────────
+    function subscriptionGoToStep2() {
+        const selected = document.querySelector('input[name="sub_subscription_id"]:checked');
+        if (!selected) {
+            notify('error', 'Please select a subscription to continue.');
+            return;
+        }
+        // Lock the subscription value into the hidden field immediately
+        document.getElementById('subscription_final_subscription_id').value = selected.value;
+        setModalHeader('Choose Membership Plan', 'Step 2 of 2 – complete your renewal');
+        showOnly('flow-subscription-step2');
+    }
+
+    function subscriptionBackToStep1() {
+        setModalHeader('Renew Subscription', 'Select a subscription to continue');
+        showOnly('flow-subscription-step1');
+    }
+
+    // ── Form submit: membership-first ────────────────────────
+    document.getElementById('membershipRenewalForm').addEventListener('submit', function (e) {
+        const planId = document.getElementById('membership_final_plan_id').value;
+        const subSelected = document.querySelector('input[name="mem_subscription_id"]:checked');
+
+        // Double-check both hidden + visible selection are present
+        if (!planId) {
+            e.preventDefault();
+            notify('error', 'Membership plan is missing. Please go back and select one.');
+            return;
+        }
+        if (!subSelected) {
+            e.preventDefault();
+            notify('error', 'Please select a subscription to continue.');
+            return;
+        }
+
+        // Write the subscription value to the hidden field
+        document.getElementById('membership_final_subscription_id').value = subSelected.value;
+
+        // Prevent double-submit
+        setSubmitLoading(this.querySelector('[type="submit"]'));
+    });
+
+    // ── Form submit: subscription-first ──────────────────────
+    document.getElementById('subscriptionRenewalForm').addEventListener('submit', function (e) {
+        const subId = document.getElementById('subscription_final_subscription_id').value;
+        const planSelected = document.querySelector('input[name="sub_plan_id"]:checked');
+
+        // Double-check both hidden + visible selection are present
+        if (!subId) {
+            e.preventDefault();
+            notify('error', 'Subscription is missing. Please go back and select one.');
+            return;
+        }
+        if (!planSelected) {
+            e.preventDefault();
+            notify('error', 'Please select a membership plan to continue.');
+            return;
+        }
+
+        // Write the plan value to the hidden field
+        document.getElementById('subscription_final_plan_id').value = planSelected.value;
+
+        // Prevent double-submit
+        setSubmitLoading(this.querySelector('[type="submit"]'));
+    });
+
+    // ── Close on Escape ──────────────────────────────────────
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRenewalModal(); });
+
+    // ── Close on backdrop click ──────────────────────────────
+    document.getElementById('renewalModal').addEventListener('click', function (e) {
+        if (e.target === this) closeRenewalModal();
+    });
+</script>
         function closeRenewalModal() {
             document.getElementById('renewalModal').classList.add('hidden');
             document.body.style.overflow = 'auto';

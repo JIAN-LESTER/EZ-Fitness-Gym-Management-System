@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Categories')
+@section('title', 'Categories | EZ Fitness')
 @section('header', 'Categories Management')
 
 <style>
@@ -265,7 +265,7 @@
                 </h3>
 
                 <p class="text-center text-gray-600 mb-6">
-                    Are you sure you want to delete <span class="font-bold" id="modal-category-name"></span>? This action cannot be undone.
+                    Are you sure you want to delete <span class="font-bold text-red-600">{{ $category->name }}</span>? This action cannot be undone.
                 </p>
 
                 <form id="deleteForm" method="POST" action="">

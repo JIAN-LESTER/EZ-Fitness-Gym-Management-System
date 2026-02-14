@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Attendance QR')
+@section('title', 'Attendance QR Scanner | EZ Fitness')
 @section('header', 'Attendance QR')
 
 @section('content')

@@ -4,12 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Forgot Password - EZ Fitness</title>
+  <title>EZ Fitness</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('logo_image/ez_fitness_gym_logo.png') }}">
+  
+  <!-- Load SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
   <style>
-
-
     .info-section {
       background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
       position: relative;
@@ -109,42 +111,11 @@
         <p class="text-gray-600 mt-2 text-center md:text-left">No worries, we'll send you reset instructions.</p>
       </header>
 
-      <!-- Alert Messages -->
-      <div class="space-y-3 mb-6">
-        @if(session('error'))
-          <div class="flex items-center p-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50"
-            role="alert">
-            <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor" viewBox="0 0 20 20">
-              <path
-                d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
-            </svg>
-            <div>
-              <span class="font-medium">Error:</span> {{ session('error') }}
-            </div>
-          </div>
-        @endif
-
-        @if(session('status'))
-          <div class="flex items-center p-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50"
-            role="alert">
-            <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
-            </svg>
-            <div>
-              {{ session('status') }}
-            </div>
-          </div>
-        @endif
-      </div>
-
-      <form method="POST" action="{{ route('password.email') }}" class="space-y-5">
+      <form id="forgotPasswordForm" method="POST" action="{{ route('password.email') }}" class="space-y-5">
         @csrf
 
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-
             Email Address
           </label>
           <input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="your.email@example.com"
@@ -155,7 +126,7 @@
           @enderror
         </div>
 
-        <button type="submit"
+        <button type="submit" id="sendResetBtn"
           class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition-all shadow-lg hover:shadow-xl">
           SEND RESET LINK
         </button>
@@ -220,46 +191,66 @@
 
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <!-- Scripts - Load in correct order -->
+  <!-- 1. SweetAlert2 Library -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- 2. Notifications Module -->
+  <script src="{{ asset('js/notifications.js') }}"></script>
 
+  <!-- 3. Your Custom Scripts -->
   <script>
-    @if(session('error'))
-      Toastify({
-        text: "{{ session('error') }}",
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-        stopOnFocus: true,
-      }).showToast();
-    @endif
+    document.addEventListener('DOMContentLoaded', function() {
+      // Show session messages as toasts
+      @if(session('success'))
+        Notifications.toast('success', '{{ session('success') }}');
+      @endif
 
-    @if(session('status'))
-      Toastify({
-        text: "{{ session('status') }}",
-        duration: 4000,
-        gravity: "top",
-        position: "right",
-        backgroundColor: "linear-gradient(to right, #10b981, #059669)",
-        stopOnFocus: true,
-      }).showToast();
-    @endif
+      @if(session('error'))
+        Notifications.toast('error', '{{ session('error') }}');
+      @endif
 
-    // Form validation
-    const form = document.querySelector('form');
-    const emailInput = document.getElementById('email');
+      @if(session('warning'))
+        Notifications.toast('warning', '{{ session('warning') }}');
+      @endif
 
-    form.addEventListener('submit', function(e) {
-      if (!emailInput.value.trim()) {
-        e.preventDefault();
-        showError(emailInput, 'Email is required');
-      } else if (!isValidEmail(emailInput.value)) {
-        e.preventDefault();
-        showError(emailInput, 'Please enter a valid email address');
-      } else {
-        clearError(emailInput);
+      @if(session('info'))
+        Notifications.toast('info', '{{ session('info') }}');
+      @endif
+
+      @if(session('status'))
+        Notifications.toast('success', '{{ session('status') }}');
+      @endif
+
+      // Forgot password form with loading state
+      const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+      const sendResetBtn = document.getElementById('sendResetBtn');
+      
+      if (forgotPasswordForm && sendResetBtn) {
+        forgotPasswordForm.addEventListener('submit', function(e) {
+          const emailInput = document.getElementById('email');
+          
+          if (!emailInput.value.trim()) {
+            e.preventDefault();
+            showError(emailInput, 'Email is required');
+            return;
+          } else if (!isValidEmail(emailInput.value)) {
+            e.preventDefault();
+            showError(emailInput, 'Please enter a valid email address');
+            return;
+          } else {
+            clearError(emailInput);
+          }
+          
+          sendResetBtn.disabled = true;
+          sendResetBtn.innerHTML = '<span class="animate-pulse">Sending...</span>';
+          Notifications.loading('Sending reset link...');
+        });
       }
     });
+
+    // Form validation
+    const emailInput = document.getElementById('email');
 
     function isValidEmail(email) {
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

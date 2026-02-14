@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Attendance History')
+@section('title', 'Attendance History | EZ Fitness')
 @section('header', 'Attendance History')
 
 

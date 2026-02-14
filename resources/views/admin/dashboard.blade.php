@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Dashboard')
+@section('title', 'Dashboard | EZ Fitness')
 @section('header', 'Dashboard')
 
 @section('content')
