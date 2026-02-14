@@ -446,69 +446,57 @@ paymentButtons.forEach(btn => {
         }
 
 
-        function addToCart(productId) {
-            if (isAddingToCart) {
-                return;
-            }
+       function addToCart(productId) {
+    if (isAddingToCart) return;
 
-            // Check stock before adding to cart
-            const currentStock = getCurrentStock(productId);
-            if (currentStock <= 0) {
-                showToast('error', 'Product is out of stock');
-                return;
-            }
+    const currentStock = getCurrentStock(productId);
+    if (currentStock <= 0) {
+        showToast('error', 'Product is out of stock');
+        return;
+    }
 
-            const button = document.querySelector(`button[data-product-id="${productId}"]`);
-            if (button) {
-                button.disabled = true;
-                const originalText = button.innerHTML;
-                button.innerHTML = '<span class="animate-pulse">Adding...</span>';
-            }
+    const button = document.querySelector(`button[data-product-id="${productId}"]`);
+    if (button) {
+        button.disabled = true;
+    }
 
-            isAddingToCart = true;
+    isAddingToCart = true;
 
-            fetch('{{ route("pos.addToCart") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ product_id: productId })
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => Promise.reject(err));
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        // Update stock display immediately (subtract 1)
-                        updateStockDisplay(productId, 1);
-
-                        loadCart();
-                        updateCheckoutButtonState();
-                    } else {
-                        showToast('error', data.message || 'Failed to add to cart');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('error', error.message || 'An error occurred');
-                })
-                .finally(() => {
-                    isAddingToCart = false;
-                    if (button) {
-                        button.disabled = false;
-                        button.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add
-                    `;
-                    }
-                });
+    // OPTIMISTIC UPDATE - Update UI immediately
+    updateStockDisplay(productId, 1);
+    
+    fetch('{{ route("pos.addToCart") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ product_id: productId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadCart();
+            updateCheckoutButtonState();
+        } else {
+            // Revert optimistic update on error
+            updateStockDisplay(productId, -1);
+            showToast('error', data.message || 'Failed to add to cart');
         }
+    })
+    .catch(error => {
+        // Revert optimistic update on error
+        updateStockDisplay(productId, -1);
+        console.error('Error:', error);
+        showToast('error', error.message || 'An error occurred');
+    })
+    .finally(() => {
+        isAddingToCart = false;
+        if (button) {
+            button.disabled = false;
+        }
+    });
+}
 
         function loadCart() {
             fetch('{{ route("pos.getCart") }}')
@@ -551,53 +539,57 @@ paymentButtons.forEach(btn => {
                 updateCartTotals();
 
             } else {
-                cartContainer.innerHTML = items.map(item => `
-                    <div class="bg-gray-50 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-50 transition shadow-sm hover:shadow-md border border-gray-100">
-                        <div class="w-12 h-12 bg-gray-100 rounded flex-shrink-0 overflow-hidden shadow-sm">
-                            ${item.image ?
-                        `<img src="/storage/${item.image}" alt="${item.name}" class="w-full h-full object-cover">` :
-                        `<svg class="w-6 h-6 text-gray-400 m-auto mt-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>`
-                    }
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-semibold text-sm text-gray-900 truncate" title="${item.name}">${item.name}</h4>
-                            <p class="text-xs text-gray-600">${item.quantity}</p>
-                            <p class="text-sm font-semibold text-green-700">₱${parseFloat(item.subtotal).toFixed(2)}</p>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <button onclick="updateQuantity(${item.cart_item_id}, ${item.product_id}, ${item.quantity - 1})"
-                                    class="w-7 h-7 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center transition shadow-sm hover:shadow"
-                                    ${item.quantity <= 1 ? 'disabled' : ''}
-                                    title="Decrease quantity">
-                                <svg class="w-3 h-3 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                                </svg>
-                            </button>
-                            <input type="number"
-                                    value="${item.quantity}"
-                                    onchange="updateQuantity(${item.cart_item_id}, ${item.product_id}, this.value)"
-                                    class="w-14 text-center border text-gray-800 border-gray-300 rounded px-1 py-1 text-sm focus:ring-2 focus:ring-gray-500 focus:outline-none shadow-sm"
-                                    min="1"
-                                    title="Quantity">
-                            <button onclick="updateQuantity(${item.cart_item_id}, ${item.product_id}, ${item.quantity + 1})"
-                                    class="w-7 h-7 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center transition shadow-sm hover:shadow"
-                                    title="Increase quantity">
-                                <svg class="w-3 h-3 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                </svg>
-                            </button>
-                        </div>
-                        <button onclick="removeFromCart(${item.cart_item_id}, ${item.product_id})"
-                                class="text-red-500 hover:text-red-700 ml-1 transition p-1 rounded hover:bg-red-50"
-                                title="Remove item">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
-                    </div>
-                `).join('');
+               cartContainer.innerHTML = items.map(item => `
+    <div class="bg-gray-50 rounded-lg p-3 flex items-center gap-3 hover:bg-gray-100 transition shadow-sm hover:shadow-md border border-gray-100" data-cart-item-id="${item.cart_item_id}">
+        <div class="w-12 h-12 bg-gray-100 rounded flex-shrink-0 overflow-hidden shadow-sm">
+            ${item.image ?
+                `<img src="/storage/${item.image}" alt="${item.name}" class="w-full h-full object-cover">` :
+                `<svg class="w-6 h-6 text-gray-400 m-auto mt-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>`
+            }
+        </div>
+        <div class="flex-1 min-w-0">
+            <h4 class="font-semibold text-sm text-gray-900 truncate" title="${item.name}">${item.name}</h4>
+            <p class="text-xs text-gray-600">Qty: ${item.quantity}</p>
+            <p class="text-sm font-semibold text-green-700 subtotal">₱${parseFloat(item.subtotal).toFixed(2)}</p>
+        </div>
+        <div class="flex items-center gap-1">
+            <button onclick="updateQuantity(${item.cart_item_id}, ${item.product_id}, ${item.quantity - 1})"
+                    class="w-7 h-7 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center transition shadow-sm hover:shadow ${item.quantity <= 1 ? 'hover:bg-red-50 hover:border-red-300' : ''}"
+                    title="${item.quantity <= 1 ? 'Remove from cart' : 'Decrease quantity'}">
+                ${item.quantity <= 1 ? 
+                    `<svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>` :
+                    `<svg class="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                    </svg>`
+                }
+            </button>
+            <input type="number"
+                    value="${item.quantity}"
+                    onchange="updateQuantity(${item.cart_item_id}, ${item.product_id}, this.value)"
+                    class="w-14 text-center border text-gray-800 border-gray-300 rounded px-1 py-1 text-sm focus:ring-2 focus:ring-gray-500 focus:outline-none shadow-sm"
+                    min="1"
+                    title="Quantity">
+            <button onclick="updateQuantity(${item.cart_item_id}, ${item.product_id}, ${item.quantity + 1})"
+                    class="w-7 h-7 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center transition shadow-sm hover:shadow"
+                    title="Increase quantity">
+                <svg class="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+        </div>
+        <button onclick="removeFromCart(${item.cart_item_id}, ${item.product_id})"
+                class="text-red-500 hover:text-red-700 ml-1 transition p-1 rounded hover:bg-red-50"
+                title="Remove item">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        </button>
+    </div>
+`).join('');
                 cartTotal.textContent = `₱${parseFloat(total).toFixed(2)}`;
 
                 updateCartTotals();
@@ -607,64 +599,136 @@ paymentButtons.forEach(btn => {
         }
 
         // Update Quantity
-        function updateQuantity(cartItemId, productId, newQuantity) {
-            newQuantity = parseInt(newQuantity);
+let updateTimeout = null;
+let pendingUpdates = new Map(); // Track pending updates
 
-            if (isNaN(newQuantity) || newQuantity < 1) {
-                showToast('error', 'Invalid quantity');
-                loadCart(); // Reset to valid value
-                return;
-            }
+function updateQuantity(cartItemId, productId, newQuantity) {
+    newQuantity = parseInt(newQuantity);
 
-            // Get current item quantity from cart
-            const currentItem = cartItems.find(item => item.cart_item_id === cartItemId);
-            if (!currentItem) {
-                showToast('error', 'Item not found in cart');
-                return;
-            }
+    // If quantity becomes 0, remove immediately
+    if (newQuantity === 0) {
+        removeFromCart(cartItemId, productId);
+        return;
+    }
 
-            const quantityDifference = newQuantity - currentItem.quantity;
+    if (isNaN(newQuantity) || newQuantity < 1) {
+        showToast('error', 'Invalid quantity');
+        loadCart();
+        return;
+    }
 
-            // Check if we have enough stock for the increase
-            if (quantityDifference > 0) {
-                const currentStock = getCurrentStock(productId);
-                if (currentStock < quantityDifference) {
-                    showToast('error', `Not enough stock available. Only ${currentStock} left.`);
-                    loadCart(); // Reset to previous quantity
-                    return;
-                }
-            }
+    const currentItem = cartItems.find(item => item.cart_item_id === cartItemId);
+    if (!currentItem) {
+        showToast('error', 'Item not found in cart');
+        return;
+    }
 
-            fetch('{{ route("pos.updateCartItem") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    cart_item_id: cartItemId,
-                    quantity: newQuantity
-                })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Update stock display based on quantity difference
-                        if (quantityDifference !== 0) {
-                            updateStockDisplay(productId, quantityDifference);
-                        }
-                        loadCart();
-                    } else {
-                        showToast('error', data.message || 'Failed to update quantity');
-                        loadCart();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('error', 'An error occurred');
-                    loadCart();
-                });
+    const quantityDifference = newQuantity - currentItem.quantity;
+
+    // Check stock availability
+    if (quantityDifference > 0) {
+        const currentStock = getCurrentStock(productId);
+        if (currentStock < quantityDifference) {
+            showToast('error', `Not enough stock available. Only ${currentStock} left.`);
+            loadCart();
+            return;
         }
+    }
+
+    // INSTANT UI UPDATE - Update cart item display immediately
+    const cartItemElement = document.querySelector(`[data-cart-item-id="${cartItemId}"]`);
+    if (cartItemElement) {
+        const quantityInput = cartItemElement.querySelector('input[type="number"]');
+        const subtotalElement = cartItemElement.querySelector('.subtotal');
+        
+        if (quantityInput) quantityInput.value = newQuantity;
+        
+        // Update subtotal display
+        const price = currentItem.subtotal / currentItem.quantity;
+        const newSubtotal = price * newQuantity;
+        if (subtotalElement) {
+            subtotalElement.textContent = `₱${newSubtotal.toFixed(2)}`;
+        }
+        
+        // Update cart totals immediately
+        updateCartTotalsOptimistic(cartItemId, newQuantity);
+    }
+
+    // Update stock display immediately
+    updateStockDisplay(productId, quantityDifference);
+
+    // DEBOUNCED SERVER UPDATE - Only send to server after user stops clicking
+    if (pendingUpdates.has(cartItemId)) {
+        clearTimeout(pendingUpdates.get(cartItemId));
+    }
+
+    const timeoutId = setTimeout(() => {
+        sendQuantityUpdateToServer(cartItemId, productId, newQuantity, quantityDifference);
+        pendingUpdates.delete(cartItemId);
+    }, 500); // Wait 500ms after last change
+
+    pendingUpdates.set(cartItemId, timeoutId);
+}
+
+// Helper function for optimistic cart total update
+function updateCartTotalsOptimistic(cartItemId, newQuantity) {
+    const item = cartItems.find(i => i.cart_item_id === cartItemId);
+    if (!item) return;
+
+    const oldQuantity = item.quantity;
+    const price = item.subtotal / oldQuantity;
+    const oldSubtotal = item.subtotal;
+    const newSubtotal = price * newQuantity;
+    
+    // Update the item in memory
+    item.quantity = newQuantity;
+    item.subtotal = newSubtotal;
+
+    // Recalculate total
+    const total = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
+    const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+    // Update displays
+    document.getElementById('cart-total').textContent = `₱${total.toFixed(2)}`;
+    document.getElementById('total-items-count').textContent = totalQuantity;
+    document.getElementById('items-count').textContent = `${cartItems.length} ${cartItems.length === 1 ? 'item' : 'items'}`;
+}
+
+// Separate function to send update to server
+function sendQuantityUpdateToServer(cartItemId, productId, newQuantity, quantityDifference) {
+    fetch('{{ route("pos.updateCartItem") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            cart_item_id: cartItemId,
+            quantity: newQuantity
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Sync with server response
+            loadCart();
+        } else {
+            // Revert on error
+            updateStockDisplay(productId, -quantityDifference);
+            showToast('error', data.message || 'Failed to update quantity');
+            loadCart();
+        }
+    })
+    .catch(error => {
+        // Revert on error
+        updateStockDisplay(productId, -quantityDifference);
+        console.error('Error:', error);
+        showToast('error', 'An error occurred');
+        loadCart();
+    });
+}
+
+
 
         // Remove from Cart
         function removeFromCart(cartItemId, productId) {
