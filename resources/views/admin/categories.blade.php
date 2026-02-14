@@ -120,8 +120,6 @@
                         <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $category->name }}</h3>
                     </div>
 
-                   
-
                     <!-- Action Buttons -->
                     <div class="flex gap-2">
                         <button onclick='editCategory(@json($category->category_id))'
@@ -251,7 +249,7 @@
         </div>
     </div>
 
-         <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
         <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeDeleteModal()"></div>
 
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
@@ -519,6 +517,17 @@ function closeDeleteModal() {
             });
         }
     });
+
+    // I catch ang data inig toplok sa button ug i inject sa modal
+    function openDeleteModal(id, name) {
+        document.getElementById('modal-category-name').textContent = name;
+        document.getElementById('deleteForm').action = '/categories/' + id;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
     </script>
 
 @endsection
