@@ -630,7 +630,7 @@
                 </h3>
 
                 <p class="text-center text-gray-600 mb-6">
-                    Are you sure you want to delete <span class="font-bold">{{ $inventory->product->name }}</span>? This action cannot be undone.
+                    Are you sure you want to delete <span class="font-bold" id="modal-product-name"></span>? This action cannot be undone.
                 </p>
 
                 <form id="deleteForm" method="POST" action="">
