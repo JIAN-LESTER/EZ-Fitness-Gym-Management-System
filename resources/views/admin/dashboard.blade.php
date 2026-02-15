@@ -4,280 +4,266 @@
 
 @section('content')
 
-    <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
-        <div class="w-full px-2 sm:px-4 py-4 sm:py-6">
+    <div class="min-h-screen">
+        <div class="w-full px-3 sm:px-6 py-5 sm:py-8 max-w-[1600px] mx-auto">
+
+            {{-- Welcome Header --}}
+            <div class="mb-6 sm:mb-8">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                    Welcome back, {{ auth()->user()->first_name ?? 'Admin' }} 👋
+                </h2>
+                <p class="text-sm text-gray-500 mt-1">{{ now()->format('l, F j, Y') }} &mdash; Here's your gym overview</p>
+            </div>
 
             @if(auth()->user()->role === 'super_admin' && !$selectedBranchId)
-                <!-- SUPER ADMIN LAYOUT -->
-                <!-- First Row: 4 Cards - Responsive Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                {{-- ═══════════════ SUPER ADMIN LAYOUT ═══════════════ --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
                     
-                    <!-- Branch Stats -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-indigo-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Total Branches</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-indigo-600 mb-0.5">{{ $totalBranches }}</h3>
-                                <p class="text-xs text-indigo-700 font-semibold truncate">
-                                    {{ $activeBranches }} active
-                                </p>
-                            </div>
-                            <div class="bg-gradient-to-br from-indigo-100 to-purple-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Branch Stats --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-indigo-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Branches</p>
+                            <h3 class="text-3xl font-black text-gray-900">{{ $totalBranches }}</h3>
+                            <p class="text-xs text-indigo-600 font-semibold mt-1">{{ $activeBranches }} active</p>
                         </div>
                     </div>
 
-                    <!-- Active Members -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-emerald-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Active Members</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-emerald-600 mb-0.5">{{ $totalActiveMembers }}</h3>
-                                <p class="text-xs text-emerald-700 font-semibold truncate">
-                                    +{{ $newMembersThisMonth }} this month
-                                </p>
-                                @if($expiringMemberships > 0)
-                                    <p class="text-[10px] text-orange-600 font-semibold mt-0.5 truncate">
-                                        {{ $expiringMemberships }} expiring
-                                    </p>
-                                @endif
-                            </div>
-                            <div class="bg-gradient-to-br from-emerald-100 to-green-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Active Members --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-emerald-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Active Members</p>
+                            <h3 class="text-3xl font-black text-gray-900">{{ $totalActiveMembers }}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">+{{ $newMembersThisMonth }} this month</span>
+                            </div>
+                            @if($expiringMemberships > 0)
+                                <p class="text-[11px] text-orange-500 font-semibold mt-1">⚠ {{ $expiringMemberships }} expiring soon</p>
+                            @endif
                         </div>
                     </div>
 
-                    <!-- Active Subscriptions -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-blue-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Subscriptions</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-blue-600 mb-0.5">{{ $activeSubscriptions }}</h3>
-                                <p class="text-xs text-blue-700 font-semibold truncate">
-                                    {{ $totalSubscriptions }} total plans
-                                </p>
-                            </div>
-                            <div class="bg-gradient-to-br from-blue-100 to-cyan-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Subscriptions --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Subscriptions</p>
+                            <h3 class="text-3xl font-black text-gray-900">{{ $activeSubscriptions }}</h3>
+                            <p class="text-xs text-blue-600 font-semibold mt-1">{{ $totalSubscriptions }} total plans</p>
                         </div>
                     </div>
 
-                    <!-- Total Users -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-teal-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Total Users</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-teal-600 mb-0.5">{{ $totalUsers }}</h3>
-                                <p class="text-xs text-teal-700 font-semibold truncate">
-                                    {{ $activeUsers }} active
-                                </p>
-                            </div>
-                            <div class="bg-gradient-to-br from-teal-100 to-cyan-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Total Users --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-teal-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-teal-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Users</p>
+                            <h3 class="text-3xl font-black text-gray-900">{{ $totalUsers }}</h3>
+                            <p class="text-xs text-teal-600 font-semibold mt-1">{{ $activeUsers }} active</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Second Row: 3 Cards - Responsive Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
-                    
-                    <!-- Gym Occupancy -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-violet-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Occupancy</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-violet-600 mb-0.5">{{ $currentOccupancy }}</h3>
-                                <p class="text-xs text-gray-600 font-semibold truncate">Members in gym</p>
-                            </div>
-                            <div class="bg-gradient-to-br from-violet-100 to-purple-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {{-- Second Row: 3 Cards --}}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-6">
+                    {{-- Gym Occupancy --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-violet-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-violet-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Occupancy</p>
+                            <h3 class="text-3xl font-black text-gray-900">{{ $currentOccupancy }}</h3>
+                            <p class="text-xs text-violet-600 font-semibold mt-1">Members in gym</p>
                         </div>
                     </div>
 
-                    <!-- Total Stock -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-orange-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Total Stock</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-orange-600 mb-0.5">{{ $totalItemsInStock }}</h3>
-                                <p class="text-xs text-orange-700 font-semibold truncate">
-                                    {{ $lowStockItems }} low stock
-                                </p>
-                            </div>
-                            <div class="bg-gradient-to-br from-orange-100 to-amber-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Total Stock --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-orange-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-orange-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Stock</p>
+                            <h3 class="text-3xl font-black text-gray-900">{{ $totalItemsInStock }}</h3>
+                            @if($lowStockItems > 0)
+                                <p class="text-[11px] text-orange-500 font-semibold mt-1">⚠ {{ $lowStockItems }} low stock</p>
+                            @else
+                                <p class="text-xs text-emerald-600 font-semibold mt-1">All stocked</p>
+                            @endif
                         </div>
                     </div>
 
-                    <!-- Today's Revenue -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-purple-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Today's Revenue</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-purple-600 mb-0.5">₱{{ number_format($todayRevenue, 2) }}</h3>
-                                <p class="text-xs text-purple-700 font-semibold truncate">{{ $todaySales }} sales today</p>
-                            </div>
-                            <div class="bg-gradient-to-br from-purple-100 to-pink-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Today's Revenue --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-purple-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-purple-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Today's Revenue</p>
+                            <h3 class="text-3xl font-black text-gray-900">₱{{ number_format($todayRevenue, 2) }}</h3>
+                            <p class="text-xs text-purple-600 font-semibold mt-1">{{ $todaySales }} sales today</p>
                         </div>
                     </div>
-
                 </div>
 
             @else
-                <!-- ADMIN LAYOUT (or Super Admin with selected branch) -->
-                <!-- Changed from lg:grid-cols-5 to a 2-2-1 layout -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                {{-- ═══════════════ ADMIN LAYOUT ═══════════════ --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5 mb-6">
                     
-                    <!-- Active Members -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-emerald-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Active Members</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-emerald-600 mb-0.5">{{ $totalActiveMembers }}</h3>
-                                <p class="text-xs text-emerald-700 font-semibold truncate">
-                                    +{{ $newMembersThisMonth }} this month
-                                </p>
-                                @if($expiringMemberships > 0)
-                                    <p class="text-[10px] text-orange-600 font-semibold mt-0.5 truncate">
-                                        {{ $expiringMemberships }} expiring
-                                    </p>
-                                @endif
-                            </div>
-                            <div class="bg-gradient-to-br from-emerald-100 to-green-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Active Members --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-emerald-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Active Members</p>
+                            <h3 class="text-3xl font-black text-gray-900">{{ $totalActiveMembers }}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">+{{ $newMembersThisMonth }} this month</span>
+                            </div>
+                            @if($expiringMemberships > 0)
+                                <p class="text-[11px] text-orange-500 font-semibold mt-1">⚠ {{ $expiringMemberships }} expiring soon</p>
+                            @endif
                         </div>
                     </div>
 
-                    <!-- Active Subscriptions -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-blue-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Subscriptions</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-blue-600 mb-0.5">{{ $activeSubscriptions }}</h3>
-                                <p class="text-xs text-blue-700 font-semibold truncate">
-                                    {{ $totalSubscriptions }} total plans
-                                </p>
-                            </div>
-                            <div class="bg-gradient-to-br from-blue-100 to-cyan-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Subscriptions --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Subscriptions</p>
+                            <h3 class="text-3xl font-black text-gray-900">{{ $activeSubscriptions }}</h3>
+                            <p class="text-xs text-blue-600 font-semibold mt-1">{{ $totalSubscriptions }} total plans</p>
                         </div>
                     </div>
 
-                    <!-- Gym Occupancy -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-violet-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Occupancy</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-violet-600 mb-0.5">{{ $currentOccupancy }}</h3>
-                                <p class="text-xs text-violet-700 font-semibold truncate">In gym now</p>
-                            </div>
-                            <div class="bg-gradient-to-br from-violet-100 to-purple-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Occupancy --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-violet-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-violet-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Occupancy</p>
+                            <h3 class="text-3xl font-black text-gray-900">{{ $currentOccupancy }}</h3>
+                            <p class="text-xs text-violet-600 font-semibold mt-1">In gym now</p>
                         </div>
                     </div>
 
-                    <!-- Total Stock -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-orange-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Total Stock</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-orange-600 mb-0.5">{{ $totalItemsInStock }}</h3>
-                                <p class="text-xs text-orange-700 font-semibold truncate">
-                                    {{ $lowStockItems }} low stock
-                                </p>
-                            </div>
-                            <div class="bg-gradient-to-br from-orange-100 to-amber-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Total Stock --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-orange-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-orange-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Stock</p>
+                            <h3 class="text-3xl font-black text-gray-900">{{ $totalItemsInStock }}</h3>
+                            @if($lowStockItems > 0)
+                                <p class="text-[11px] text-orange-500 font-semibold mt-1">⚠ {{ $lowStockItems }} low stock</p>
+                            @else
+                                <p class="text-xs text-emerald-600 font-semibold mt-1">All stocked</p>
+                            @endif
                         </div>
                     </div>
 
-                </div>
-
-                <!-- Second row with Today's Revenue - single card centered on large screens -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-                    <div class="lg:col-start-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 border-l-4 border-purple-500 hover:shadow-lg transition-all">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Today's Revenue</p>
-                                <h3 class="text-xl sm:text-2xl font-black text-purple-600 mb-0.5">₱{{ number_format($todayRevenue, 2) }}</h3>
-                                <p class="text-xs text-purple-700 font-semibold truncate">{{ $todaySales }} sales</p>
-                            </div>
-                            <div class="bg-gradient-to-br from-purple-100 to-pink-100 p-2 rounded-lg flex-shrink-0">
-                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Today's Revenue --}}
+                    <div class="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-gray-100 overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-purple-50 to-transparent rounded-bl-full"></div>
+                        <div class="relative">
+                            <div class="w-11 h-11 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-purple-200 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Today's Revenue</p>
+                            <h3 class="text-3xl font-black text-gray-900">₱{{ number_format($todayRevenue, 2) }}</h3>
+                            <p class="text-xs text-purple-600 font-semibold mt-1">{{ $todaySales }} sales</p>
                         </div>
                     </div>
                 </div>
 
             @endif
 
-            <!-- Main Content Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+            {{-- ═══════════════ MAIN CONTENT GRID ═══════════════ --}}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
 
-                <!-- Left Column - Charts (2 columns) -->
-                <div class="lg:col-span-2 space-y-4 lg:space-y-6">
+                {{-- Left Column - Charts (2 columns) --}}
+                <div class="lg:col-span-2 space-y-5 lg:space-y-6">
 
-                    {{-- Branch Performance (Super Admin Only, All Branches View) --}}
+                    {{-- Branch Performance (Super Admin Only) --}}
                     @if(auth()->user()->role === 'super_admin' && !$selectedBranchId && count($branchPerformance) > 0)
-                        <div class="bg-white/90 backdrop-blur-sm rounded-xl lg:rounded-2xl shadow-xl p-4 sm:p-6 border border-white/20">
-                            <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">Branch Performance Overview</h3>
-                            <div class="overflow-x-auto -mx-4 sm:mx-0">
-                                <div class="inline-block min-w-full align-middle">
-                                    <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-gray-50">
-                                            <tr>
-                                                <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
-                                                <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
-                                                <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                        <div class="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 p-5 sm:p-6 border border-gray-100">
+                            <div class="flex items-center gap-3 mb-5">
+                                <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-800">Branch Performance</h3>
+                            </div>
+                            <div class="overflow-x-auto -mx-5 sm:-mx-6">
+                                <div class="inline-block min-w-full align-middle px-5 sm:px-6">
+                                    <table class="min-w-full">
+                                        <thead>
+                                            <tr class="border-b border-gray-100">
+                                                <th class="pb-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Branch</th>
+                                                <th class="pb-3 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Members</th>
+                                                <th class="pb-3 text-right text-[11px] font-bold text-gray-400 uppercase tracking-wider">Revenue</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="bg-white divide-y divide-gray-200">
+                                        <tbody class="divide-y divide-gray-50">
                                             @foreach($branchPerformance as $branch)
-                                                <tr class="hover:bg-gray-50">
-                                                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                        <div class="text-sm font-medium text-gray-900">{{ $branch['name'] }}</div>
+                                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                                    <td class="py-3.5">
+                                                        <span class="text-sm font-semibold text-gray-800">{{ $branch['name'] }}</span>
                                                     </td>
-                                                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                        <div class="text-sm text-gray-900">{{ $branch['member_count'] }}</div>
+                                                    <td class="py-3.5">
+                                                        <span class="inline-flex items-center text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full">{{ $branch['member_count'] }}</span>
                                                     </td>
-                                                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                        <div class="text-sm font-semibold text-green-600">₱{{ number_format($branch['monthly_revenue'], 2) }}</div>
+                                                    <td class="py-3.5 text-right">
+                                                        <span class="text-sm font-bold text-emerald-600">₱{{ number_format($branch['monthly_revenue'], 2) }}</span>
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -288,41 +274,27 @@
                         </div>
                     @endif
 
-                    <!-- Revenue & Sales Trend Chart -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-xl lg:rounded-2xl shadow-xl p-4 sm:p-6 border border-white/20">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-                            <div class="w-full sm:w-auto">
-                                <h3 class="text-lg sm:text-xl font-bold text-gray-800">Sales Trend</h3>
-                                <p class="text-xs sm:text-sm text-gray-500" id="salesPeriodLabel">
-                                    @if($salesPeriod === 'today') Hourly breakdown for today
-                                    @elseif($salesPeriod === 'week') Daily breakdown for this week
-                                    @else Weekly breakdown for this month
-                                    @endif
-                                </p>
+                    {{-- Revenue & Sales Trend Chart --}}
+                    <div class="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 p-5 sm:p-6 border border-gray-100">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-800">Sales Trend</h3>
+                                    <p class="text-xs text-gray-400" id="salesPeriodLabel">
+                                        @if($salesPeriod === 'today') Hourly breakdown for today
+                                        @elseif($salesPeriod === 'week') Daily breakdown for this week
+                                        @else Weekly breakdown for this month
+                                        @endif
+                                    </p>
+                                </div>
                             </div>
-                            <div class="flex gap-2 w-full sm:w-auto">
-                                <button data-sales-period="today"
-                                    class="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all {{ $salesPeriod === 'today' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                    Today
-                                </button>
-                                <button data-sales-period="week"
-                                    class="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all {{ $salesPeriod === 'week' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                    Week
-                                </button>
-                                <button data-sales-period="month"
-                                    class="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all {{ $salesPeriod === 'month' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                    Month
-                                </button>
-                            </div>
-                        </div>
-                        <div class="flex gap-3 sm:gap-4 mb-4 justify-center sm:justify-end flex-wrap">
-                            <div class="flex items-center">
-                                <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                                <span class="text-xs sm:text-sm text-gray-600">Revenue</span>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                                <span class="text-xs sm:text-sm text-gray-600">Sales Count</span>
+                            <div class="flex gap-1.5 bg-gray-100 p-1 rounded-xl">
+                                <button data-sales-period="today" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ $salesPeriod === 'today' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Today</button>
+                                <button data-sales-period="week" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ $salesPeriod === 'week' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Week</button>
+                                <button data-sales-period="month" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ $salesPeriod === 'month' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Month</button>
                             </div>
                         </div>
                         <div class="h-64 sm:h-72">
@@ -330,34 +302,30 @@
                         </div>
                     </div>
 
-                    <!-- Membership & Subscription Growth Trends - Side by Side -->
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+                    {{-- Membership & Subscription Growth Trends --}}
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 lg:gap-6">
                         
-                        <!-- Membership Growth Trend -->
-                        <div class="bg-white/90 backdrop-blur-sm rounded-xl lg:rounded-2xl shadow-xl p-4 sm:p-6 border border-white/20">
-                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-                                <div class="w-full sm:w-auto">
-                                    <h3 class="text-lg sm:text-xl font-bold text-gray-800">Membership Growth</h3>
-                                    <p class="text-xs sm:text-sm text-gray-500" id="membershipPeriodLabel">
-                                        @if($membershipPeriod === 'today') Hourly breakdown for today
-                                        @elseif($membershipPeriod === 'week') Daily breakdown for this week
-                                        @else Weekly breakdown for this month
-                                        @endif
-                                    </p>
+                        {{-- Membership Growth --}}
+                        <div class="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 p-5 sm:p-6 border border-gray-100">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-bold text-gray-800">Membership Growth</h3>
+                                        <p class="text-[11px] text-gray-400" id="membershipPeriodLabel">
+                                            @if($membershipPeriod === 'today') Hourly breakdown for today
+                                            @elseif($membershipPeriod === 'week') Daily breakdown for this week
+                                            @else Weekly breakdown for this month
+                                            @endif
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="flex gap-2 w-full sm:w-auto">
-                                    <button data-membership-period="today"
-                                        class="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all {{ $membershipPeriod === 'today' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                        Today
-                                    </button>
-                                    <button data-membership-period="week"
-                                        class="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all {{ $membershipPeriod === 'week' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                        Week
-                                    </button>
-                                    <button data-membership-period="month"
-                                        class="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all {{ $membershipPeriod === 'month' ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                        Month
-                                    </button>
+                                <div class="flex gap-1.5 bg-gray-100 p-1 rounded-xl">
+                                    <button data-membership-period="today" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ $membershipPeriod === 'today' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Today</button>
+                                    <button data-membership-period="week" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ $membershipPeriod === 'week' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Week</button>
+                                    <button data-membership-period="month" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ $membershipPeriod === 'month' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Month</button>
                                 </div>
                             </div>
                             <div class="h-56 sm:h-64">
@@ -365,41 +333,27 @@
                             </div>
                         </div>
 
-                        <!-- Subscription Growth Trend -->
-                        <div class="bg-white/90 backdrop-blur-sm rounded-xl lg:rounded-2xl shadow-xl p-4 sm:p-6 border border-white/20">
-                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-                                <div class="w-full sm:w-auto">
-                                    <h3 class="text-lg sm:text-xl font-bold text-gray-800">Subscription Growth</h3>
-                                    <p class="text-xs sm:text-sm text-gray-500" id="subscriptionPeriodLabel">
-                                        @if($subscriptionPeriod === 'today') Hourly breakdown for today
-                                        @elseif($subscriptionPeriod === 'week') Daily breakdown for this week
-                                        @else Weekly breakdown for this month
-                                        @endif
-                                    </p>
+                        {{-- Subscription Growth --}}
+                        <div class="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 p-5 sm:p-6 border border-gray-100">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-bold text-gray-800">Subscription Growth</h3>
+                                        <p class="text-[11px] text-gray-400" id="subscriptionPeriodLabel">
+                                            @if($subscriptionPeriod === 'today') Hourly breakdown for today
+                                            @elseif($subscriptionPeriod === 'week') Daily breakdown for this week
+                                            @else Weekly breakdown for this month
+                                            @endif
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="flex gap-2 w-full sm:w-auto">
-                                    <button data-subscription-period="today"
-                                        class="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all {{ $subscriptionPeriod === 'today' ? 'bg-teal-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                        Today
-                                    </button>
-                                    <button data-subscription-period="week"
-                                        class="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all {{ $subscriptionPeriod === 'week' ? 'bg-teal-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                        Week
-                                    </button>
-                                    <button data-subscription-period="month"
-                                        class="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all {{ $subscriptionPeriod === 'month' ? 'bg-teal-500 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                        Month
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="flex gap-3 sm:gap-4 mb-4 justify-center sm:justify-end flex-wrap">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-teal-500 rounded-full mr-2"></div>
-                                    <span class="text-xs sm:text-sm text-gray-600">New Subscriptions</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                                    <span class="text-xs sm:text-sm text-gray-600">Revenue</span>
+                                <div class="flex gap-1.5 bg-gray-100 p-1 rounded-xl">
+                                    <button data-subscription-period="today" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ $subscriptionPeriod === 'today' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Today</button>
+                                    <button data-subscription-period="week" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ $subscriptionPeriod === 'week' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Week</button>
+                                    <button data-subscription-period="month" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all {{ $subscriptionPeriod === 'month' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Month</button>
                                 </div>
                             </div>
                             <div class="h-56 sm:h-64">
@@ -410,70 +364,76 @@
                     </div>
 
                     <!-- Product & Membership Performance -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-xl lg:rounded-2xl shadow-xl p-4 sm:p-6 border border-white/20">
-                        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">Performance Overview</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                            <!-- Highest Selling Product -->
-                            <div class="border-2 border-green-200 rounded-lg p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50">
-                                <div class="flex items-center mb-2">
-                                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                    </svg>
-                                    <h4 class="font-semibold text-green-800 text-sm sm:text-base">Top Product</h4>
+                    {{-- Performance Overview --}}
+                    <div class="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 p-5 sm:p-6 border border-gray-100">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="w-9 h-9 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">Performance Overview</h3>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {{-- Top Product --}}
+                            <div class="rounded-xl p-4 bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="w-7 h-7 bg-emerald-500 rounded-lg flex items-center justify-center">
+                                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                    </div>
+                                    <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Top Product</span>
                                 </div>
                                 @if($highestSellingProduct && $highestSellingProduct->product)
-                                    <p class="text-base sm:text-lg font-bold text-gray-800 truncate">{{ $highestSellingProduct->product->name }}</p>
-                                    <p class="text-xs sm:text-sm text-gray-600">{{ $highestSellingProduct->total_sold }} units sold</p>
+                                    <p class="text-base font-bold text-gray-800 truncate">{{ $highestSellingProduct->product->name }}</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">{{ $highestSellingProduct->total_sold }} units sold</p>
                                 @else
-                                    <p class="text-gray-500 text-sm">No data available</p>
+                                    <p class="text-sm text-gray-400">No data available</p>
                                 @endif
                             </div>
 
-                            <!-- Lowest Selling Product -->
-                            <div class="border-2 border-red-200 rounded-lg p-3 sm:p-4 bg-gradient-to-br from-red-50 to-orange-50">
-                                <div class="flex items-center mb-2">
-                                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-red-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                                    </svg>
-                                    <h4 class="font-semibold text-red-800 text-sm sm:text-base">Needs Attention</h4>
+                            {{-- Needs Attention --}}
+                            <div class="rounded-xl p-4 bg-gradient-to-br from-red-50 to-orange-50 border border-red-100">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="w-7 h-7 bg-red-500 rounded-lg flex items-center justify-center">
+                                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
+                                    </div>
+                                    <span class="text-xs font-bold text-red-700 uppercase tracking-wider">Needs Attention</span>
                                 </div>
                                 @if($lowestSellingProduct && $lowestSellingProduct->product)
-                                    <p class="text-base sm:text-lg font-bold text-red-600 truncate">{{ $lowestSellingProduct->product->name }}</p>
-                                    <p class="text-xs sm:text-sm text-gray-600">{{ $lowestSellingProduct->total_sold }} units sold</p>
+                                    <p class="text-base font-bold text-red-600 truncate">{{ $lowestSellingProduct->product->name }}</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">{{ $lowestSellingProduct->total_sold }} units sold</p>
                                 @else
-                                    <p class="text-gray-500 text-sm">No data available</p>
+                                    <p class="text-sm text-gray-400">No data available</p>
                                 @endif
                             </div>
 
-                            <!-- Most Popular Plan -->
-                            <div class="border-2 border-purple-200 rounded-lg p-3 sm:p-4 bg-gradient-to-br from-purple-50 to-pink-50">
-                                <div class="flex items-center mb-2">
-                                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                    </svg>
-                                    <h4 class="font-semibold text-purple-800 text-sm sm:text-base">Top Plan</h4>
+                            {{-- Top Plan --}}
+                            <div class="rounded-xl p-4 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="w-7 h-7 bg-purple-500 rounded-lg flex items-center justify-center">
+                                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                                    </div>
+                                    <span class="text-xs font-bold text-purple-700 uppercase tracking-wider">Top Plan</span>
                                 </div>
                                 @if($mostPopularPlan && $mostPopularPlan->plan)
-                                    <p class="text-base sm:text-lg font-bold text-gray-800 truncate">{{ $mostPopularPlan->plan->name }}</p>
-                                    <p class="text-xs sm:text-sm text-gray-600">{{ $mostPopularPlan->total_sales }} memberships sold</p>
+                                    <p class="text-base font-bold text-gray-800 truncate">{{ $mostPopularPlan->plan->name }}</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">{{ $mostPopularPlan->total_sales }} memberships sold</p>
                                 @else
-                                    <p class="text-gray-500 text-sm">No data available</p>
+                                    <p class="text-sm text-gray-400">No data available</p>
                                 @endif
                             </div>
 
-                            <!-- Most Popular Subscription -->
-                            <div class="border-2 border-teal-200 rounded-lg p-3 sm:p-4 bg-gradient-to-br from-teal-50 to-cyan-50">
-                                <div class="flex items-center mb-2">
-                                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-teal-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <h4 class="font-semibold text-teal-800 text-sm sm:text-base">Top Subscription</h4>
+                            {{-- Top Subscription --}}
+                            <div class="rounded-xl p-4 bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="w-7 h-7 bg-teal-500 rounded-lg flex items-center justify-center">
+                                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    </div>
+                                    <span class="text-xs font-bold text-teal-700 uppercase tracking-wider">Top Subscription</span>
                                 </div>
                                 @if($mostPopularSubscription)
-                                    <p class="text-base sm:text-lg font-bold text-gray-800 truncate">{{ $mostPopularSubscription->name }}</p>
-                                    <p class="text-xs sm:text-sm text-gray-600">{{ $mostPopularSubscription->member_count }} active members</p>
+                                    <p class="text-base font-bold text-gray-800 truncate">{{ $mostPopularSubscription->name }}</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">{{ $mostPopularSubscription->member_count }} active members</p>
                                 @else
-                                    <p class="text-gray-500 text-sm">No data available</p>
+                                    <p class="text-sm text-gray-400">No data available</p>
                                 @endif
                             </div>
                         </div>
@@ -481,102 +441,114 @@
 
                 </div>
 
-                <!-- Right Column - Stats & Activity (1 column) -->
-                <div class="space-y-4 lg:space-y-6">
+                {{-- Right Column - Stats & Activity --}}
+                <div class="space-y-5 lg:space-y-6">
 
-                    <!-- Transaction Overview -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-xl lg:rounded-2xl shadow-xl p-4 sm:p-6 border border-white/20">
-                        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">Monthly Overview</h3>
+                    {{-- Monthly Overview --}}
+                    <div class="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 p-5 sm:p-6 border border-gray-100">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="w-9 h-9 bg-gradient-to-br from-slate-600 to-gray-800 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">Monthly Overview</h3>
+                        </div>
                         <div class="space-y-3">
-                            <div class="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                                <div class="flex items-center min-w-0 flex-1">
-                                    <div class="bg-green-500 p-2 rounded-full mr-3 flex-shrink-0">
-                                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                        </svg>
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                                     </div>
-                                    <span class="text-gray-700 font-medium text-sm sm:text-base truncate">Stock In</span>
+                                    <span class="text-sm font-semibold text-gray-700">Stock In</span>
                                 </div>
-                                <span class="text-lg sm:text-xl font-bold text-green-600 ml-2">{{ $stockInCount }}</span>
+                                <span class="text-xl font-black text-emerald-600">{{ $stockInCount }}</span>
                             </div>
 
-                            <div class="flex items-center justify-between p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border border-red-200">
-                                <div class="flex items-center min-w-0 flex-1">
-                                    <div class="bg-red-500 p-2 rounded-full mr-3 flex-shrink-0">
-                                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                                        </svg>
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-red-50 border border-red-100">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
                                     </div>
-                                    <span class="text-gray-700 font-medium text-sm sm:text-base truncate">Stock Out</span>
+                                    <span class="text-sm font-semibold text-gray-700">Stock Out</span>
                                 </div>
-                                <span class="text-lg sm:text-xl font-bold text-red-600 ml-2">{{ $stockOutCount }}</span>
+                                <span class="text-xl font-black text-red-600">{{ $stockOutCount }}</span>
                             </div>
 
-                            <div class="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-                                <div class="flex items-center min-w-0 flex-1">
-                                    <div class="bg-blue-500 p-2 rounded-full mr-3 flex-shrink-0">
-                                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                        </svg>
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-blue-50 border border-blue-100">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                                     </div>
-                                    <span class="text-gray-700 font-medium text-sm sm:text-base truncate">Total Sales</span>
+                                    <span class="text-sm font-semibold text-gray-700">Total Sales</span>
                                 </div>
-                                <span class="text-lg sm:text-xl font-bold text-blue-600 ml-2">{{ $todaySales }}</span>
+                                <span class="text-xl font-black text-blue-600">{{ $todaySales }}</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Monthly Revenue Breakdown -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-xl lg:rounded-2xl shadow-xl p-4 sm:p-6 border border-white/20">
-                        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">Monthly Revenue Breakdown</h3>
+                    {{-- Revenue Breakdown --}}
+                    <div class="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 p-5 sm:p-6 border border-gray-100">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="w-9 h-9 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">Revenue Breakdown</h3>
+                        </div>
                         <div class="space-y-3">
-                            <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-3 sm:p-4 rounded-lg">
-                                <p class="text-xs sm:text-sm text-gray-600 mb-1">Product Sales</p>
-                                <p class="text-xl sm:text-2xl font-bold text-blue-600 truncate">₱{{ number_format($revenueBreakdown['products'], 2) }}</p>
+                            <div class="p-3 rounded-xl bg-blue-50 border border-blue-100">
+                                <p class="text-[11px] font-bold text-blue-400 uppercase tracking-wider mb-0.5">Product Sales</p>
+                                <p class="text-xl font-black text-gray-900">₱{{ number_format($revenueBreakdown['products'], 2) }}</p>
                             </div>
-                            <div class="bg-gradient-to-r from-green-50 to-green-100 p-3 sm:p-4 rounded-lg">
-                                <p class="text-xs sm:text-sm text-gray-600 mb-1">Membership Plans</p>
-                                <p class="text-xl sm:text-2xl font-bold text-green-600 truncate">₱{{ number_format($revenueBreakdown['memberships'], 2) }}</p>
+                            <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                                <p class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5">Membership Plans</p>
+                                <p class="text-xl font-black text-gray-900">₱{{ number_format($revenueBreakdown['memberships'], 2) }}</p>
                             </div>
-                            <div class="bg-gradient-to-r from-teal-50 to-teal-100 p-3 sm:p-4 rounded-lg">
-                                <p class="text-xs sm:text-sm text-gray-600 mb-1">Subscriptions</p>
-                                <p class="text-xl sm:text-2xl font-bold text-teal-600 truncate">₱{{ number_format($revenueBreakdown['subscriptions'], 2) }}</p>
+                            <div class="p-3 rounded-xl bg-teal-50 border border-teal-100">
+                                <p class="text-[11px] font-bold text-teal-400 uppercase tracking-wider mb-0.5">Subscriptions</p>
+                                <p class="text-xl font-black text-gray-900">₱{{ number_format($revenueBreakdown['subscriptions'], 2) }}</p>
                             </div>
-                            <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-3 sm:p-4 rounded-lg border-2 border-purple-300">
-                                <p class="text-xs sm:text-sm text-gray-600 mb-1">Total Revenue</p>
-                                <p class="text-xl sm:text-2xl font-bold text-purple-600 truncate">₱{{ number_format($revenueBreakdown['total'], 2) }}</p>
+                            <div class="p-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                                <p class="text-[11px] font-bold text-purple-100 uppercase tracking-wider mb-0.5">Total Revenue</p>
+                                <p class="text-2xl font-black">₱{{ number_format($revenueBreakdown['total'], 2) }}</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Recent Sales Activity -->
-                    <div class="bg-white/90 backdrop-blur-sm rounded-xl lg:rounded-2xl shadow-xl p-4 sm:p-6 border border-white/20">
-                        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">Recent Sales</h3>
-                        <div class="space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
+                    {{-- Recent Sales --}}
+                    <div class="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 p-5 sm:p-6 border border-gray-100">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">Recent Sales</h3>
+                        </div>
+                        <div class="space-y-3 max-h-80 sm:max-h-96 overflow-y-auto pr-1">
                             @forelse($recentSales as $sale)
-                                <div class="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all hover:shadow-md">
+                                <div class="p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all border border-gray-100">
                                     <div class="flex items-center justify-between mb-2 gap-2">
                                         <div class="min-w-0 flex-1">
-                                            <p class="font-medium text-gray-800 text-sm sm:text-base truncate">Sale #{{ $sale->sales_id }}</p>
-                                            <p class="text-[10px] sm:text-xs text-gray-500 truncate">{{ $sale->created_at->diffForHumans() }}</p>
+                                            <p class="font-bold text-gray-800 text-sm truncate">Sale #{{ $sale->sales_id }}</p>
+                                            <p class="text-[11px] text-gray-400">{{ $sale->created_at->diffForHumans() }}</p>
                                             @if($sale->branch)
-                                                <p class="text-[10px] sm:text-xs text-blue-600 mt-1 truncate">{{ $sale->branch->name }}</p>
+                                                <p class="text-[11px] text-blue-500 font-semibold mt-0.5 truncate">{{ $sale->branch->name }}</p>
                                             @endif
                                         </div>
-                                        <span class="font-bold text-green-600 text-sm sm:text-base whitespace-nowrap ml-2">₱{{ number_format($sale->total_amount, 2) }}</span>
+                                        <span class="font-black text-emerald-600 text-sm whitespace-nowrap">₱{{ number_format($sale->total_amount, 2) }}</span>
                                     </div>
                                     <div class="flex flex-wrap gap-1">
                                         @foreach($sale->items as $item)
                                             @if($item->product)
-                                                <span class="text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded truncate max-w-full">{{ $item->product->name }}</span>
+                                                <span class="text-[10px] font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full truncate max-w-full">{{ $item->product->name }}</span>
                                             @elseif($item->plan)
-                                                <span class="text-[10px] sm:text-xs bg-green-100 text-green-700 px-2 py-1 rounded truncate max-w-full">{{ $item->plan->name }}</span>
+                                                <span class="text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full truncate max-w-full">{{ $item->plan->name }}</span>
                                             @endif
                                         @endforeach
                                     </div>
                                 </div>
                             @empty
-                                <p class="text-gray-500 text-center py-4 text-sm">No recent sales</p>
+                                <div class="text-center py-8">
+                                    <svg class="w-12 h-12 text-gray-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                                    <p class="text-sm text-gray-400 font-medium">No recent sales</p>
+                                </div>
                             @endforelse
                         </div>
                     </div>
@@ -586,6 +558,7 @@
             </div>
 
         </div>
+    </div>
 
         <!-- Chart.js Script -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
