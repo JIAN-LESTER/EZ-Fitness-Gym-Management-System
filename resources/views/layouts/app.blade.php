@@ -211,27 +211,37 @@
     "
     class="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
-
 <?php
-$user = Auth::user();
+$user = \App\Models\User::with(['member.plan', 'member.subscription', 'branch'])
+    ->find(Auth::id());
 $member = null;
+$plan   = null;
+$plans  = collect();
 
-// Only get member data if user is actually a member
 if ($user->role === 'member') {
-    $member = $user->member;
-    $plan = $member->plan ?? null;
-}
+    // Force direct DB query — bypass ORM identity map
+    $member = \App\Models\MemberProfile::with(['plan', 'subscription'])
+        ->where('user_id', $user->user_id)
+        ->first();
 
+    // $plan is the member's current membership plan
+    $plan = $member?->plan ?? null;
+
+    // $plans is the full list for the branch (needed by renewal modal)
+    if ($user->branch_id) {
+        $plans = \App\Models\MembershipPlan::where('branch_id', $user->branch_id)
+            ->orderBy('price')
+            ->get();
+    }
+}
 
 $selectedBranchId = null;
 
 if ($user->role === 'super_admin') {
-
-    $selectedBranchId = session('selected_branch_id'); 
+    $selectedBranchId = session('selected_branch_id');
 } elseif ($user->branch_id) {
     $selectedBranchId = $user->branch_id;
 }
-
 
 $pendingApprovalsCount = 0;
 
@@ -240,7 +250,6 @@ if (in_array($user->role, ['admin', 'super_admin', 'staff'])) {
         ->where('isDisabled', false);
 
     if ($selectedBranchId) {
-
         $query->whereHas('user', function ($q) use ($selectedBranchId) {
             $q->where('branch_id', $selectedBranchId);
         });
@@ -248,7 +257,6 @@ if (in_array($user->role, ['admin', 'super_admin', 'staff'])) {
 
     $pendingApprovalsCount = $query->count();
 }
-
 
 $lowStockCount = 0;
 
@@ -293,7 +301,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('admin.dashboard') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.dashboard') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Dashboard</span>
     </a>
@@ -309,7 +317,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  
    class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
     </svg>
     <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm flex-1">Accounts</span>
     @if($pendingApprovalsCount > 0)
@@ -323,7 +331,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('admin.plan_management') }}" @click="profileOpen = false"  
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.plan_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Membership Plans</span>
     </a>
@@ -331,7 +339,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
         <a href="{{ route('admin.subscription_management') }}" @click="profileOpen = false"  
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.subscription_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Subscriptions</span>
     </a>
@@ -359,7 +367,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('products.index') }}" @click="profileOpen = false"
        class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('products.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm flex-1">Inventory</span>
         @if($lowStockCount > 0)
@@ -373,7 +381,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('pos.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('pos.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">POS</span>
     </a>
@@ -387,7 +395,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('sales.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('sales.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Sales</span>
     </a>
@@ -395,7 +403,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('transactions.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('transactions.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Transactions</span>
     </a>
@@ -409,7 +417,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('logs.show') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('logs.show') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Activity Logs</span>
     </a>
@@ -424,7 +432,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
  <a href="{{ route('admin.branch_management') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.branch_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Branches</span>
     </a>
@@ -434,18 +442,17 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('categories.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('categories.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6h.008v.008H6V6z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Categories</span>
     </a>
 
 @elseif(auth()->user()->role === 'staff')
-    <!-- Staff Section - Similar structure -->
+    <!-- Staff Section -->
    <a href="{{ route('staff.dashboard') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('staff.dashboard') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Dashboard</span>
     </a>
@@ -459,7 +466,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 <a href="{{ route('admin.user_management') }}" @click="profileOpen = false"  
    class="relative flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.user_management') ? 'bg-white/20 text-white' : '' }}">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
     </svg>
     <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm flex-1">Members</span>
     @if($pendingApprovalsCount > 0)
@@ -473,7 +480,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('admin.plan_management') }}" @click="profileOpen = false"  
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.plan_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="transition-opacity text-sm">Membership Plans</span>
     </a>
@@ -481,7 +488,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
          <a href="{{ route('admin.subscription_management') }}" @click="profileOpen = false"  
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('admin.subscription_management') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Subscriptions</span>
     </a>
@@ -510,7 +517,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('products.index') }}" @click="profileOpen = false"
        class="relative flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('products.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="transition-opacity flex-1">Inventory</span>
         @if($lowStockCount > 0)
@@ -524,7 +531,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     <a href="{{ route('pos.index') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('pos.index') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="transition-opacity">POS</span>
     </a>
@@ -534,7 +541,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
    <a href="{{ route('member.dashboard') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('member.dashboard') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m-4 0h8" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Home</span>
     </a>
@@ -542,7 +549,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 <a href="{{ route('member.member.logs') }}" @click="profileOpen = false"
        class="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/20 rounded {{ request()->routeIs('member.member.logs') ? 'bg-white/20 text-white' : '' }}">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <span x-show="sidebarOpen" x-cloak class="sidebar-content text-sm">Attendance History</span>
     </a>
@@ -778,10 +785,9 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 
 @if($user->role === 'member')
     @php
-        $member = $user->member;
         $branches = \App\Models\Branches::orderBy('name')->get();
-        $membershipPlans = \App\Models\MembershipPlan::where('branch_id', $user->branch_id ?? null)->get();
-        $subscriptions = \App\Models\Subscriptions::where('branch_id', $user->branch_id ?? null)->get();
+              $membershipPlans = collect(); // safe empty default
+        $subscriptions = collect();  
     @endphp
 
     {{-- STEP 1: Complete Profile + Select Branch --}}
@@ -798,9 +804,8 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                     <p class="text-gray-100 text-sm mt-1">Step 1 of 3: Fill in your personal details and select a branch</p>
                 </div>
 
-                <form action="{{ route('profile.complete-member-profile') }}" method="POST" class="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(90vh-180px)]">
-                    @csrf
-                    @method('PUT')
+            <form id="completeProfileForm" action="{{ route('profile.complete-member-profile') }}" method="POST" class="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(90vh-180px)]">     @csrf
+       
 
                     {{-- Branch Selection --}}
                     <div class="space-y-4">
@@ -896,8 +901,12 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
     @endif
 
     {{-- STEP 2: Select Membership Plan --}}
-    @if($member && $member->sex && $member->birthday && $member->mobile_number && $user->branch_id && !$member->plan_id)
-        <div id="selectPlanModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+  @if($member && $member->sex && $member->birthday && $member->mobile_number && $user->branch_id && !$member->plan_id)
+    @php
+        $membershipPlans = \App\Models\MembershipPlan::where('branch_id', $user->branch_id)
+            ->orderBy('price')->get();
+    @endphp
+  <div id="selectPlanModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
             <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh]">
                 <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
                     <div class="flex items-center space-x-3">
@@ -978,7 +987,11 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 
     {{-- STEP 3: Select Subscription --}}
     @if($member && $member->plan_id && !$member->subscription_id && $member->subscription_status === 'pending_selection')
-        <div id="selectSubscriptionModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+    @php
+        $subscriptions = \App\Models\Subscriptions::where('branch_id', $user->branch_id)
+            ->orderBy('price')->get();
+    @endphp
+    <div id="selectSubscriptionModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
             <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh]">
                 <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
                     <div class="flex items-center space-x-3">
@@ -1092,7 +1105,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                     </div>
 
                     <div class="space-y-3">
-                        <button onclick="checkApprovalStatus()" 
+                        <button onclick="checkApprovalStatus(this)" 
                             class="w-full px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 font-medium transition-colors flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -1209,7 +1222,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                 </div>
 
                 <div class="space-y-3">
-                    <button onclick="checkRenewalStatus()" 
+                    <button onclick="checkRenewalStatus(this)" 
                         id="renewalCheckBtn"
                         class="w-full px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 font-medium transition-colors flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1508,7 +1521,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                                 <select name="plan_id" id="plan_id" disabled
                                     class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                     <option value="">Keep current plan</option>
-                                    @foreach($plans as $plan)
+                                    @foreach(($plans ?? []) as $plan)
                                         <option value="{{ $plan->plan_id }}" {{ $member->plan_id == $plan->plan_id ? 'selected' : '' }}>
                                             {{ $plan->name }}
                                         </option>
@@ -1620,7 +1633,8 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
         </div>
     </div>
 
-@if($user->role === 'member' && $member && isset($daysRemaining) && $daysRemaining === 0 && $member->status === 'expired' && !$member->renewal_pending)
+
+@if($user->role === 'member' && $member && $member->status === 'expired' && !$member->renewal_pending)
     {{-- Membership Expired - Renewal Required Modal --}}
     <div id="renewalRequiredModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
         <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
@@ -1670,7 +1684,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 
                     <div x-show="open" @click.away="open = false"
                          class="absolute mt-2 w-full max-w-xl bg-white border border-gray-300 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto">
-                        @foreach($plans as $plan)
+                       @foreach(($plans ?? []) as $plan)
                             <div @click="
                                     selected = '{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }} / {{ $plan->duration_days }} days';
                                     selectedId = '{{ $plan->plan_id }}';
@@ -1794,6 +1808,7 @@ const clearAllErrors = (form) => {
 };
 
 // Complete Profile Form Validation
+// Complete Profile Form Validation
 document.addEventListener('DOMContentLoaded', function () {
     const completeProfileForm = document.getElementById('completeProfileForm');
 
@@ -1802,20 +1817,10 @@ document.addEventListener('DOMContentLoaded', function () {
             let valid = true;
             clearAllErrors(this);
 
-            // Get Alpine.js data for plan selection
-            const planContainer = this.querySelector('[x-data]');
-            const planButton = planContainer?.querySelector('button');
-            const hiddenPlanInput = this.querySelector('input[name="plan_id"]');
-            
-            // Plan validation
-            if (!hiddenPlanInput || !hiddenPlanInput.value) {
-                if (planButton) {
-                    planButton.classList.add('border-red-500');
-                    const errorDiv = document.createElement('p');
-                    errorDiv.className = 'error-message text-red-600 text-xs mt-1 block';
-                    errorDiv.textContent = 'Please select a membership plan';
-                    planContainer.appendChild(errorDiv);
-                }
+            // Branch validation
+            const branch = this.querySelector('select[name="branch_id"]');
+            if (!branch || !branch.value) {
+                showError(branch, 'Please select a branch');
                 valid = false;
             }
 
@@ -2131,28 +2136,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-function checkRenewalStatus() {
-    const button = document.getElementById('renewalCheckBtn');
+function checkRenewalStatus(btn) {
+    const button = btn;
     const originalContent = button.innerHTML;
-    
+
     button.disabled = true;
-    button.innerHTML = `
-        <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-    `;
+    button.innerHTML = `<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>`;
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
-    
+
     if (!csrfToken) {
-        Toastify({
-            text: 'Security token not found. Please refresh the page.',
-            duration: 3000,
-            gravity: "top",
-            position: "right",
-            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-        }).showToast();
+        Notifications.toast('error', 'Security token not found. Please refresh the page.');
         button.disabled = false;
         button.innerHTML = originalContent;
         return;
@@ -2164,73 +2161,33 @@ function checkRenewalStatus() {
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': csrfToken.content,
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
         },
         credentials: 'same-origin'
     })
     .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return response.json();
     })
     .then(data => {
         console.log('Renewal approval status:', data);
-        
+
         if (data.status === 'approved') {
-            // Show success message
-            Toastify({
-                text: 'Your renewal has been approved! Redirecting...',
-                duration: 3000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #10b981, #059669)",
-            }).showToast();
-            
-            // Reload page after 2 seconds to show updated status
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-            
+            Notifications.toast('success', 'Your renewal has been approved! Redirecting...');
+            setTimeout(() => { window.location.reload(); }, 2000);
+
         } else if (data.status === 'rejected') {
-            // Hide renewal modal and show rejection message
             const renewalModal = document.getElementById('renewalCheckStatusModal');
             if (renewalModal) renewalModal.classList.add('hidden');
-            
-            Toastify({
-                text: data.message || 'Renewal was not approved',
-                duration: 5000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-            }).showToast();
-            
-            // Reload to show updated state
-            setTimeout(() => {
-                window.location.reload();
-            }, 3000);
-            
+            Notifications.toast('error', data.message || 'Renewal was not approved.');
+            setTimeout(() => { window.location.reload(); }, 3000);
+
         } else {
-            // Still pending
-            Toastify({
-                text: 'Renewal still pending approval. Please try again in a moment.',
-                duration: 3000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #f59e0b, #d97706)",
-            }).showToast();
+            Notifications.toast('warning', 'Renewal still pending approval. Please try again in a moment.');
         }
     })
     .catch(error => {
         console.error('Error checking renewal status:', error);
-        
-        Toastify({
-            text: 'Error checking status. Please try again.',
-            duration: 5000,
-            gravity: "top",
-            position: "right",
-            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-        }).showToast();
+        Notifications.toast('error', 'Error checking status. Please try again.');
     })
     .finally(() => {
         button.disabled = false;
@@ -2238,28 +2195,20 @@ function checkRenewalStatus() {
     });
 }
 
-function checkApprovalStatus() {
-    const button = event.target;
+function checkApprovalStatus(btn) {
+    const button = btn;
     const originalContent = button.innerHTML;
-    
+
     button.disabled = true;
-    button.innerHTML = `
-        <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-    `;
+    button.innerHTML = `<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>`;
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
-    
+
     if (!csrfToken) {
-        Toastify({
-            text: 'Security token not found. Please refresh the page.',
-            duration: 3000,
-            gravity: "top",
-            position: "right",
-            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-        }).showToast();
+        Notifications.toast('error', 'Security token not found. Please refresh the page.');
         button.disabled = false;
         button.innerHTML = originalContent;
         return;
@@ -2271,131 +2220,69 @@ function checkApprovalStatus() {
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': csrfToken.content,
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
         },
         credentials: 'same-origin'
     })
     .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return response.json();
     })
     .then(data => {
         console.log('Approval status:', data);
-        
+
         if (data.status === 'approved') {
-            // Hide waiting modal
             const waitingModal = document.getElementById('waitingSubscriptionApprovalModal');
             if (waitingModal) waitingModal.classList.add('hidden');
-            
-            // Show approved modal
+
             const approvedModal = document.getElementById('qrApprovedModal');
             if (approvedModal) {
                 approvedModal.classList.remove('hidden');
-                
-                // Update member data display
+
                 if (data.member_data) {
-                    const memberDataHTML = `
-                        <div class="mt-4 p-4 bg-gray-50 rounded-lg text-left space-y-2">
-                            <div>
-                                <p class="text-sm text-gray-600">Plan:</p>
-                                <p class="font-bold text-gray-800">${data.member_data.plan}</p>
-                                <p class="text-sm text-gray-500">${data.member_data.plan_price}</p>
-                            </div>
-                            <div class="border-t pt-2">
-                                <p class="text-sm text-gray-600">Subscription:</p>
-                                <p class="font-bold text-gray-800">${data.member_data.subscription}</p>
-                                <p class="text-sm text-gray-500">${data.member_data.subscription_price}</p>
-                            </div>
-                            <div class="border-t pt-2">
-                                <p class="text-sm text-gray-600">Valid Until:</p>
-                                <p class="font-bold text-gray-800">${data.member_data.end_date}</p>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Find and update the member data section
                     const memberDataSection = approvedModal.querySelector('.member-data-section');
                     if (memberDataSection) {
-                        memberDataSection.innerHTML = memberDataHTML;
+                        memberDataSection.innerHTML = `
+                            <div class="mt-4 p-4 bg-gray-50 rounded-lg text-left space-y-2">
+                                <div>
+                                    <p class="text-sm text-gray-600">Plan:</p>
+                                    <p class="font-bold text-gray-800">${data.member_data.plan}</p>
+                                    <p class="text-sm text-gray-500">${data.member_data.plan_price}</p>
+                                </div>
+                                <div class="border-t pt-2">
+                                    <p class="text-sm text-gray-600">Subscription:</p>
+                                    <p class="font-bold text-gray-800">${data.member_data.subscription}</p>
+                                    <p class="text-sm text-gray-500">${data.member_data.subscription_price}</p>
+                                </div>
+                                <div class="border-t pt-2">
+                                    <p class="text-sm text-gray-600">Valid Until:</p>
+                                    <p class="font-bold text-gray-800">${data.member_data.end_date}</p>
+                                </div>
+                            </div>`;
                     }
                 }
-                
-                // Show QR code if available
+
                 if (data.qr_code_url) {
                     const qrDisplay = document.getElementById('qrCodeDisplay');
                     const qrImage = document.getElementById('qrCodeImage');
-                    
                     if (qrDisplay && qrImage) {
                         qrImage.src = data.qr_code_url;
-                        qrDisplay.classList.remove('hidden');
-                        
-                        qrImage.onerror = function() {
-                            console.error('Failed to load QR code image');
-                            qrDisplay.innerHTML = `
-                                <div class="text-center py-4">
-                                    <p class="text-sm text-gray-600">QR code has been sent to your email</p>
-                                    <p class="text-xs text-gray-500 mt-1">Please check your inbox</p>
-                                </div>
-                            `;
-                        };
-                        
-                        qrImage.onload = function() {
-                            console.log('QR code loaded successfully');
-                        };
-                    }
-                } else {
-                    const qrDisplay = document.getElementById('qrCodeDisplay');
-                    if (qrDisplay) {
-                        qrDisplay.innerHTML = `
-                            <div class="text-center py-4">
-                                <p class="text-sm text-gray-600">QR code has been sent to your email</p>
-                                <p class="text-xs text-gray-500 mt-1">Please check your inbox</p>
-                            </div>
-                        `;
                         qrDisplay.classList.remove('hidden');
                     }
                 }
             }
-            
-            Toastify({
-                text: data.message || 'Your membership has been approved!',
-                duration: 5000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #10b981, #059669)",
-            }).showToast();
-            
+
+            Notifications.toast('success', data.message || 'Your membership has been approved!');
+
         } else if (data.status === 'rejected') {
-            Toastify({
-                text: data.message || 'Application was not approved',
-                duration: 5000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-            }).showToast();
-            
+            Notifications.toast('error', data.message || 'Application was not approved.');
+
         } else {
-            Toastify({
-                text: data.message || 'Still pending approval',
-                duration: 3000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #f59e0b, #d97706)",
-            }).showToast();
+            Notifications.toast('warning', data.message || 'Still pending approval.');
         }
     })
     .catch(error => {
         console.error('Error checking approval status:', error);
-        
-        Toastify({
-            text: 'Error checking status. Please try again.',
-            duration: 5000,
-            gravity: "top",
-            position: "right",
-            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-        }).showToast();
+        Notifications.toast('error', 'Error checking status. Please try again.');
     })
     .finally(() => {
         button.disabled = false;

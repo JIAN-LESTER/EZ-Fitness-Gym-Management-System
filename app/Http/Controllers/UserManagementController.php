@@ -71,7 +71,7 @@ class UserManagementController extends Controller
         // Build the base query
         $query = User::query()
             ->with(['member' => function($query) {
-                $query->select('member_id', 'user_id', 'plan_id', 'subscription_id', 'isApprovedForSubscription', 'isDisabledForSubscription', 'sex', 'birthday', 'mobile_number', 'subscription_status', 'isApproved', 'isDisabled', 'renewal_pending');
+                $query->select('member_id', 'user_id', 'plan_id', 'subscription_id', 'isApprovedForSubscription', 'isDisabledForSubscription', 'sex', 'birthday', 'mobile_number', 'subscription_status', 'isApproved', 'isDisabled', 'renewal_pending', 'end_date_for_subscription', 'end_date');
             }, 'member.plan:plan_id,name,price', 'member.subscription:subscription_id,name,price', 'branch:branch_id,name'])
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
@@ -256,6 +256,15 @@ class UserManagementController extends Controller
         $branchId = $currentUser->branch_id;
     }
 
+    // Role permission check: enforce who can create what roles
+    $requestedRole = $validated['role'] ?? 'member';
+    if ($currentUser->role === 'staff' && !in_array($requestedRole, ['member'])) {
+        return redirect()->back()->withErrors(['role' => 'Staff can only add members.'])->withInput();
+    }
+    if ($currentUser->role === 'admin' && in_array($requestedRole, ['admin', 'super_admin'])) {
+        return redirect()->back()->withErrors(['role' => 'Admins can only add members and staff.'])->withInput();
+    }
+
     // Create user with auto-verified email
     $user = User::create([
         'first_name' => $validated['first_name'],
@@ -377,10 +386,33 @@ class UserManagementController extends Controller
     return redirect()->back()->with('success', $successMessage);
 }
 
+    /**
+     * Get plans and subscriptions filtered by branch_id (for AJAX in add/edit modal)
+     */
+    public function getPlansByBranch(Request $request)
+    {
+        $branchId = $request->query('branch_id');
+        if (!$branchId) {
+            return response()->json(['plans' => [], 'subscriptions' => []]);
+        }
+
+        $plans = \App\Models\MembershipPlan::where('branch_id', $branchId)
+            ->orWhereNull('branch_id') // global plans
+            ->select('plan_id', 'name', 'price')
+            ->get();
+
+        $subscriptions = \App\Models\Subscriptions::where('branch_id', $branchId)
+            ->orWhereNull('branch_id') // global subscriptions
+            ->select('subscription_id', 'name', 'price', 'duration_days')
+            ->get();
+
+        return response()->json(compact('plans', 'subscriptions'));
+    }
+
     public function show(string $id)
     {
         $currentUser = Auth::user();
-        $user = User::with(['member.plan', 'logs', 'branch'])->findOrFail($id);
+        $user = User::with(['member.plan', 'member.subscription', 'logs', 'branch'])->findOrFail($id);
 
         // Authorization check for staff and admin
         if ($currentUser->role === 'staff' && $user->role !== 'member') {
@@ -423,8 +455,9 @@ class UserManagementController extends Controller
         if ($user->member) {
             $response['member'] = [
                 'plan_id' => $user->member->plan_id,
+                'subscription_id' => $user->member->subscription_id,
                 'sex' => $user->member->sex,
-                'birthday' => $user->member->birthday,
+                'birthday' => $user->member->birthday ? \Carbon\Carbon::parse($user->member->birthday)->format('Y-m-d') : null,
                 'height' => $user->member->height,
                 'weight' => $user->member->weight,
                 'mobile_number' => $user->member->mobile_number,
@@ -700,35 +733,53 @@ class UserManagementController extends Controller
 
     return redirect()->back()->with('success', 'User updated successfully');
 }
+
     public function destroy(string $id)
     {
         $currentUser = Auth::user();
 
-                     $branchId = $currentUser->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $currentUser->branch_id;
+        $branchId = $currentUser->role === 'super_admin'
+            ? session('selected_branch_id')
+            : $currentUser->branch_id;
+
         $userToDelete = User::where('user_id', $id)->firstOrFail();
 
-        // Authorization checks
-        if ($currentUser->role === 'staff' && $userToDelete->role !== 'member') {
-            return redirect()->back()->with('error', 'You can only delete members');
-        }
-
-        if ($currentUser->role === 'admin' && $userToDelete->branch_id !== $currentUser->branch_id) {
-            return redirect()->back()->with('error', 'You can only delete users from your branch');
-        }
-
-        if ($userToDelete->role === 'super_admin') {
-            return redirect()->back()->with('error', 'Super Admin cannot be deleted.');
-        }
-
-        if ($userToDelete->role === 'admin' && $currentUser->role !== 'super_admin') {
-            return redirect()->back()->with('error', 'Only Super Admin can delete Admin users.');
-        }
-
+        // Rule 1: Nobody can delete their own account
         if ($userToDelete->user_id === $currentUser->user_id) {
             return redirect()->back()->with('error', 'You cannot delete your own account.');
         }
+
+        // Rule 2: Nobody can delete a super_admin account
+        if ($userToDelete->role === 'super_admin') {
+            return redirect()->back()->with('error', 'Super Admin accounts cannot be deleted.');
+        }
+
+        // Rule 2b: Cannot delete an admin if they are the last admin in their branch
+        if ($userToDelete->role === 'admin') {
+            $adminCount = User::where('role', 'admin')
+                ->where('branch_id', $userToDelete->branch_id)
+                ->count();
+            if ($adminCount <= 1) {
+                return redirect()->back()->with('error', 'Cannot delete this admin — they are the last admin for their branch.');
+            }
+        }
+
+        // Rule 3: Staff can only delete members
+        if ($currentUser->role === 'staff' && $userToDelete->role !== 'member') {
+            return redirect()->back()->with('error', 'You can only delete members.');
+        }
+
+        // Rule 4: Admin can only delete members and staff from their own branch
+        if ($currentUser->role === 'admin') {
+            if ($userToDelete->branch_id !== $currentUser->branch_id) {
+                return redirect()->back()->with('error', 'You can only delete users from your branch.');
+            }
+            if (!in_array($userToDelete->role, ['member', 'staff'])) {
+                return redirect()->back()->with('error', 'Admins can only delete members and staff.');
+            }
+        }
+
+        // Rule 5: Super admin can delete admin, staff, member (covered by rules above)
 
         Logs::create([
             'user_id' => $currentUser->user_id,
@@ -818,21 +869,17 @@ public function approveSubscription(Request $request, $memberId)
             
             // For subscription end date
             if ($isRenewal && $member->end_date_for_subscription && \Carbon\Carbon::parse($member->end_date_for_subscription)->isFuture()) {
-                // If renewing and current subscription hasn't expired, add to existing end date
                 $newSubscriptionEndDate = \Carbon\Carbon::parse($member->end_date_for_subscription)
                     ->addDays($subscription->duration_days);
             } else {
-                // If new or expired, start from now
                 $newSubscriptionEndDate = $now->copy()->addDays($subscription->duration_days);
             }
 
             // For plan end date
             if ($isRenewal && $member->end_date && \Carbon\Carbon::parse($member->end_date)->isFuture()) {
-                // If plan hasn't expired, add to existing end date
                 $newPlanEndDate = \Carbon\Carbon::parse($member->end_date)
                     ->addDays($plan->duration_days);
             } else {
-                // If new or expired, start from now
                 $newPlanEndDate = $now->copy()->addDays($plan->duration_days);
             }
 
@@ -844,17 +891,16 @@ public function approveSubscription(Request $request, $memberId)
             $member->subscription_status = 'active';
             $member->status = 'active';
             $member->renewal_pending = false;
-            $member->approved_at = $isRenewal ? $member->approved_at : now(); // Keep original approval date if renewal
+            $member->approved_at = $isRenewal ? $member->approved_at : now();
             $member->approved_at_for_subscription = now();
-            $member->start_date_for_subscription = $isRenewal ? $member->start_date_for_subscription : now(); // Keep original start if renewal
+            $member->start_date_for_subscription = $isRenewal ? $member->start_date_for_subscription : now();
             $member->end_date_for_subscription = $newSubscriptionEndDate;
-            $member->start_date = $isRenewal ? $member->start_date : now(); // Keep original start if renewal
+            $member->start_date = $isRenewal ? $member->start_date : now();
             $member->end_date = $newPlanEndDate;
             $member->suspended_at = null;
             $member->days_remaining_before_suspend = null;
-            $member->plan_days_remaining_before_suspend = null; // Clear paused plan days
+            $member->plan_days_remaining_before_suspend = null;
             
-            // Save the member profile
             $member->save();
 
             Logs::create([
@@ -1012,7 +1058,6 @@ public function approveProfile(Request $request, $memberId)
 
 /**
  * Optimized QR generation - now synchronous but faster
- * Use this if you don't want to set up queues
  */
 private function generateAndSendQRCode($user, $memberProfile, $plan, $subscription)
 {
@@ -1065,7 +1110,6 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
         $memberProfile->qr_code = $qrRelativePath;
         $memberProfile->save();
 
-        // CHANGE: Send immediately instead of queue
         Mail::to($user->email)->send(new MemberQRCodeMail($memberProfile, $fullPath));
 
         \Log::info("QR Code generated and sent via email", [
@@ -1085,7 +1129,7 @@ private function generateAndSendQRCode($user, $memberProfile, $plan, $subscripti
 }
 
     /**
-     * Deny member access - WITH SWEETALERT
+     * Deny member access
      */
     public function deny($memberId)
 {
@@ -1156,13 +1200,12 @@ public function suspendMember($memberId)
             'plan_end' => $member->end_date,
         ]);
 
-        // Update member with suspended status and save BOTH remaining days
         $member->update([
             'subscription_status' => 'suspended',
-            'status' => 'suspended', // Also suspend the membership status
+            'status' => 'suspended',
             'suspended_at' => $now,
-            'days_remaining_before_suspend' => $subscriptionDaysRemaining, // Subscription days
-            'plan_days_remaining_before_suspend' => $planDaysRemaining, // Plan days
+            'days_remaining_before_suspend' => $subscriptionDaysRemaining,
+            'plan_days_remaining_before_suspend' => $planDaysRemaining,
         ]);
 
         // Clear caches
@@ -1233,7 +1276,7 @@ public function resumeMember($memberId)
             'end_date' => $newPlanEndDate,
             'days_remaining_before_suspend' => null,
             'plan_days_remaining_before_suspend' => null,
-            'renewal_pending' => false, // Clear renewal pending flag
+            'renewal_pending' => false,
         ]);
 
         // Clear caches
