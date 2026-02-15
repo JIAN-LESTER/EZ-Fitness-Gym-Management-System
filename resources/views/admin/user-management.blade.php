@@ -242,11 +242,15 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
 
+                @php $visibleRowCount = 0; @endphp
 @forelse($users as $user)
     {{-- Skip non-members if user is staff --}}
-    @if($isStaff && $user->role !== 'member')
-        @continue
-    @endif
+  @if($isStaff && $user->role !== 'member')
+    @continue
+@elseif($isAdmin && $user->role === 'super_admin')
+    @continue
+@endif
+    @php $visibleRowCount++; @endphp   
 
    @php
     $isOwnAccount = ($user->user_id == $currentAuthId);
@@ -673,18 +677,32 @@
         @endif
     </tr>
 @empty
+    {{-- $users is truly empty (no rows at all) --}}
     <tr>
         <td colspan="7" class="px-6 py-12 text-center text-gray-500">
             <div class="flex flex-col items-center justify-center">
                 <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <p class="text-lg font-medium">No {{ $isStaff ? 'members' : 'users' }} found</p>
+                <p class="text-lg font-medium">No members found</p>
                 <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
             </div>
         </td>
     </tr>
 @endforelse
+@if(($isStaff || $isAdmin) && $visibleRowCount === 0 && $users->total() > 0)
+    <tr>
+        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+            <div class="flex flex-col items-center justify-center">
+                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p class="text-lg font-medium">No members found</p>
+                <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
+            </div>
+        </td>
+    </tr>
+@endif
 
                 </tbody>
             </table>
@@ -1111,6 +1129,23 @@
                                 </select>
                             </div>
 
+                                <div>
+                                <label for="edit_subscription_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Subscription
+                                    @if($isStaff)<span class="text-red-500">*</span>@endif
+                                </label>
+                                <select name="subscription_id" id="edit_subscription_id" {{ $isStaff ? 'required' : '' }} onchange="updateEditPaymentSection()"
+                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                                    <option value="">Select a subscription{{ $isStaff ? '' : ' (optional)' }}</option>
+                                    @php
+                                        $subscriptions = \App\Models\Subscriptions::all();
+                                    @endphp
+                                    @foreach($subscriptions ?? [] as $subscription)
+                                        <option value="{{ $subscription->subscription_id }}">{{ $subscription->name }} - ₱{{ number_format($subscription->price, 2) }} / {{ $subscription->duration_days }} days</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="edit_sex" class="block text-sm font-medium text-gray-700 mb-2">
@@ -1156,22 +1191,7 @@
                                     class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             </div>
 
-                            <div>
-                                <label for="edit_subscription_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Subscription
-                                    @if($isStaff)<span class="text-red-500">*</span>@endif
-                                </label>
-                                <select name="subscription_id" id="edit_subscription_id" {{ $isStaff ? 'required' : '' }} onchange="updateEditPaymentSection()"
-                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
-                                    <option value="">Select a subscription{{ $isStaff ? '' : ' (optional)' }}</option>
-                                    @php
-                                        $subscriptions = \App\Models\Subscriptions::all();
-                                    @endphp
-                                    @foreach($subscriptions ?? [] as $subscription)
-                                        <option value="{{ $subscription->subscription_id }}">{{ $subscription->name }} - ₱{{ number_format($subscription->price, 2) }} / {{ $subscription->duration_days }} days</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                        
 
                             {{-- Payment Section --}}
                             <div id="editPaymentSection" class="hidden space-y-4 pt-4 border-t border-gray-200">
@@ -1823,8 +1843,9 @@
         // EDIT USER
         // ===========================
 
-        function editUser(userId) {
-            fetch(`/admin/user_crud/edit/${userId}`)
+function editUser(userId) {
+    closeAllActionsMenus();
+    fetch(`/admin/user_crud/edit/${userId}`)
                 .then(res => {
                     if (!res.ok) throw new Error('Failed to fetch user data');
                     return res.json();

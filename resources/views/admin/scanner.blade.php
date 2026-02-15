@@ -141,6 +141,31 @@
 let html5QrCode;
 let isScanning = false;
 
+// ─── Cooldown tracking ───────────────────────────────────────────────────────
+// Key: qr_data string  →  Value: timestamp (ms) of last successful scan
+const COOLDOWN_MS = 60 * 1000; // 1 minute
+const scanCooldowns = {};
+let cooldownTimerInterval = null; // holds the setInterval for the countdown UI
+
+/**
+ * Returns the remaining cooldown in milliseconds for a given QR value,
+ * or 0 if the member is free to scan again.
+ */
+function getRemainingCooldown(qrData) {
+    const last = scanCooldowns[qrData];
+    if (!last) return 0;
+    const elapsed = Date.now() - last;
+    return elapsed < COOLDOWN_MS ? COOLDOWN_MS - elapsed : 0;
+}
+
+/**
+ * Records a fresh scan timestamp for the given QR value.
+ */
+function recordScan(qrData) {
+    scanCooldowns[qrData] = Date.now();
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', function() {
     const startBtn = document.getElementById('start-scan');
     const stopBtn = document.getElementById('stop-scan');
@@ -194,20 +219,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 stopBtn.disabled = true;
                 statusDiv.textContent = 'Scanner stopped';
                 statusDiv.className = 'mt-3 text-center text-sm text-gray-600';
+                clearCooldownTimer();
             } catch (err) {
                 console.error('Stop error:', err);
             }
         }
     });
 
-    // Handle successful scan
+    // ── Handle successful scan ───────────────────────────────────────────────
     function onScanSuccess(decodedText, decodedResult) {
-        // Stop scanning temporarily to process
+
+        // ── Cooldown check ──────────────────────────────────────────────────
+        const remaining = getRemainingCooldown(decodedText);
+        if (remaining > 0) {
+            // Already on cooldown — show the warning but do NOT pause/resume
+            // (scanner keeps running so staff can scan a different member)
+            showCooldownWarning(remaining, decodedText);
+            return;
+        }
+        // ───────────────────────────────────────────────────────────────────
+
+        // Pause scanner while we process this scan
         html5QrCode.pause();
-        
+        clearCooldownTimer();
+
         statusDiv.textContent = 'Processing...';
         statusDiv.className = 'mt-3 text-center text-sm text-yellow-600 font-semibold';
-        
+
+        // Record the scan timestamp immediately (before the network round-trip)
+        // so a second scan of the same code while the request is in flight is
+        // also blocked.
+        recordScan(decodedText);
+
         // Send to server
         fetch('{{ route('attendance.scan') }}', {
             method: 'POST',
@@ -231,35 +274,116 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadTodayAttendance();
             } else {
                 showError(data.message);
+                // On server-side failure, remove the cooldown so the member
+                // can try again immediately (e.g. expired membership warning).
+                delete scanCooldowns[decodedText];
             }
-            
-            // Resume scanning after 3 seconds
-            setTimeout(() => {
-                if (isScanning) {
-                    html5QrCode.resume();
-                    statusDiv.textContent = 'Scanning... Point camera at QR code';
-                    statusDiv.className = 'mt-3 text-center text-sm text-green-600 font-semibold';
-                }
-            }, 3000);
+
+            // Resume scanner after 3 seconds
+            resumeAfterDelay(3000);
         })
         .catch(error => {
             showError('Network error: ' + error.message);
-            setTimeout(() => {
-                if (isScanning) {
-                    html5QrCode.resume();
-                    statusDiv.textContent = 'Scanning... Point camera at QR code';
-                    statusDiv.className = 'mt-3 text-center text-sm text-green-600 font-semibold';
-                }
-            }, 3000);
+            delete scanCooldowns[decodedText];
+            resumeAfterDelay(3000);
         });
     }
 
     function onScanFailure(error) {
-        // Ignore scan failures (happens continuously while scanning)
+        // Ignore continuous scan failures
     }
+
+    // ── Resume helper ────────────────────────────────────────────────────────
+    function resumeAfterDelay(ms) {
+        setTimeout(() => {
+            if (isScanning) {
+                html5QrCode.resume();
+                statusDiv.textContent = 'Scanning... Point camera at QR code';
+                statusDiv.className = 'mt-3 text-center text-sm text-green-600 font-semibold';
+            }
+        }, ms);
+    }
+
+    // ── Cooldown UI ──────────────────────────────────────────────────────────
+    function showCooldownWarning(remainingMs, qrData) {
+        // Clear any existing countdown timer
+        clearCooldownTimer();
+
+        const updateUI = () => {
+            const ms = getRemainingCooldown(qrData);
+            if (ms <= 0) {
+                clearCooldownTimer();
+                // Restore normal scanning status
+                if (isScanning) {
+                    statusDiv.textContent = 'Scanning... Point camera at QR code';
+                    statusDiv.className = 'mt-3 text-center text-sm text-green-600 font-semibold';
+                }
+                // Reset result container to idle
+                resultContainer.innerHTML = `
+                    <div class="text-center text-gray-400">
+                        <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                        </svg>
+                        <p class="text-sm">Scan a QR code to see member details</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const secondsLeft = Math.ceil(ms / 1000);
+            const percentage = (ms / COOLDOWN_MS) * 100;
+
+            // Update status bar text
+            statusDiv.textContent = `Cooldown: ${secondsLeft}s remaining`;
+            statusDiv.className = 'mt-3 text-center text-sm text-orange-600 font-semibold';
+
+            // Update result container with countdown
+            resultContainer.innerHTML = `
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-orange-400">
+                        <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-orange-600 mb-1">Cooldown Active</h4>
+                    <p class="text-sm text-gray-500 mb-4">This member must wait before scanning again.</p>
+
+                    <!-- Circular-style countdown -->
+                    <div class="relative w-24 h-24 mx-auto mb-3">
+                        <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="15.9"
+                                fill="none" stroke="#fed7aa" stroke-width="3"/>
+                            <circle id="cooldown-ring" cx="18" cy="18" r="15.9"
+                                fill="none" stroke="#f97316" stroke-width="3"
+                                stroke-dasharray="${percentage.toFixed(1)} 100"
+                                stroke-linecap="round"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="cooldown-seconds" class="text-2xl font-bold text-orange-600">${secondsLeft}</span>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-gray-400">Scanner is ready for other members</p>
+                </div>
+            `;
+        };
+
+        // Run immediately then every second
+        updateUI();
+        cooldownTimerInterval = setInterval(updateUI, 1000);
+    }
+
+    function clearCooldownTimer() {
+        if (cooldownTimerInterval !== null) {
+            clearInterval(cooldownTimerInterval);
+            cooldownTimerInterval = null;
+        }
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     // Display check-in success
     function showCheckInSuccess(data) {
+        clearCooldownTimer();
         resultContainer.innerHTML = `
             <div class="text-center">
                 <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -280,6 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Display check-out success
     function showCheckOutSuccess(data) {
+        clearCooldownTimer();
         resultContainer.innerHTML = `
             <div class="text-center">
                 <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -302,6 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Display error result
     function showError(message) {
+        clearCooldownTimer();
         resultContainer.innerHTML = `
             <div class="text-center">
                 <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -453,7 +579,6 @@ document.addEventListener('DOMContentLoaded', function() {
     height: auto !important;
     display: block;
     transform: scaleX(-1) !important; /* Prevent mirroring */
-
 }
 
 #qr-reader__dashboard {

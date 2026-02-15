@@ -521,7 +521,7 @@ class UserManagementController extends Controller
     }
 
     $user->role = $validated['role'];
-    $user->status = $validated['status'];
+  $user->status = $validated['status'] ?? $user->status;
 
     if ($currentUser->role === 'super_admin' && isset($validated['branch_id'])) {
         $user->branch_id = $validated['branch_id'];
