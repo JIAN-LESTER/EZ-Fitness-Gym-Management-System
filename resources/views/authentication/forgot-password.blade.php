@@ -118,7 +118,7 @@
           <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
             Email Address
           </label>
-          <input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="your.email@example.com"
+          <input novalidate id="email" name="email" value="{{ old('email') }}" placeholder="your.email@example.com"
             class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none" 
             required />
           @error('email')

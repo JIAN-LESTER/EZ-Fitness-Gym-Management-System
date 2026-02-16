@@ -890,11 +890,12 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                         </div>
                     </div>
 
-                    <div class="flex justify-end pt-6 border-t border-gray-200">
-                        <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors shadow-lg">
-                            Continue to Plan Selection
-                        </button>
-                    </div>
+                    <div class="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(90vh-250px)]">
+        ...content without the button...
+    </div>
+    <div class="flex justify-end p-6 border-t border-gray-200 bg-white">
+        <button type="submit" ...>Continue to Plan Selection</button>
+    </div>
                 </form>
             </div>
         </div>
@@ -973,11 +974,14 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                         </div>
 
                         @if(count($membershipPlans ?? []) > 0)
-                            <div class="flex justify-end pt-6 border-t border-gray-200">
-                                <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium">
-                                    Continue to Subscription
-                                </button>
-                            </div>
+                              <div class="p-6 overflow-y-auto max-h-[calc(90vh-260px)]">
+        ...plans grid...
+    </div>
+    @if(count($membershipPlans ?? []) > 0)
+    <div class="flex justify-end p-6 border-t border-gray-200 bg-white">
+        <button type="submit" ...>Continue to Subscription</button>
+    </div>
+    @endif
                         @endif
                     </form>
                 </div>
@@ -1052,13 +1056,16 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                             @endforelse
                         </div>
 
-                        @if(count($subscriptions ?? []) > 0)
-                            <div class="flex justify-end pt-6 border-t border-gray-200">
-                                <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium">
-                                    Submit for Approval
-                                </button>
-                            </div>
-                        @endif
+                        <div class="p-6 overflow-y-auto max-h-[calc(90vh-260px)]">
+        ... (intro block + subscriptions grid, WITHOUT button) ...
+    </div>
+    @if(count($subscriptions ?? []) > 0)
+    <div class="flex justify-end p-6 border-t border-gray-200 bg-white rounded-b-2xl">
+        <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium">
+            Submit for Approval
+        </button>
+    </div>
+    @endif
                     </form>
                 </div>
             </div>

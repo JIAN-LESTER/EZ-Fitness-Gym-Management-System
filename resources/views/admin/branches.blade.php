@@ -37,6 +37,21 @@
     textarea::placeholder {
         color: #9CA3AF !important;
     }
+
+    /* Smooth transition for enabled/disabled state */
+    select:not(:disabled),
+    input[type="text"]:not(:disabled) {
+        background-color: #ffffff !important;
+        transition: background-color 0.2s ease, opacity 0.2s ease;
+    }
+
+    select:disabled,
+    input[type="text"]:disabled {
+        background-color: #F3F4F6 !important;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transition: background-color 0.2s ease, opacity 0.2s ease;
+    }
 </style>
 
 @section('content')
@@ -228,8 +243,8 @@
                         </div>
                         <div>
                             <label for="add_province" class="block text-sm font-medium text-gray-700 mb-2">Province <span class="text-red-500">*</span></label>
-                            <select name="province" id="add_province" required onchange="loadCities('add')"
-                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            <select name="province" id="add_province" required onchange="loadCities('add')" disabled
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="">Select Province</option>
                             </select>
                         </div>
@@ -238,8 +253,8 @@
                     <!-- City/Municipality -->
                     <div>
                         <label for="add_city" class="block text-sm font-medium text-gray-700 mb-2">City/Municipality <span class="text-red-500">*</span></label>
-                        <select name="city" id="add_city" required
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        <select name="city" id="add_city" required disabled onchange="onCityChange('add')"
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             <option value="">Select City/Municipality</option>
                         </select>
                     </div>
@@ -247,16 +262,17 @@
                     <!-- Street Name -->
                     <div>
                         <label for="add_street" class="block text-sm font-medium text-gray-700 mb-2">Street Name/Barangay <span class="text-red-500">*</span></label>
-                        <input type="text" name="street" id="add_street" required
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
-                            placeholder="e.g., Barangay San Antonio, Main Street">
+                        <input type="text" name="street" id="add_street" required disabled
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
+                            placeholder="e.g., Barangay San Antonio, Main Street"
+                            oninput="onStreetInput('add')">
                     </div>
 
                     <!-- Building Name/Number -->
                     <div>
                         <label for="add_building" class="block text-sm font-medium text-gray-700 mb-2">Building Name/Number</label>
-                        <input type="text" name="building" id="add_building"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
+                        <input type="text" name="building" id="add_building" disabled
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
                             placeholder="e.g., Fitness Center Building, Unit 123">
                     </div>
 
@@ -319,8 +335,8 @@
                         </div>
                         <div>
                             <label for="edit_province" class="block text-sm font-medium text-gray-700 mb-2">Province <span class="text-red-500">*</span></label>
-                            <select name="province" id="edit_province" required onchange="loadCities('edit')"
-                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            <select name="province" id="edit_province" required onchange="loadCities('edit')" disabled
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                                 <option value="">Select Province</option>
                             </select>
                         </div>
@@ -329,8 +345,8 @@
                     <!-- City/Municipality -->
                     <div>
                         <label for="edit_city" class="block text-sm font-medium text-gray-700 mb-2">City/Municipality <span class="text-red-500">*</span></label>
-                        <select name="city" id="edit_city" required
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        <select name="city" id="edit_city" required disabled onchange="onCityChange('edit')"
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                             <option value="">Select City/Municipality</option>
                         </select>
                     </div>
@@ -338,15 +354,16 @@
                     <!-- Street Name -->
                     <div>
                         <label for="edit_street" class="block text-sm font-medium text-gray-700 mb-2">Street Name/Barangay <span class="text-red-500">*</span></label>
-                        <input type="text" name="street" id="edit_street" required
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        <input type="text" name="street" id="edit_street" required disabled
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
+                            oninput="onStreetInput('edit')">
                     </div>
 
                     <!-- Building Name/Number -->
                     <div>
                         <label for="edit_building" class="block text-sm font-medium text-gray-700 mb-2">Building Name/Number</label>
-                        <input type="text" name="building" id="edit_building"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        <input type="text" name="building" id="edit_building" disabled
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                     </div>
 
                     <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
@@ -408,7 +425,72 @@ let regionsData = [];
 let provincesData = [];
 let citiesData = [];
 
-// Load regions on page load
+// ─── Cascading Enable/Disable Helpers ────────────────────────────────────────
+
+/**
+ * Enable a field and update its visual state.
+ */
+function enableField(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = false;
+}
+
+/**
+ * Disable a field, reset its value, and update visual state.
+ */
+function disableField(id, defaultOption = null) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = true;
+
+    // Reset selects to their placeholder, inputs to empty
+    if (el.tagName === 'SELECT') {
+        el.innerHTML = defaultOption || '<option value="">Select...</option>';
+    } else {
+        el.value = '';
+    }
+}
+
+/**
+ * Called when City/Municipality selection changes.
+ * Enables Street if a city is selected; disables Street + Building otherwise.
+ */
+function onCityChange(mode) {
+    const citySelect = document.getElementById(`${mode}_city`);
+    const streetInput = document.getElementById(`${mode}_street`);
+    const buildingInput = document.getElementById(`${mode}_building`);
+
+    if (citySelect.value) {
+        enableField(`${mode}_street`);
+        // Building state follows Street — keep disabled until street has a value
+        if (!streetInput.value.trim()) {
+            buildingInput.disabled = true;
+        }
+    } else {
+        disableField(`${mode}_street`);
+        disableField(`${mode}_building`);
+    }
+}
+
+/**
+ * Called on every keystroke in Street Name.
+ * Enables Building once Street has any content; disables it when cleared.
+ */
+function onStreetInput(mode) {
+    const streetInput = document.getElementById(`${mode}_street`);
+    const buildingInput = document.getElementById(`${mode}_building`);
+
+    if (streetInput.value.trim()) {
+        enableField(`${mode}_building`);
+    } else {
+        buildingInput.disabled = true;
+        buildingInput.value = '';
+    }
+}
+
+// ─── PSGC API Loaders ─────────────────────────────────────────────────────────
+
 async function loadRegions() {
     try {
         const response = await fetch('https://psgc.gitlab.io/api/regions/');
@@ -441,15 +523,15 @@ function populateRegions(mode) {
 async function loadProvinces(mode) {
     const regionSelect = document.getElementById(`${mode}_region`);
     const provinceSelect = document.getElementById(`${mode}_province`);
-    const citySelect = document.getElementById(`${mode}_city`);
-    
-    if (!regionSelect.value) {
-        provinceSelect.innerHTML = '<option value="">Select Province</option>';
-        citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
-        return;
-    }
 
-    // Find region code
+    // Reset downstream fields
+    disableField(`${mode}_province`, '<option value="">Select Province</option>');
+    disableField(`${mode}_city`, '<option value="">Select City/Municipality</option>');
+    disableField(`${mode}_street`);
+    disableField(`${mode}_building`);
+
+    if (!regionSelect.value) return;
+
     const region = regionsData.find(r => r.name === regionSelect.value);
     if (!region) return;
 
@@ -458,7 +540,6 @@ async function loadProvinces(mode) {
         provincesData = await response.json();
         
         provinceSelect.innerHTML = '<option value="">Select Province</option>';
-        citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
         
         provincesData.forEach(province => {
             const option = document.createElement('option');
@@ -467,6 +548,9 @@ async function loadProvinces(mode) {
             option.setAttribute('data-code', province.code);
             provinceSelect.appendChild(option);
         });
+
+        // Enable province now that it has options
+        enableField(`${mode}_province`);
     } catch (error) {
         console.error('Error loading provinces:', error);
         if (typeof toastr !== 'undefined') {
@@ -478,16 +562,16 @@ async function loadProvinces(mode) {
 async function loadCities(mode) {
     const provinceSelect = document.getElementById(`${mode}_province`);
     const citySelect = document.getElementById(`${mode}_city`);
-    
-    if (!provinceSelect.value) {
-        citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
-        return;
-    }
 
-    // Find province code
+    // Reset downstream fields
+    disableField(`${mode}_city`, '<option value="">Select City/Municipality</option>');
+    disableField(`${mode}_street`);
+    disableField(`${mode}_building`);
+
+    if (!provinceSelect.value) return;
+
     const selectedOption = provinceSelect.options[provinceSelect.selectedIndex];
     const provinceCode = selectedOption.getAttribute('data-code');
-    
     if (!provinceCode) return;
 
     try {
@@ -509,6 +593,9 @@ async function loadCities(mode) {
             option.textContent = city.name;
             citySelect.appendChild(option);
         });
+
+        // Enable city now that it has options
+        enableField(`${mode}_city`);
     } catch (error) {
         console.error('Error loading cities:', error);
         if (typeof toastr !== 'undefined') {
@@ -517,7 +604,8 @@ async function loadCities(mode) {
     }
 }
 
-// Helper function to parse address
+// ─── Address Parser ───────────────────────────────────────────────────────────
+
 function parseAddress(address) {
     // Format: "Building, Street, City, Province, Region" or "Street, City, Province, Region"
     const parts = address.split(',').map(p => p.trim());
@@ -540,14 +628,10 @@ function parseAddress(address) {
         };
     }
     
-    return {
-        building: '',
-        street: '',
-        city: '',
-        province: '',
-        region: ''
-    };
+    return { building: '', street: '', city: '', province: '', region: '' };
 }
+
+// ─── Modal Helpers ────────────────────────────────────────────────────────────
 
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -577,23 +661,24 @@ function closeModal(modalId) {
     const form = modal.querySelector('form');
     if (form) {
         form.reset();
-        
-        // Reset selects to default
-        const selects = form.querySelectorAll('select');
-        selects.forEach(select => {
-            if (!select.id.includes('country')) {
-                select.innerHTML = '<option value="">Select...</option>';
-            }
-        });
+
+        // Re-disable and reset all cascading fields
+        const mode = modalId === 'addBranchModal' ? 'add' : 'edit';
+        document.getElementById(`${mode}_province`).innerHTML = '<option value="">Select Province</option>';
+        document.getElementById(`${mode}_province`).disabled = true;
+        document.getElementById(`${mode}_city`).innerHTML = '<option value="">Select City/Municipality</option>';
+        document.getElementById(`${mode}_city`).disabled = true;
+        document.getElementById(`${mode}_street`).disabled = true;
+        document.getElementById(`${mode}_building`).disabled = true;
     }
 }
 
-// FIXED EDIT FUNCTION - Fetches data via AJAX with proper headers
+// ─── Edit Branch ──────────────────────────────────────────────────────────────
+
 async function editBranch(branchId) {
     console.log('Editing branch:', branchId);
     
     try {
-        // Fetch branch data from API with proper headers to trigger JSON response
         const response = await fetch(`/admin/branches/${branchId}/edit`, {
             headers: {
                 'Accept': 'application/json',
@@ -601,67 +686,59 @@ async function editBranch(branchId) {
             }
         });
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const branch = await response.json();
         console.log('Branch data:', branch);
         
-        // Parse the address
         const addressParts = parseAddress(branch.address);
         
-        // Set branch name
         document.getElementById('edit_name').value = branch.name || '';
-        
-        // Set form action
         document.getElementById('editBranchForm').action = `/admin/branches/${branch.branch_id}`;
         
-        // Wait for regions to load if not already loaded
-        if (regionsData.length === 0) {
-            await loadRegions();
-        }
+        if (regionsData.length === 0) await loadRegions();
         
         // Set region
         const regionSelect = document.getElementById('edit_region');
         regionSelect.value = addressParts.region;
         
-        // Load and set provinces
         if (addressParts.region) {
-            await loadProvinces('edit');
-            setTimeout(() => {
-                const provinceSelect = document.getElementById('edit_province');
-                
-                // Find and select the province
-                for (let i = 0; i < provinceSelect.options.length; i++) {
-                    if (provinceSelect.options[i].value === addressParts.province) {
-                        provinceSelect.selectedIndex = i;
-                        break;
+            await loadProvinces('edit'); // this enables province & resets downstream
+
+            // Set province
+            const provinceSelect = document.getElementById('edit_province');
+            for (let i = 0; i < provinceSelect.options.length; i++) {
+                if (provinceSelect.options[i].value === addressParts.province) {
+                    provinceSelect.selectedIndex = i;
+                    break;
+                }
+            }
+
+            if (addressParts.province) {
+                await loadCities('edit'); // this enables city & resets downstream
+
+                // Set city
+                const citySelect = document.getElementById('edit_city');
+                citySelect.value = addressParts.city;
+
+                if (addressParts.city) {
+                    // Enable street
+                    enableField('edit_street');
+                    document.getElementById('edit_street').value = addressParts.street || '';
+
+                    if (addressParts.street) {
+                        // Enable building
+                        enableField('edit_building');
+                        document.getElementById('edit_building').value = addressParts.building || '';
                     }
                 }
-                
-                // Load and set cities
-                if (addressParts.province) {
-                    loadCities('edit').then(() => {
-                        setTimeout(() => {
-                            const citySelect = document.getElementById('edit_city');
-                            citySelect.value = addressParts.city;
-                        }, 100);
-                    });
-                }
-            }, 200);
+            }
         }
         
-        // Set street and building
-        document.getElementById('edit_street').value = addressParts.street || '';
-        document.getElementById('edit_building').value = addressParts.building || '';
-        
-        // Open modal
         openModal('editBranchModal');
         
     } catch (error) {
         console.error('Error loading branch:', error);
-        
         if (typeof toastr !== 'undefined') {
             toastr.error('Failed to load branch data. Please try again.');
         } else {
@@ -670,7 +747,8 @@ async function editBranch(branchId) {
     }
 }
 
-// Delete Modal Functions
+// ─── Delete Modal ─────────────────────────────────────────────────────────────
+
 function openDeleteModal(actionUrl, branchName) {
     const form = document.getElementById('deleteForm');
     const nameSpan = document.getElementById('deleteBranchName');
@@ -703,12 +781,11 @@ function closeDeleteModal() {
     window.scrollTo(0, parseInt(scrollY || '0') * -1);
 }
 
-// Initialize on page load
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Load regions data
     loadRegions();
     
-    // Close modals with Escape key
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             const modals = ['addBranchModal', 'editBranchModal', 'deleteModal'];

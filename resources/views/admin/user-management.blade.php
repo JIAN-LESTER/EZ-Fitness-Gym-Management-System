@@ -56,6 +56,79 @@
     textarea::placeholder {
         color: #9CA3AF !important;
     }
+
+    /* Mobile Table Adjustments */
+    @media (max-width: 768px) {
+        .mobile-card {
+            display: block;
+        }
+        
+        .desktop-table {
+            display: none;
+        }
+
+        /* Mobile user cards */
+        .user-mobile-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .user-mobile-card:active {
+            background: #f9fafb;
+            transform: scale(0.98);
+        }
+
+        /* Modal adjustments for mobile */
+        .modal-mobile-full {
+            margin: 0;
+            width: 100%;
+            max-width: 100%;
+            max-height: 100vh;
+            border-radius: 0;
+        }
+
+        .modal-mobile-full header {
+            border-radius: 0;
+        }
+
+        /* Filter dropdown mobile positioning */
+        #filterDropdown {
+            position: fixed !important;
+            left: 1rem !important;
+            right: 1rem !important;
+            width: auto !important;
+            top: auto !important;
+        }
+
+        /* Actions menu mobile positioning */
+        [id^="actionsMenu-"] {
+            position: fixed !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            bottom: 1rem !important;
+            top: auto !important;
+            width: calc(100% - 2rem) !important;
+            max-width: 320px !important;
+        }
+    }
+
+    @media (min-width: 769px) {
+        .mobile-card {
+            display: none;
+        }
+        
+        .desktop-table {
+            display: table;
+        }
+    }
+
+    .rotate-180 {
+        transform: rotate(180deg);
+    }
 </style>
 
 @section('content')
@@ -66,33 +139,32 @@
         $currentAuthId = auth()->id();
     @endphp
 
-    <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+     <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
 
         <!-- Header / Add Button -->
-        <div
-            class="flex justify-between items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-800">Account Management</h2>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 gap-3 sm:gap-0">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Account Management</h2>
             <button onclick="openModal('addUserModal')"
-                class="flex items-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
+                class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-800 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-sm sm:text-base">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                     class="w-5 h-5">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
-                Add {{ $isStaff ? 'Member' : 'User' }}
+                <span class="whitespace-nowrap">Add {{ $isStaff ? 'Member' : 'User' }}</span>
             </button>
         </div>
 
         <!-- Search & Filters -->
         <div class="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
             @if ($isStaff)
-                <form method="GET" action="{{ route('staff.user_management') }}" class="space-y-4" role="search"></form>
+                <form method="GET" action="{{ route('staff.user_management') }}" class="space-y-4" role="search">
             @else
                 <form method="GET" action="{{ route('admin.user_management') }}" class="space-y-4" role="search">
             @endif
 
-                <div class="flex flex-wrap lg:flex-nowrap items-center gap-3">
+                <div class="flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap items-stretch sm:items-center gap-3">
 
-                    <div class="flex-1 min-w-[200px]">
+                    <div class="flex-1 min-w-full sm:min-w-[200px]">
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,19 +174,19 @@
                             </div>
                             <input type="text" id="search" name="search" value="{{ request('search') }}"
                                 placeholder="Search by name or username..."
-                                class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all">
+                                class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all text-sm sm:text-base">
                         </div>
                     </div>
 
                     <!-- Filter Dropdown -->
                     <div class="relative w-full sm:w-auto">
                         <button type="button" onclick="toggleFilterDropdown()"
-                            class="w-full sm:w-auto flex items-center justify-between gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-sm transition-all duration-300 font-semibold whitespace-nowrap">
+                            class="w-full sm:w-auto flex items-center justify-center sm:justify-between gap-2 bg-gray-800 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:bg-gray-700 shadow-sm transition-all duration-300 font-semibold text-sm sm:text-base">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                             </svg>
-                            Filters
+                            <span>Filters</span>
                             <span id="filterCount"
                                 class="hidden ml-1 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-full">0</span>
                             <svg class="w-4 h-4 transition-transform" id="filterDropdownIcon" fill="none"
@@ -201,24 +273,24 @@
 
                     <div class="w-full sm:w-auto">
                         <button type="submit"
-                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
+                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-800 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-sm sm:text-base">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
-                            Search
+                            <span>Search</span>
                         </button>
                     </div>
 
                     @if(request('search') || request('roles') || request('user_status'))
                         <div class="w-full sm:w-auto">
                             <a href="{{ route('admin.user_management') }}"
-                                class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-all duration-300 font-semibold shadow-md whitespace-nowrap">
+                                class="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-all duration-300 font-semibold shadow-md text-sm sm:text-base">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M6 18L18 6M6 6l12 12" />
                                 </svg>
-                                Clear Filters
+                                <span class="whitespace-nowrap">Clear Filters</span>
                             </a>
                         </div>
                     @endif
@@ -707,6 +779,7 @@
                 </tbody>
             </table>
         </div>
+        
 
         <!-- Pagination -->
         @if($users->total() > 0)
@@ -788,8 +861,8 @@
 
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" name="email" id="email"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        <input novalidate name="email" id="email"
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white text-gray-800 dark:text-gray-800 px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         @error('email')
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                         @enderror
@@ -1027,8 +1100,8 @@
 
                         <div>
                             <label for="edit_email" class="block text-sm font-medium text-gray-700 mb-2">Email <span class="text-red-500">*</span></label>
-                            <input type="email" name="email" id="edit_email" required
-                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            <input novalidate name="email" id="edit_email" required
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 text-gray-800 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2386,68 +2459,7 @@ function editUser(userId) {
             return valid;
         }
 
-        function setupLiveValidation() {
-            // Add modal live validation
-            setupLiveValidationForForm(false);
-            // Edit modal live validation
-            setupLiveValidationForForm(true);
-        }
-
-        function setupLiveValidationForForm(isEdit) {
-            const getEl = (id) => document.getElementById(isEdit ? `edit_${id}` : id);
-            const passwordConf = document.getElementById(isEdit ? 'edit_password_confirmation' : 'password_confirmation');
-
-            const addV = (el, fn) => {
-                if (!el) return;
-                el.addEventListener('blur', () => fn(el));
-                el.addEventListener('input', () => { if (el.value.trim()) fn(el); });
-            };
-
-            addV(getEl('first_name'), (el) => { if (el.value.trim()) clearError(el); });
-            addV(getEl('last_name'), (el) => { if (el.value.trim()) clearError(el); });
-
-            addV(getEl('username'), (el) => {
-                if (el.value.trim().length >= 3) clearError(el);
-                else if (el.value.trim()) showError(el, 'Username must be at least 3 characters');
-            });
-
-            addV(getEl('email'), (el) => {
-                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (el.value.trim() && re.test(el.value)) clearError(el);
-                else if (el.value.trim()) showError(el, 'Please enter a valid email address');
-            });
-
-            const passwordEl = getEl('password');
-            addV(passwordEl, (el) => {
-                if (el.value && el.value.length >= 6) clearError(el);
-                else if (el.value) showError(el, 'Password must be at least 6 characters');
-            });
-
-            if (passwordEl && passwordConf) {
-                addV(passwordConf, (el) => {
-                    if (el.value && passwordEl.value === el.value) clearError(el);
-                    else if (el.value) showError(el, 'Passwords do not match');
-                });
-            }
-
-            addV(getEl('height'), (el) => {
-                const h = parseFloat(el.value);
-                if (el.value && (h <= 0 || h > 300)) showError(el, 'Please enter a valid height (1–300 cm)');
-                else if (el.value) clearError(el);
-            });
-
-            addV(getEl('weight'), (el) => {
-                const w = parseFloat(el.value);
-                if (el.value && (w <= 0 || w > 500)) showError(el, 'Please enter a valid weight (1–500 kg)');
-                else if (el.value) clearError(el);
-            });
-
-            addV(getEl('mobile_number'), (el) => {
-                const re = /^(09|\+639)\d{9}$/;
-                if (el.value && !re.test(el.value.trim())) showError(el, 'Enter a valid mobile number (e.g., 09123456789)');
-                else if (el.value) clearError(el);
-            });
-        }
+       
 
         function scrollToFirstError(form) {
             const firstError = form.querySelector('.error-message');
@@ -2709,23 +2721,84 @@ function submitApprovalForm(memberId, type, paymentMethod, referenceCode) {
         }
 
         function denyMember(memberId) {
-            if (typeof Swal === 'undefined') {
-                if (confirm('Deny this member?')) window.location.href = `/admin/user_crud/deny/${memberId}`;
-                return;
-            }
-            Swal.fire({
-                title: 'Deny Member?',
-                text: 'This member will not be able to access the system.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, deny',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) window.location.href = `/admin/user_crud/deny/${memberId}`;
-            });
-        }
+    const existing = document.getElementById('denyMemberModal');
+    if (existing) existing.remove();
+
+    const modalHTML = `
+        <div id="denyMemberModal" class="fixed inset-0 z-[9999] flex items-center justify-center">
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <div class="bg-gradient-to-r from-red-600 to-red-700 text-white p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold">Deny Member</h2>
+                            <p class="text-red-100 text-sm mt-1">This action will disable their membership</p>
+                        </div>
+                        <button type="button" id="closeDenyModalBtn" class="text-white/80 hover:text-white p-1">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </div>
+                    <p class="text-center text-gray-700 mb-6">Are you sure you want to deny this member? They will not be able to access the system.</p>
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+                        <div class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <div class="text-sm text-amber-800">
+                                <p class="font-semibold mb-1">What happens when you deny:</p>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li>Membership access is disabled immediately</li>
+                                    <li>Member cannot check in or use the gym</li>
+                                    <li>Account remains but membership is blocked</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="button" id="cancelDenyBtn"
+                            class="flex-1 px-6 py-3 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold transition-colors">
+                            Cancel
+                        </button>
+                        <button type="button" id="confirmDenyBtn"
+                            class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 font-semibold transition-all shadow-lg">
+                            Deny Member
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    const scrollY = window.scrollY;
+    document.body.dataset.scrollY = scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+
+    const closeDenyModal = () => {
+        const modal = document.getElementById('denyMemberModal');
+        if (!modal) return;
+        modal.remove();
+        unlockScroll();
+    };
+
+    document.getElementById('closeDenyModalBtn').addEventListener('click', closeDenyModal);
+    document.getElementById('cancelDenyBtn').addEventListener('click', closeDenyModal);
+    document.getElementById('confirmDenyBtn').addEventListener('click', () => {
+        closeDenyModal();
+        window.location.href = `/admin/user_crud/deny/${memberId}`;
+    });
+}
 
         // ===========================
         // SUSPEND / RESUME / CANCEL PLAN MODALS
