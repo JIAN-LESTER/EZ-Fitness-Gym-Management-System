@@ -170,17 +170,9 @@
           <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
           <div class="relative">
             <input type="text" id="username" name="username" placeholder="johndoe123"
-              class="w-full border border-gray-300 rounded-lg p-3 pr-10 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none"
+              class="w-full border border-gray-300 rounded-lg focus:ring-2 p-3 focus:ring-gray-400 focus:border-transparent focus:outline-none"
               value="{{ old('username') }}" autocomplete="username" />
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" id="username-status">
-              <span class="checking-spinner"></span>
-              <svg class="validation-icon-ok w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-              </svg>
-              <svg class="validation-icon-err w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-              </svg>
-            </span>
+ 
           </div>
           @error('username')
             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
@@ -193,17 +185,9 @@
           <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
           <div class="relative">
             <input id="email" name="email" placeholder="john@example.com" novalidate
-              class="w-full border border-gray-300 rounded-lg p-3 pr-10 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none"
+              class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none"
               value="{{ old('email') }}" autocomplete="email" />
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" id="email-status">
-              <span class="checking-spinner"></span>
-              <svg class="validation-icon-ok w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-              </svg>
-              <svg class="validation-icon-err w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-              </svg>
-            </span>
+            
           </div>
           @error('email')
             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
@@ -363,25 +347,8 @@
         }
       }
 
-      // ── Real-time async checks on blur (with debounce on input event) ────────
+    
 
-      // Username
-      const usernameStatusEl = document.getElementById('username-status');
-
-      async function validateUsernameAsync(value) {
-        const trimmed = value.trim();
-        if (!trimmed || trimmed.length < 4) return; // sync errors handled on submit
-
-        setStatus(usernameStatusEl, 'checking');
-        const taken = await checkField('username', trimmed);
-        if (taken) {
-          setStatus(usernameStatusEl, 'error');
-          showError(usernameInput, 'Username is already taken', 'username-error');
-        } else {
-          setStatus(usernameStatusEl, 'ok');
-          clearError(usernameInput, 'username-error');
-        }
-      }
 
       const debouncedUsernameCheck = debounce(validateUsernameAsync, 400);
       usernameInput.addEventListener('input', (e) => debouncedUsernameCheck(e.target.value));
@@ -389,28 +356,11 @@
 
       // Email
       const emailRegex     = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const emailStatusEl  = document.getElementById('email-status');
+   
       const emailHint      = document.getElementById('email-hint');
       const emailErrorEl   = document.getElementById('email-error');
 
-      async function validateEmailAsync(value) {
-        const trimmed = value.trim();
-        if (!trimmed || !emailRegex.test(trimmed)) return;
-
-        setStatus(emailStatusEl, 'checking');
-        const taken = await checkField('email', trimmed);
-        if (taken) {
-          setStatus(emailStatusEl, 'error');
-          emailErrorEl.textContent = 'Email is already taken';
-          emailErrorEl.className = 'error-message text-red-500 text-xs mt-1';
-          emailErrorEl.classList.remove('hidden');
-          emailHint.classList.add('hidden');
-        } else {
-          setStatus(emailStatusEl, 'ok');
-          clearError(emailInput, 'email-error');
-          emailHint.classList.remove('hidden');
-        }
-      }
+  
 
       const debouncedEmailCheck = debounce(validateEmailAsync, 400);
       emailInput.addEventListener('input', (e) => debouncedEmailCheck(e.target.value));
@@ -477,8 +427,7 @@
 
           if (!isValid) return;
 
-          // --- Async uniqueness checks: run BOTH in parallel via Promise.all ---
-          // Use cached results if the user already blurred those fields
+         
           const [usernameTaken, emailTaken] = await Promise.all([
             (usernameVal && usernameVal.length >= 4) ? checkField('username', usernameVal) : Promise.resolve(false),
             (emailVal && emailRegex.test(emailVal))  ? checkField('email', emailVal)       : Promise.resolve(false),
@@ -486,13 +435,13 @@
 
           if (usernameTaken) {
             showError(usernameInput, 'Username is already taken', 'username-error');
-            setStatus(usernameStatusEl, 'error');
+     
             isValid = false;
           }
 
           if (emailTaken) {
             showError(emailInput, 'Email is already taken', 'email-error');
-            setStatus(emailStatusEl, 'error');
+       
             isValid = false;
           }
 

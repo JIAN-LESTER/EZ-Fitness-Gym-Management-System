@@ -7,6 +7,7 @@ use App\Models\Member_Profile;
 use App\Models\member;
 use App\Models\MemberProfile;
 use App\Models\User;
+use DB;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
