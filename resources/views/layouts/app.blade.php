@@ -194,21 +194,30 @@
         sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false'
     }"
     x-init="
-        // Enable transitions after a brief delay
-        setTimeout(() => {
-            document.body.classList.add('sidebar-loaded');
-        }, 50);
-        
-        // Clean up initialization classes after Alpine loads
-        $nextTick(() => {
-            document.documentElement.classList.remove('sidebar-init-open', 'sidebar-init-closed');
-        });
-        
-        // Watch for changes and save to localStorage
-        $watch('sidebarOpen', val => {
-            localStorage.setItem('sidebarOpen', val);
-        });
-    "
+    setTimeout(() => {
+        document.body.classList.add('sidebar-loaded');
+        document.documentElement.classList.remove('sidebar-init-open', 'sidebar-init-closed');
+    }, 100);
+    
+    // Auto-collapse on mobile on initial load
+    if (window.innerWidth < 768) sidebarOpen = false;
+    
+    // Watch resize to auto-collapse when shrinking to mobile
+    window.addEventListener('resize', () => {
+        if (window.innerWidth < 768) sidebarOpen = false;
+    });
+
+    $watch('sidebarOpen', val => {
+        localStorage.setItem('sidebarOpen', val);
+        if (!val) {
+            document.documentElement.classList.add('sidebar-init-closed');
+            document.documentElement.classList.remove('sidebar-init-open');
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                document.documentElement.classList.remove('sidebar-init-closed');
+            }));
+        }
+    });
+"
     class="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
 <?php
