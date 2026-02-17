@@ -146,7 +146,9 @@
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Account Management</h2>
     <button onclick="openModal('addUserModal')"
         class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-800 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base">
-        <svg class="w-5 h-5"><!-- icon --></svg>
+       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
         <span>Add {{ $isStaff ? 'Member' : 'User' }}</span>
     </button>
 </div>
@@ -1281,14 +1283,16 @@
                         <div>
                             <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
                             <select name="role" id="role" onchange="toggleMemberFields('add')"
-                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
-                                <option value="member">Member</option>
-                                <option value="staff">Staff</option>
-                                @if($isSuperAdmin)
-                                    <option value="admin">Admin</option>
-                                    <option value="super_admin">Super Admin</option>
-                                @endif
-                            </select>
+    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+    <option value="member">Member</option>
+    <option value="staff">Staff</option>
+    @if($isAdmin || $isSuperAdmin)
+        <option value="admin">Admin</option>
+    @endif
+    @if($isSuperAdmin)
+        <option value="super_admin">Super Admin</option>
+    @endif
+</select>
                         </div>
                     @else
                         {{-- Staff: branch display only, role hidden --}}
@@ -1524,15 +1528,17 @@
                             <div>
                                 <label for="edit_role" class="block text-sm font-medium text-gray-700 mb-2">Role <span
                                         class="text-red-500">*</span></label>
-                                <select name="role" id="edit_role" onchange="toggleMemberFields('edit')"
-                                    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
-                                    <option value="member">Member</option>
-                                    <option value="staff">Staff</option>
-                                    @if($isSuperAdmin)
-                                        <option value="admin">Admin</option>
-                                        <option value="super_admin">Super Admin</option>
-                                    @endif
-                                </select>
+                               <select name="role" id="edit_role" onchange="toggleMemberFields('edit')"
+    class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+    <option value="member">Member</option>
+    <option value="staff">Staff</option>
+    @if($isAdmin || $isSuperAdmin)
+        <option value="admin">Admin</option>
+    @endif
+    @if($isSuperAdmin)
+        <option value="super_admin">Super Admin</option>
+    @endif
+</select>
                             </div>
 
                             <div>

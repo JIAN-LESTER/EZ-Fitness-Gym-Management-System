@@ -32,58 +32,62 @@ class AuthController extends Controller
         return view('authentication.register');
     }
 
-    public function register(Request $request)
+ public function register(Request $request)
     {
         $validated = $request->validate([
-            'email' => 'required|string|email|max:100|unique:users,email',
+            'email'      => 'required|string|email|max:100|unique:users,email',
             'first_name' => 'required|string|max:50',
-            'last_name' => 'required|string|max:50',
-            'username' => 'required|string|max:50|min:4|unique:users,username',
-            'password' => 'required|string|min:6|confirmed',
+            'last_name'  => 'required|string|max:50',
+            'username'   => 'required|string|max:50|min:4|unique:users,username',
+            'password'   => 'required|string|min:6|confirmed',
         ], [
-            'email.unique' => 'The email has already been taken',
-            'email.required' => 'Email is required',
-            'first_name.required' => 'First name is required',
-            'last_name.required' => 'Last name is required',
-            'username.unique' => 'The username has already been taken',
-            'username.required' => 'Username is required',
-            'password.required' => 'Password is required',
-            'password.min' => 'Password must be at least 6 characters',
-            'password.confirmed' => 'Password confirmation does not match',
+            'email.unique'          => 'The email has already been taken',
+            'email.required'        => 'Email is required',
+            'first_name.required'   => 'First name is required',
+            'last_name.required'    => 'Last name is required',
+            'username.unique'       => 'The username has already been taken',
+            'username.required'     => 'Username is required',
+            'password.required'     => 'Password is required',
+            'password.min'          => 'Password must be at least 6 characters',
+            'password.confirmed'    => 'Password confirmation does not match',
         ]);
 
-        $user = User::create([
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'username' => $validated['username'],
-            'email' => $validated['email'],
-            'password' => bcrypt($validated['password']),
-            'role' => 'member',
-            'status' => 'active',
-            'branch_id' => null, // **NEW: No branch assigned yet for self-registration**
-        ]);
-
-        $user->sendEmailVerificationNotification();
-
-        if ($user->role === 'member') {
-            MemberProfile::create([
-                'user_id' => $user->user_id,
-                'status' => 'inactive',
+        // Wrap DB writes in a transaction so nothing is left half-created on failure
+        $user = DB::transaction(function () use ($validated) {
+            $user = User::create([
+                'first_name' => $validated['first_name'],
+                'last_name'  => $validated['last_name'],
+                'username'   => $validated['username'],
+                'email'      => $validated['email'],
+                'password'   => bcrypt($validated['password']),
+                'role'       => 'member',
+                'status'     => 'active',
+                'branch_id'  => null,
             ]);
-        }
 
-        // **UPDATED: Remove branch_id from logs (will be fetched from user relationship)**
-        Logs::create([
-            'user_id' => $user->user_id,
-            'action' => "{$user->last_name} created his own account.",
-            'timestamp' => now(),
-        ]);
+            if ($user->role === 'member') {
+                MemberProfile::create([
+                    'user_id' => $user->user_id,
+                    'status'  => 'inactive',
+                ]);
+            }
+
+            Logs::create([
+                'user_id'   => $user->user_id,
+                'action'    => "{$user->last_name} created his own account.",
+                'timestamp' => now(),
+            ]);
+
+            return $user;
+        });
+
+        // Send verification email AFTER the transaction commits
+        $user->sendEmailVerificationNotification();
 
         return redirect()
             ->route('loginForm')
             ->with('success', 'Registration successful! Verification link has been sent to your email.');
     }
-
 
     public function login(Request $request)
     {
@@ -270,6 +274,20 @@ class AuthController extends Controller
     {
         return view('authentication.forgot-password');
     }
+
+    public function checkAvailability(Request $request)
+    {
+        $field = $request->query('field');
+        $value = $request->query('value');
+
+        if (!in_array($field, ['username', 'email']) || empty($value)) {
+            return response()->json(['taken' => false]);
+        }
+
+        $exists = User::where($field, $value)->exists();
+        return response()->json(['taken' => $exists]);
+    }
+
 
     /**
      * Handle the password reset link request.

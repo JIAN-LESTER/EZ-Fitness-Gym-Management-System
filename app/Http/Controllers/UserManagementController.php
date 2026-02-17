@@ -257,13 +257,13 @@ class UserManagementController extends Controller
     }
 
     // Role permission check: enforce who can create what roles
-    $requestedRole = $validated['role'] ?? 'member';
-    if ($currentUser->role === 'staff' && !in_array($requestedRole, ['member'])) {
-        return redirect()->back()->withErrors(['role' => 'Staff can only add members.'])->withInput();
-    }
-    if ($currentUser->role === 'admin' && in_array($requestedRole, ['admin', 'super_admin'])) {
-        return redirect()->back()->withErrors(['role' => 'Admins can only add members and staff.'])->withInput();
-    }
+$requestedRole = $validated['role'] ?? 'member';
+if ($currentUser->role === 'staff' && !in_array($requestedRole, ['member'])) {
+    return redirect()->back()->withErrors(['role' => 'Staff can only add members.'])->withInput();
+}
+if ($currentUser->role === 'admin' && in_array($requestedRole, ['super_admin'])) {
+    return redirect()->back()->withErrors(['role' => 'Admins cannot create Super Admin accounts.'])->withInput();
+}
 
     // Create user with auto-verified email
     $user = User::create([

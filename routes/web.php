@@ -207,3 +207,5 @@ Route::middleware(['auth', 'staff'])->group(function () {
     Route::get('/staff/products', [StaffController::class, 'productsIndex'])->name('staff.products.index');
     Route::get('/staff/sales-report', [StaffController::class, 'salesReport'])->name('staff.sales.report');
 });
+
+Route::get('/check-availability', [AuthController::class, 'checkAvailability'])->name('check.availability');

@@ -561,10 +561,6 @@
     </div>
 
 
-    {{-- ═══════════════════════════════════════════
-         MODALS (shared)
-    ═══════════════════════════════════════════ --}}
-
     <div id="confirmModal" class="modal-backdrop">
         <div class="modal-card">
             <h2 class="text-base font-bold text-gray-800 mb-1.5" id="confirmTitle">Confirm Action</h2>
