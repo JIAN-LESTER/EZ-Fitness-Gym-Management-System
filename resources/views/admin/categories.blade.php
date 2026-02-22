@@ -126,7 +126,7 @@
                             class="flex-1 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-all text-sm shadow-md">
                             Edit
                         </button>
-                        <button onclick='openDeleteModal(@json($category->category_id))'
+                        <button onclick='openDeleteModal("{{ route("categories.destroy", $category->category_id) }}", "{{ $category->name }}")'
                             class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all text-sm shadow-md">
                             Delete
                         </button>
@@ -265,7 +265,7 @@
                 </h3>
 
                 <p class="text-center text-gray-600 mb-6">
-                    Are you sure you want to delete <span class="font-bold text-red-600">{{ $category->name }}</span>? This action cannot be undone.
+                 Are you sure you want to delete <span id="deleteCategoryName" class="font-bold text-red-600"></span>?
                 </p>
 
                 <form id="deleteForm" method="POST" action="">
@@ -434,34 +434,27 @@
     }
 
     // Delete Modal with SweetAlert
-            function openDeleteModal(actionUrl) {
-    const form = document.getElementById('deleteForm');
-    form.action = actionUrl;
+        function openDeleteModal(actionUrl, categoryName) {
+    document.getElementById('deleteCategoryName').textContent = categoryName;
+    document.getElementById('deleteForm').action = actionUrl;
 
     const modal = document.getElementById('deleteModal');
     const scrollY = window.scrollY;
-
-    // Prevent body scroll
     document.body.style.position = 'fixed';
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = '100%';
     document.body.style.overflowY = 'scroll';
-
     modal.classList.remove('hidden');
 }
 
 function closeDeleteModal() {
     const modal = document.getElementById('deleteModal');
     const scrollY = document.body.style.top;
-
     modal.classList.add('hidden');
-
-    // Restore body scroll
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.width = '';
     document.body.style.overflowY = '';
-
     window.scrollTo(0, parseInt(scrollY || '0') * -1);
 }
 
@@ -517,17 +510,7 @@ function closeDeleteModal() {
             });
         }
     });
-
-    // I catch ang data inig toplok sa button ug i inject sa modal
-    function openDeleteModal(id, name) {
-        document.getElementById('modal-category-name').textContent = name;
-        document.getElementById('deleteForm').action = '/categories/' + id;
-        document.getElementById('deleteModal').classList.remove('hidden');
-    }
-
-    function closeDeleteModal() {
-        document.getElementById('deleteModal').classList.add('hidden');
-    }
+   
     </script>
 
 @endsection

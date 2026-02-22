@@ -11,7 +11,9 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libzip-dev \
     zip \
-    curl
+    curl \
+    nodejs \
+    npm
 
 # Install PHP extensions required by Laravel
 RUN docker-php-ext-install pdo pdo_mysql zip gd
@@ -22,14 +24,17 @@ RUN a2enmod rewrite
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy project file
+# Copy project files
 COPY . .
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Install PHP dependencies
+# Install PHP dependencies (no dev = no Telescope)
 RUN composer install --no-dev --optimize-autoloader
+
+# Install Node dependencies and build frontend assets (Vite + Tailwind)
+RUN npm ci && npm run build
 
 # Set permissions
 RUN chown -R www-data:www-data storage bootstrap/cache

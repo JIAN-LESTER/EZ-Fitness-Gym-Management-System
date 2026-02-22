@@ -107,14 +107,15 @@
                     <div
                         class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200">
                         <!-- Plan Header -->
-           
-                          <div class="mb-4">
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $plan->name }}</h3>
-                        <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full mb-2">
-                            {{ $plan->branch->name ?? 'N/A' }}
-                        </span>
-                        <p class="text-sm text-gray-600 line-clamp-2">{{ $plan->details }}</p>
-                    </div>
+
+                        <div class="mb-4">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $plan->name }}</h3>
+                            <span
+                                class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full mb-2">
+                                {{ $plan->branch->name ?? 'N/A' }}
+                            </span>
+                            <p class="text-sm text-gray-600 line-clamp-2">{{ $plan->details }}</p>
+                        </div>
 
                         <!-- Plan Details -->
                         <div class="space-y-3 mb-6">
@@ -127,9 +128,9 @@
                                 <span class="text-sm font-semibold text-gray-700">{{ $plan->duration_days }} days</span>
                             </div>
                             <!-- <div class="flex items-center justify-between py-2">
-                                <span class="text-sm text-gray-600 font-medium">Branch</span>
-                                <span class="text-sm font-semibold text-gray-700">{{ $plan->branch->name ?? 'N/A' }}</span>
-                            </div> -->
+                                        <span class="text-sm text-gray-600 font-medium">Branch</span>
+                                        <span class="text-sm font-semibold text-gray-700">{{ $plan->branch->name ?? 'N/A' }}</span>
+                                    </div> -->
                             <div class="flex items-center justify-between py-2">
                                 <span class="text-sm text-gray-600 font-medium">Members</span>
                                 <span class="text-sm font-semibold text-gray-700">{{ $plan->members_count }}</span>
@@ -142,7 +143,8 @@
                                 class="flex-1 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-all text-sm shadow-md">
                                 Edit
                             </button>
-                            <button onclick='openDeleteModal("{{ route('plans.destroy', $plan->plan_id) }}", "{{ $plan->name }}")'
+                            <button
+                                onclick='openDeleteModal("{{ route('plans.destroy', $plan->plan_id) }}", "{{ $plan->name }}")'
                                 class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all text-sm shadow-md">
                                 Delete
                             </button>
@@ -240,30 +242,35 @@
                         @enderror
                     </div>
 
+                    {{-- Details: textarea --}}
                     <div>
                         <label for="add_details" class="block text-sm font-medium text-gray-700 mb-2">Details</label>
-                        <input type="text" name="details" id="add_details"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
-                            placeholder="e.g., This plan is good for 1 year">
+                        <textarea name="details" id="add_details" rows="4"
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800 resize-none"
+                            placeholder="e.g., This plan includes unlimited access to all gym equipment..."></textarea>
                     </div>
-                    <div>
-                        <label for="add_price" class="block text-sm font-medium text-gray-700 mb-2">Price (₱)</label>
-                        <input type="number" name="price" id="add_price" step="0.01" min="0"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
-                            placeholder="0.00">
-                        @error('add_price')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
-                    </div>
-                    <div>
-                        <label for="add_duration" class="block text-sm font-medium text-gray-700 mb-2">Duration
-                            (Days)</label>
-                        <input type="number" name="duration_days" id="add_duration" min="1"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
-                            placeholder="30">
-                        @error('add_duration')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
+
+                    {{-- Price & Duration side by side --}}
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="add_price" class="block text-sm font-medium text-gray-700 mb-2">Price (₱)</label>
+                            <input type="number" name="price" id="add_price" step="0.01" min="0"
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
+                                placeholder="0.00">
+                            @error('add_price')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="add_duration" class="block text-sm font-medium text-gray-700 mb-2">Duration
+                                (Days)</label>
+                            <input type="number" name="duration_days" id="add_duration" min="1"
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"
+                                placeholder="30">
+                            @error('add_duration')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
                     </div>
                     <div
                         class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
@@ -323,25 +330,29 @@
 
                     <div>
                         <label for="edit_details" class="block text-sm font-medium text-gray-700 mb-2">Details</label>
-                        <input type="text" name="details" id="edit_details"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                        <textarea name="details" id="edit_details" rows="4"
+                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800 resize-none"></textarea>
                     </div>
-                    <div>
-                        <label for="edit_price" class="block text-sm font-medium text-gray-700 mb-2">Price (₱)</label>
-                        <input type="number" name="price" id="edit_price" step="0.01" min="0"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
-                        @error('edit_price')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
-                    </div>
-                    <div>
-                        <label for="edit_duration" class="block text-sm font-medium text-gray-700 mb-2">Duration
-                            (Days)</label>
-                        <input type="number" name="duration_days" id="edit_duration" min="1"
-                            class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
-                        @error('edit_duration')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                        @enderror
+
+                    {{-- Price & Duration side by side --}}
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit_price" class="block text-sm font-medium text-gray-700 mb-2">Price (₱)</label>
+                            <input type="number" name="price" id="edit_price" step="0.01" min="0"
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            @error('edit_price')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="edit_duration" class="block text-sm font-medium text-gray-700 mb-2">Duration
+                                (Days)</label>
+                            <input type="number" name="duration_days" id="edit_duration" min="1"
+                                class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800">
+                            @error('edit_duration')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
                     </div>
                     <div
                         class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200 sticky bottom-0 bg-white pb-2">
@@ -359,18 +370,19 @@
         </div>
     </div>
 
-     <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
         <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeDeleteModal()"></div>
 
         @php
-           
+
         @endphp
 
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
             <div class="p-6">
                 <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
                     <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                 </div>
 
@@ -379,7 +391,8 @@
                 </h3>
 
                 <p class="text-center text-gray-600 mb-6">
-                    Are you sure you want to delete <span id="deletePlanName" class="font-bold text-red-600"></span>? This action cannot be undone.
+                    Are you sure you want to delete <span id="deletePlanName" class="font-bold text-red-600"></span>? This
+                    action cannot be undone.
                 </p>
 
                 <form id="deleteForm" method="POST" action="">
@@ -513,57 +526,9 @@
                 valid = false;
             }
 
-            if (!valid && typeof toastr !== 'undefined') {
-                toastr.error('Please fix the errors in the form');
-            }
-
             return valid;
         }
 
-        function setupLiveValidation(form) {
-            const name = form.querySelector('[name="name"]');
-            const price = form.querySelector('[name="price"]');
-            const duration = form.querySelector('[name="duration_days"]');
-
-            // Name validation
-            name.addEventListener('blur', function () {
-                if (this.value.trim() && this.value.trim().length >= 3 && this.value.trim().length <= 100) {
-                    clearError(this);
-                }
-            });
-
-            name.addEventListener('input', function () {
-                if (this.value.trim() && this.value.trim().length >= 3) {
-                    clearError(this);
-                }
-            });
-
-            // Price validation
-            price.addEventListener('blur', function () {
-                if (this.value && parseFloat(this.value) > 0 && parseFloat(this.value) <= 999999.99) {
-                    clearError(this);
-                }
-            });
-
-            price.addEventListener('input', function () {
-                if (this.value && parseFloat(this.value) > 0) {
-                    clearError(this);
-                }
-            });
-
-            // Duration validation
-            duration.addEventListener('blur', function () {
-                if (this.value && parseInt(this.value) >= 1 && parseInt(this.value) <= 3650) {
-                    clearError(this);
-                }
-            });
-
-            duration.addEventListener('input', function () {
-                if (this.value && parseInt(this.value) >= 1) {
-                    clearError(this);
-                }
-            });
-        }
 
         function editPlan(plan) {
             document.getElementById('edit_name').value = plan.name;
@@ -576,42 +541,42 @@
                 document.getElementById('edit_branch').value = plan.branch_id;
             @endif
 
-            document.getElementById('editPlanForm').action = `/admin/plans/${plan.plan_id}`;
+            document.getElementById('editPlanForm').action = `/plans/${plan.plan_id}`;
             openModal('editPlanModal');
         }
 
-         function openDeleteModal(actionUrl, planName) {
-    const form = document.getElementById('deleteForm');
-    const nameSpan = document.getElementById('deletePlanName');
-    form.action = actionUrl;
-    nameSpan.textContent = planName;
+        function openDeleteModal(actionUrl, planName) {
+            const form = document.getElementById('deleteForm');
+            const nameSpan = document.getElementById('deletePlanName');
+            form.action = actionUrl;
+            nameSpan.textContent = planName;
 
-    const modal = document.getElementById('deleteModal');
-    const scrollY = window.scrollY;
+            const modal = document.getElementById('deleteModal');
+            const scrollY = window.scrollY;
 
-    // Prevent body scroll
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflowY = 'scroll';
+            // Prevent body scroll
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
+            document.body.style.overflowY = 'scroll';
 
-    modal.classList.remove('hidden');
-}
+            modal.classList.remove('hidden');
+        }
 
-function closeDeleteModal() {
-    const modal = document.getElementById('deleteModal');
-    const scrollY = document.body.style.top;
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            const scrollY = document.body.style.top;
 
-    modal.classList.add('hidden');
+            modal.classList.add('hidden');
 
-    // Restore body scroll
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.width = '';
-    document.body.style.overflowY = '';
+            // Restore body scroll
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            document.body.style.overflowY = '';
 
-    window.scrollTo(0, parseInt(scrollY || '0') * -1);
-}
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        }
 
         function submitDeleteForm(planId) {
             const form = document.createElement('form');
@@ -658,23 +623,10 @@ function closeDeleteModal() {
                         e.preventDefault();
                     }
                 });
-                setupLiveValidation(editPlanForm);
+
             }
 
-            // Toastr Configuration
-            if (typeof toastr !== 'undefined') {
-                toastr.options = {
-                    "closeButton": true,
-                    "progressBar": true,
-                    "positionClass": "toast-top-right",
-                    "timeOut": "3000",
-                    "extendedTimeOut": "1000",
-                    "showEasing": "swing",
-                    "hideEasing": "linear",
-                    "showMethod": "fadeIn",
-                    "hideMethod": "fadeOut"
-                };
-            }
+
         });
 
         // Close modals on Escape key

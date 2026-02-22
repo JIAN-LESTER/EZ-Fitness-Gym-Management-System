@@ -194,44 +194,63 @@
         sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false'
     }"
     x-init="
-        // Enable transitions after a brief delay
-        setTimeout(() => {
-            document.body.classList.add('sidebar-loaded');
-        }, 50);
-        
-        // Clean up initialization classes after Alpine loads
-        $nextTick(() => {
-            document.documentElement.classList.remove('sidebar-init-open', 'sidebar-init-closed');
-        });
-        
-        // Watch for changes and save to localStorage
-        $watch('sidebarOpen', val => {
-            localStorage.setItem('sidebarOpen', val);
-        });
-    "
+    setTimeout(() => {
+        document.body.classList.add('sidebar-loaded');
+        document.documentElement.classList.remove('sidebar-init-open', 'sidebar-init-closed');
+    }, 100);
+    
+    // Auto-collapse on mobile on initial load
+    if (window.innerWidth < 768) sidebarOpen = false;
+    
+    // Watch resize to auto-collapse when shrinking to mobile
+    window.addEventListener('resize', () => {
+        if (window.innerWidth < 768) sidebarOpen = false;
+    });
+
+    $watch('sidebarOpen', val => {
+        localStorage.setItem('sidebarOpen', val);
+        if (!val) {
+            document.documentElement.classList.add('sidebar-init-closed');
+            document.documentElement.classList.remove('sidebar-init-open');
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                document.documentElement.classList.remove('sidebar-init-closed');
+            }));
+        }
+    });
+"
     class="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
-
 <?php
-$user = Auth::user();
+$user = \App\Models\User::with(['member.plan', 'member.subscription', 'branch'])
+    ->find(Auth::id());
 $member = null;
+$plan   = null;
+$plans  = collect();
 
-// Only get member data if user is actually a member
 if ($user->role === 'member') {
-    $member = $user->member;
-    $plan = $member->plan ?? null;
-}
+    // Force direct DB query — bypass ORM identity map
+    $member = \App\Models\MemberProfile::with(['plan', 'subscription'])
+        ->where('user_id', $user->user_id)
+        ->first();
 
+    // $plan is the member's current membership plan
+    $plan = $member?->plan ?? null;
+
+    // $plans is the full list for the branch (needed by renewal modal)
+    if ($user->branch_id) {
+        $plans = \App\Models\MembershipPlan::where('branch_id', $user->branch_id)
+            ->orderBy('price')
+            ->get();
+    }
+}
 
 $selectedBranchId = null;
 
 if ($user->role === 'super_admin') {
-
-    $selectedBranchId = session('selected_branch_id'); 
+    $selectedBranchId = session('selected_branch_id');
 } elseif ($user->branch_id) {
     $selectedBranchId = $user->branch_id;
 }
-
 
 $pendingApprovalsCount = 0;
 
@@ -240,7 +259,6 @@ if (in_array($user->role, ['admin', 'super_admin', 'staff'])) {
         ->where('isDisabled', false);
 
     if ($selectedBranchId) {
-
         $query->whereHas('user', function ($q) use ($selectedBranchId) {
             $q->where('branch_id', $selectedBranchId);
         });
@@ -248,7 +266,6 @@ if (in_array($user->role, ['admin', 'super_admin', 'staff'])) {
 
     $pendingApprovalsCount = $query->count();
 }
-
 
 $lowStockCount = 0;
 
@@ -777,10 +794,9 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 
 @if($user->role === 'member')
     @php
-        $member = $user->member;
         $branches = \App\Models\Branches::orderBy('name')->get();
-        $membershipPlans = \App\Models\MembershipPlan::where('branch_id', $user->branch_id ?? null)->get();
-        $subscriptions = \App\Models\Subscriptions::where('branch_id', $user->branch_id ?? null)->get();
+              $membershipPlans = collect(); // safe empty default
+        $subscriptions = collect();  
     @endphp
 
     {{-- STEP 1: Complete Profile + Select Branch --}}
@@ -797,9 +813,8 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                     <p class="text-gray-100 text-sm mt-1">Step 1 of 3: Fill in your personal details and select a branch</p>
                 </div>
 
-                <form action="{{ route('profile.complete-member-profile') }}" method="POST" class="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(90vh-180px)]">
-                    @csrf
-                    @method('PUT')
+            <form id="completeProfileForm" action="{{ route('profile.complete-member-profile') }}" method="POST" class="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(90vh-180px)]">     @csrf
+       
 
                     {{-- Branch Selection --}}
                     <div class="space-y-4">
@@ -884,19 +899,24 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                         </div>
                     </div>
 
-                    <div class="flex justify-end pt-6 border-t border-gray-200">
-                        <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors shadow-lg">
-                            Continue to Plan Selection
-                        </button>
-                    </div>
+                    <div class="p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(90vh-250px)]">
+        ...content without the button...
+    </div>
+    <div class="flex justify-end p-6 border-t border-gray-200 bg-white">
+        <button type="submit" ...>Continue to Plan Selection</button>
+    </div>
                 </form>
             </div>
         </div>
     @endif
 
     {{-- STEP 2: Select Membership Plan --}}
-    @if($member && $member->sex && $member->birthday && $member->mobile_number && $user->branch_id && !$member->plan_id)
-        <div id="selectPlanModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+  @if($member && $member->sex && $member->birthday && $member->mobile_number && $user->branch_id && !$member->plan_id)
+    @php
+        $membershipPlans = \App\Models\MembershipPlan::where('branch_id', $user->branch_id)
+            ->orderBy('price')->get();
+    @endphp
+  <div id="selectPlanModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
             <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh]">
                 <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
                     <div class="flex items-center space-x-3">
@@ -963,11 +983,14 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                         </div>
 
                         @if(count($membershipPlans ?? []) > 0)
-                            <div class="flex justify-end pt-6 border-t border-gray-200">
-                                <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium">
-                                    Continue to Subscription
-                                </button>
-                            </div>
+                              <div class="p-6 overflow-y-auto max-h-[calc(90vh-260px)]">
+        ...plans grid...
+    </div>
+    @if(count($membershipPlans ?? []) > 0)
+    <div class="flex justify-end p-6 border-t border-gray-200 bg-white">
+        <button type="submit" ...>Continue to Subscription</button>
+    </div>
+    @endif
                         @endif
                     </form>
                 </div>
@@ -977,7 +1000,11 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 
     {{-- STEP 3: Select Subscription --}}
     @if($member && $member->plan_id && !$member->subscription_id && $member->subscription_status === 'pending_selection')
-        <div id="selectSubscriptionModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
+    @php
+        $subscriptions = \App\Models\Subscriptions::where('branch_id', $user->branch_id)
+            ->orderBy('price')->get();
+    @endphp
+    <div id="selectSubscriptionModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
             <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden max-h-[90vh]">
                 <div class="bg-gray-600 text-white p-5 rounded-t-2xl">
                     <div class="flex items-center space-x-3">
@@ -1038,13 +1065,16 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                             @endforelse
                         </div>
 
-                        @if(count($subscriptions ?? []) > 0)
-                            <div class="flex justify-end pt-6 border-t border-gray-200">
-                                <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium">
-                                    Submit for Approval
-                                </button>
-                            </div>
-                        @endif
+                        <div class="p-6 overflow-y-auto max-h-[calc(90vh-260px)]">
+        ... (intro block + subscriptions grid, WITHOUT button) ...
+    </div>
+    @if(count($subscriptions ?? []) > 0)
+    <div class="flex justify-end p-6 border-t border-gray-200 bg-white rounded-b-2xl">
+        <button type="submit" class="px-8 py-3 rounded-xl bg-gray-600 text-white hover:bg-gray-700 font-medium">
+            Submit for Approval
+        </button>
+    </div>
+    @endif
                     </form>
                 </div>
             </div>
@@ -1091,7 +1121,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                     </div>
 
                     <div class="space-y-3">
-                        <button onclick="checkApprovalStatus()" 
+                        <button onclick="checkApprovalStatus(this)" 
                             class="w-full px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 font-medium transition-colors flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -1208,7 +1238,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                 </div>
 
                 <div class="space-y-3">
-                    <button onclick="checkRenewalStatus()" 
+                    <button onclick="checkRenewalStatus(this)" 
                         id="renewalCheckBtn"
                         class="w-full px-6 py-3 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 font-medium transition-colors flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1507,7 +1537,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
                                 <select name="plan_id" id="plan_id" disabled
                                     class="block w-full rounded-xl border-gray-800 bg-gray-200 text-gray-800  px-4 py-3 focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                                     <option value="">Keep current plan</option>
-                                    @foreach($plans as $plan)
+                                    @foreach(($plans ?? []) as $plan)
                                         <option value="{{ $plan->plan_id }}" {{ $member->plan_id == $plan->plan_id ? 'selected' : '' }}>
                                             {{ $plan->name }}
                                         </option>
@@ -1619,7 +1649,8 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
         </div>
     </div>
 
-@if($user->role === 'member' && $member && isset($daysRemaining) && $daysRemaining === 0 && $member->status === 'expired' && !$member->renewal_pending)
+
+@if($user->role === 'member' && $member && $member->status === 'expired' && !$member->renewal_pending)
     {{-- Membership Expired - Renewal Required Modal --}}
     <div id="renewalRequiredModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50">
         <div class="relative bg-white text-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
@@ -1669,7 +1700,7 @@ if (in_array($user->role, ['admin', 'staff', 'super_admin'])) {
 
                     <div x-show="open" @click.away="open = false"
                          class="absolute mt-2 w-full max-w-xl bg-white border border-gray-300 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto">
-                        @foreach($plans as $plan)
+                       @foreach(($plans ?? []) as $plan)
                             <div @click="
                                     selected = '{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }} / {{ $plan->duration_days }} days';
                                     selectedId = '{{ $plan->plan_id }}';
@@ -1793,6 +1824,7 @@ const clearAllErrors = (form) => {
 };
 
 // Complete Profile Form Validation
+// Complete Profile Form Validation
 document.addEventListener('DOMContentLoaded', function () {
     const completeProfileForm = document.getElementById('completeProfileForm');
 
@@ -1801,20 +1833,10 @@ document.addEventListener('DOMContentLoaded', function () {
             let valid = true;
             clearAllErrors(this);
 
-            // Get Alpine.js data for plan selection
-            const planContainer = this.querySelector('[x-data]');
-            const planButton = planContainer?.querySelector('button');
-            const hiddenPlanInput = this.querySelector('input[name="plan_id"]');
-            
-            // Plan validation
-            if (!hiddenPlanInput || !hiddenPlanInput.value) {
-                if (planButton) {
-                    planButton.classList.add('border-red-500');
-                    const errorDiv = document.createElement('p');
-                    errorDiv.className = 'error-message text-red-600 text-xs mt-1 block';
-                    errorDiv.textContent = 'Please select a membership plan';
-                    planContainer.appendChild(errorDiv);
-                }
+            // Branch validation
+            const branch = this.querySelector('select[name="branch_id"]');
+            if (!branch || !branch.value) {
+                showError(branch, 'Please select a branch');
                 valid = false;
             }
 
@@ -2130,28 +2152,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-function checkRenewalStatus() {
-    const button = document.getElementById('renewalCheckBtn');
+function checkRenewalStatus(btn) {
+    const button = btn;
     const originalContent = button.innerHTML;
-    
+
     button.disabled = true;
-    button.innerHTML = `
-        <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-    `;
+    button.innerHTML = `<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>`;
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
-    
+
     if (!csrfToken) {
-        Toastify({
-            text: 'Security token not found. Please refresh the page.',
-            duration: 3000,
-            gravity: "top",
-            position: "right",
-            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-        }).showToast();
+        Notifications.toast('error', 'Security token not found. Please refresh the page.');
         button.disabled = false;
         button.innerHTML = originalContent;
         return;
@@ -2163,73 +2177,33 @@ function checkRenewalStatus() {
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': csrfToken.content,
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
         },
         credentials: 'same-origin'
     })
     .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return response.json();
     })
     .then(data => {
         console.log('Renewal approval status:', data);
-        
+
         if (data.status === 'approved') {
-            // Show success message
-            Toastify({
-                text: 'Your renewal has been approved! Redirecting...',
-                duration: 3000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #10b981, #059669)",
-            }).showToast();
-            
-            // Reload page after 2 seconds to show updated status
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-            
+            Notifications.toast('success', 'Your renewal has been approved! Redirecting...');
+            setTimeout(() => { window.location.reload(); }, 2000);
+
         } else if (data.status === 'rejected') {
-            // Hide renewal modal and show rejection message
             const renewalModal = document.getElementById('renewalCheckStatusModal');
             if (renewalModal) renewalModal.classList.add('hidden');
-            
-            Toastify({
-                text: data.message || 'Renewal was not approved',
-                duration: 5000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-            }).showToast();
-            
-            // Reload to show updated state
-            setTimeout(() => {
-                window.location.reload();
-            }, 3000);
-            
+            Notifications.toast('error', data.message || 'Renewal was not approved.');
+            setTimeout(() => { window.location.reload(); }, 3000);
+
         } else {
-            // Still pending
-            Toastify({
-                text: 'Renewal still pending approval. Please try again in a moment.',
-                duration: 3000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #f59e0b, #d97706)",
-            }).showToast();
+            Notifications.toast('warning', 'Renewal still pending approval. Please try again in a moment.');
         }
     })
     .catch(error => {
         console.error('Error checking renewal status:', error);
-        
-        Toastify({
-            text: 'Error checking status. Please try again.',
-            duration: 5000,
-            gravity: "top",
-            position: "right",
-            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-        }).showToast();
+        Notifications.toast('error', 'Error checking status. Please try again.');
     })
     .finally(() => {
         button.disabled = false;
@@ -2237,28 +2211,20 @@ function checkRenewalStatus() {
     });
 }
 
-function checkApprovalStatus() {
-    const button = event.target;
+function checkApprovalStatus(btn) {
+    const button = btn;
     const originalContent = button.innerHTML;
-    
+
     button.disabled = true;
-    button.innerHTML = `
-        <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-    `;
+    button.innerHTML = `<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>`;
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
-    
+
     if (!csrfToken) {
-        Toastify({
-            text: 'Security token not found. Please refresh the page.',
-            duration: 3000,
-            gravity: "top",
-            position: "right",
-            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-        }).showToast();
+        Notifications.toast('error', 'Security token not found. Please refresh the page.');
         button.disabled = false;
         button.innerHTML = originalContent;
         return;
@@ -2270,131 +2236,69 @@ function checkApprovalStatus() {
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': csrfToken.content,
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
         },
         credentials: 'same-origin'
     })
     .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return response.json();
     })
     .then(data => {
         console.log('Approval status:', data);
-        
+
         if (data.status === 'approved') {
-            // Hide waiting modal
             const waitingModal = document.getElementById('waitingSubscriptionApprovalModal');
             if (waitingModal) waitingModal.classList.add('hidden');
-            
-            // Show approved modal
+
             const approvedModal = document.getElementById('qrApprovedModal');
             if (approvedModal) {
                 approvedModal.classList.remove('hidden');
-                
-                // Update member data display
+
                 if (data.member_data) {
-                    const memberDataHTML = `
-                        <div class="mt-4 p-4 bg-gray-50 rounded-lg text-left space-y-2">
-                            <div>
-                                <p class="text-sm text-gray-600">Plan:</p>
-                                <p class="font-bold text-gray-800">${data.member_data.plan}</p>
-                                <p class="text-sm text-gray-500">${data.member_data.plan_price}</p>
-                            </div>
-                            <div class="border-t pt-2">
-                                <p class="text-sm text-gray-600">Subscription:</p>
-                                <p class="font-bold text-gray-800">${data.member_data.subscription}</p>
-                                <p class="text-sm text-gray-500">${data.member_data.subscription_price}</p>
-                            </div>
-                            <div class="border-t pt-2">
-                                <p class="text-sm text-gray-600">Valid Until:</p>
-                                <p class="font-bold text-gray-800">${data.member_data.end_date}</p>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Find and update the member data section
                     const memberDataSection = approvedModal.querySelector('.member-data-section');
                     if (memberDataSection) {
-                        memberDataSection.innerHTML = memberDataHTML;
+                        memberDataSection.innerHTML = `
+                            <div class="mt-4 p-4 bg-gray-50 rounded-lg text-left space-y-2">
+                                <div>
+                                    <p class="text-sm text-gray-600">Plan:</p>
+                                    <p class="font-bold text-gray-800">${data.member_data.plan}</p>
+                                    <p class="text-sm text-gray-500">${data.member_data.plan_price}</p>
+                                </div>
+                                <div class="border-t pt-2">
+                                    <p class="text-sm text-gray-600">Subscription:</p>
+                                    <p class="font-bold text-gray-800">${data.member_data.subscription}</p>
+                                    <p class="text-sm text-gray-500">${data.member_data.subscription_price}</p>
+                                </div>
+                                <div class="border-t pt-2">
+                                    <p class="text-sm text-gray-600">Valid Until:</p>
+                                    <p class="font-bold text-gray-800">${data.member_data.end_date}</p>
+                                </div>
+                            </div>`;
                     }
                 }
-                
-                // Show QR code if available
+
                 if (data.qr_code_url) {
                     const qrDisplay = document.getElementById('qrCodeDisplay');
                     const qrImage = document.getElementById('qrCodeImage');
-                    
                     if (qrDisplay && qrImage) {
                         qrImage.src = data.qr_code_url;
-                        qrDisplay.classList.remove('hidden');
-                        
-                        qrImage.onerror = function() {
-                            console.error('Failed to load QR code image');
-                            qrDisplay.innerHTML = `
-                                <div class="text-center py-4">
-                                    <p class="text-sm text-gray-600">QR code has been sent to your email</p>
-                                    <p class="text-xs text-gray-500 mt-1">Please check your inbox</p>
-                                </div>
-                            `;
-                        };
-                        
-                        qrImage.onload = function() {
-                            console.log('QR code loaded successfully');
-                        };
-                    }
-                } else {
-                    const qrDisplay = document.getElementById('qrCodeDisplay');
-                    if (qrDisplay) {
-                        qrDisplay.innerHTML = `
-                            <div class="text-center py-4">
-                                <p class="text-sm text-gray-600">QR code has been sent to your email</p>
-                                <p class="text-xs text-gray-500 mt-1">Please check your inbox</p>
-                            </div>
-                        `;
                         qrDisplay.classList.remove('hidden');
                     }
                 }
             }
-            
-            Toastify({
-                text: data.message || 'Your membership has been approved!',
-                duration: 5000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #10b981, #059669)",
-            }).showToast();
-            
+
+            Notifications.toast('success', data.message || 'Your membership has been approved!');
+
         } else if (data.status === 'rejected') {
-            Toastify({
-                text: data.message || 'Application was not approved',
-                duration: 5000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-            }).showToast();
-            
+            Notifications.toast('error', data.message || 'Application was not approved.');
+
         } else {
-            Toastify({
-                text: data.message || 'Still pending approval',
-                duration: 3000,
-                gravity: "top",
-                position: "right",
-                backgroundColor: "linear-gradient(to right, #f59e0b, #d97706)",
-            }).showToast();
+            Notifications.toast('warning', data.message || 'Still pending approval.');
         }
     })
     .catch(error => {
         console.error('Error checking approval status:', error);
-        
-        Toastify({
-            text: 'Error checking status. Please try again.',
-            duration: 5000,
-            gravity: "top",
-            position: "right",
-            backgroundColor: "linear-gradient(to right, #ef4444, #dc2626)",
-        }).showToast();
+        Notifications.toast('error', 'Error checking status. Please try again.');
     })
     .finally(() => {
         button.disabled = false;
