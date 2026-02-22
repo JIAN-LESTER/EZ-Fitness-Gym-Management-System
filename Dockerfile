@@ -1,7 +1,7 @@
 # Use official PHP with Apache
 FROM php:8.2-apache
 
-# Install system dependencies
+# Install system dependencies (Removed nodejs and npm from here!)
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -11,17 +11,17 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libzip-dev \
     zip \
-    curl \
-    nodejs \
-    npm
+    curl
+
+# Install official Node.js & NPM safely
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
 
 # Install PHP extensions required by Laravel
 RUN docker-php-ext-install pdo pdo_mysql zip gd
 
-# Fix the Apache MPM conflict and enable rewrite (Laravel needs this)
-# The || true ensures the build doesn't fail if the modules are already disabled
-RUN a2dismod mpm_event mpm_worker || true
-RUN a2enmod mpm_prefork rewrite
+# Enable Apache rewrite (Laravel needs this)
+RUN a2enmod rewrite
 
 # Set working directory
 WORKDIR /var/www/html
