@@ -162,21 +162,7 @@ let html5QrCode;
 let isScanning = false;
 let currentTab = 'scanner'; // mobile tab state
 
-// ─── Cooldown tracking ───────────────────────────────────────────────────────
-const COOLDOWN_MS = 60 * 1000;
-const scanCooldowns = {};
-let cooldownTimerInterval = null;
 
-function getRemainingCooldown(qrData) {
-    const last = scanCooldowns[qrData];
-    if (!last) return 0;
-    const elapsed = Date.now() - last;
-    return elapsed < COOLDOWN_MS ? COOLDOWN_MS - elapsed : 0;
-}
-
-function recordScan(qrData) {
-    scanCooldowns[qrData] = Date.now();
-}
 
 // ─── Mobile tab switching ────────────────────────────────────────────────────
 function switchTab(tab) {
@@ -262,7 +248,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 stopBtn.disabled  = true;
                 statusDiv.textContent = 'Scanner stopped';
                 statusDiv.className   = 'mt-3 text-center text-sm text-gray-600';
-                clearCooldownTimer();
             } catch (err) {
                 console.error('Stop error:', err);
             }
@@ -271,19 +256,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── Scan success handler ─────────────────────────────────────────────────
     function onScanSuccess(decodedText, decodedResult) {
-        const remaining = getRemainingCooldown(decodedText);
-        if (remaining > 0) {
-            showCooldownWarning(remaining, decodedText);
-            return;
-        }
-
         html5QrCode.pause();
-        clearCooldownTimer();
 
         statusDiv.textContent = 'Processing…';
         statusDiv.className   = 'mt-3 text-center text-sm text-yellow-600 font-semibold';
-
-        recordScan(decodedText);
 
         fetch('{{ route('attendance.scan') }}', {
             method: 'POST',
@@ -302,13 +278,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 flashAttendanceBadge();
             } else {
                 showError(data.message);
-                delete scanCooldowns[decodedText];
             }
             resumeAfterDelay(3000);
         })
         .catch(error => {
             showError('Network error: ' + error.message);
-            delete scanCooldowns[decodedText];
             resumeAfterDelay(3000);
         });
     }
@@ -326,61 +300,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }, ms);
     }
 
-    // ── Cooldown UI ──────────────────────────────────────────────────────────
-    function showCooldownWarning(remainingMs, qrData) {
-        clearCooldownTimer();
-        const updateUI = () => {
-            const ms = getRemainingCooldown(qrData);
-            if (ms <= 0) {
-                clearCooldownTimer();
-                if (isScanning) {
-                    statusDiv.textContent = 'Scanning… Point camera at QR code';
-                    statusDiv.className   = 'mt-3 text-center text-sm text-green-600 font-semibold';
-                }
-                resultContainer.innerHTML = defaultResultHTML();
-                return;
-            }
-            const secondsLeft  = Math.ceil(ms / 1000);
-            const percentage   = (ms / COOLDOWN_MS) * 100;
-            statusDiv.textContent = `Cooldown: ${secondsLeft}s remaining`;
-            statusDiv.className   = 'mt-3 text-center text-sm text-orange-600 font-semibold';
-            resultContainer.innerHTML = `
-                <div class="text-center">
-                    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3 border-4 border-orange-400">
-                        <svg class="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <h4 class="text-lg sm:text-xl font-bold text-orange-600 mb-1">Cooldown Active</h4>
-                    <p class="text-xs sm:text-sm text-gray-500 mb-3">This member must wait before scanning again.</p>
-                    <div class="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-3">
-                        <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#fed7aa" stroke-width="3"/>
-                            <circle id="cooldown-ring" cx="18" cy="18" r="15.9" fill="none" stroke="#f97316" stroke-width="3"
-                                stroke-dasharray="${percentage.toFixed(1)} 100" stroke-linecap="round"/>
-                        </svg>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <span class="text-xl sm:text-2xl font-bold text-orange-600">${secondsLeft}</span>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-400">Scanner is ready for other members</p>
-                </div>
-            `;
-        };
-        updateUI();
-        cooldownTimerInterval = setInterval(updateUI, 1000);
-    }
 
-    function clearCooldownTimer() {
-        if (cooldownTimerInterval !== null) {
-            clearInterval(cooldownTimerInterval);
-            cooldownTimerInterval = null;
-        }
-    }
 
     // ── Success / error displays ─────────────────────────────────────────────
     function showCheckInSuccess(data) {
-        clearCooldownTimer();
         resultContainer.innerHTML = `
             <div class="text-center">
                 <div class="w-12 h-12 sm:w-16 sm:h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -400,7 +323,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showCheckOutSuccess(data) {
-        clearCooldownTimer();
         resultContainer.innerHTML = `
             <div class="text-center">
                 <div class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -422,7 +344,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showError(message) {
-        clearCooldownTimer();
         resultContainer.innerHTML = `
             <div class="text-center">
                 <div class="w-12 h-12 sm:w-16 sm:h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
