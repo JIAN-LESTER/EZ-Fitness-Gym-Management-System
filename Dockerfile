@@ -18,8 +18,10 @@ RUN apt-get update && apt-get install -y \
 # Install PHP extensions required by Laravel
 RUN docker-php-ext-install pdo pdo_mysql zip gd
 
-# Enable Apache rewrite (Laravel needs this)
-RUN a2enmod rewrite
+# Fix the Apache MPM conflict and enable rewrite (Laravel needs this)
+# The || true ensures the build doesn't fail if the modules are already disabled
+RUN a2dismod mpm_event mpm_worker || true
+RUN a2enmod mpm_prefork rewrite
 
 # Set working directory
 WORKDIR /var/www/html
