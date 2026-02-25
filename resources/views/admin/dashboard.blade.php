@@ -1219,4 +1219,4 @@
         </script>
     </body>
 
-@endsection
+@endsection 

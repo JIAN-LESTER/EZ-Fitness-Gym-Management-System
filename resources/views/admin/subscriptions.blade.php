@@ -104,13 +104,13 @@
         </div>
 
         <!-- Cards Grid -->
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
             @forelse($subscriptions as $subscription)
                 @if($loop->first)
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @endif
 
-                <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200">
+                <div class="bg-white border-2 border-gray-200 rounded-2xl p-4 sm:p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200">
                     <!-- Subscription Header -->
                     <div class="mb-4">
                         <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $subscription->name }}</h3>

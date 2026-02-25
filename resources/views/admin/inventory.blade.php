@@ -57,6 +57,19 @@
 .clickable-row:hover {
     background-color: #f9fafb;
 }
+
+/* Mobile Responsive Utilities */
+@media (max-width: 640px) {
+    #filterDropdown {
+        position: fixed;
+        left: 0;
+        right: 0;
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        max-height: 90vh;
+    }
+}
 </style>
 
 @section('content')
@@ -64,22 +77,23 @@
 
         <!-- Header / Add Button -->
         <div class="flex justify-between items-center p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-800">Products Management</h2>
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Products Management</h2>
             <button onclick="openModal('addProductModal')"
-                class="flex items-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5">
+                class="flex items-center gap-2 bg-gray-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap text-sm sm:text-base">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
-                Add Product
+                <span class="hidden sm:inline">Add Product</span>
+                <span class="sm:hidden">Add</span>
             </button>
         </div>
 
         <!-- Search and Filter Section -->
-        <div class="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
-            <form method="GET" action="{{ route('products.index') }}" class="space-y-4" role="search">
-                <div class="flex flex-wrap lg:flex-nowrap items-center gap-3">
+        <div class="p-3 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <form method="GET" action="{{ route('products.index') }}" class="space-y-3 sm:space-y-4" role="search">
+                <div class="flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap items-stretch sm:items-center gap-3">
                     <!-- Search Input -->
-                    <div class="flex-1 min-w-[200px]">
+                    <div class="flex-1 min-w-full sm:min-w-[200px]">
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,98 +102,102 @@
                             </div>
                             <input type="text" id="search" name="search" value="{{ request('search') }}"
                                 placeholder="Search by name or description..."
-                                class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all">
+                                class="pl-10 w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400 shadow-sm transition-all text-sm sm:text-base">
                         </div>
                     </div>
 
-                    <!-- Filter Dropdown -->
-                    <div class="relative w-full sm:w-auto">
-                        <button type="button" onclick="toggleFilterDropdown()"
-                            class="w-full sm:w-auto flex items-center justify-between gap-2 bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-xl hover:border-gray-300 shadow-sm transition-all duration-300 font-semibold whitespace-nowrap">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                            </svg>
-                            Filters
-                            <span id="filterCount" class="hidden ml-1 px-2 py-0.5 text-xs bg-gray-800 text-white rounded-full">0</span>
-                            <svg class="w-4 h-4 transition-transform" id="filterDropdownIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
+                    <!-- Filter and Search Buttons Row -->
+                    <div class="flex gap-2 sm:gap-3 w-full sm:w-auto">
+                        <!-- Filter Dropdown -->
+                        <div class="relative flex-1 sm:flex-initial">
+                            <button type="button" onclick="toggleFilterDropdown()"
+                                class="w-full flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 px-4 sm:px-6 py-3 rounded-xl hover:border-gray-300 shadow-sm transition-all duration-300 font-semibold whitespace-nowrap text-sm sm:text-base">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                                </svg>
+                                <span class="hidden sm:inline">Filters</span>
+                                <span class="sm:hidden">Filter</span>
+                                <span id="filterCount" class="hidden ml-1 px-2 py-0.5 text-xs bg-gray-800 text-white rounded-full">0</span>
+                                <svg class="w-4 h-4 transition-transform" id="filterDropdownIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
 
-                        <!-- Filter Dropdown Content -->
-                        <div id="filterDropdown" class="hidden fixed mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 max-h-[calc(100vh-200px)] overflow-y-auto z-[9999]">
-                            <div class="p-4 space-y-4">
-                                <!-- Category Filter -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-3">Filter by Category</label>
-                                    <div class="space-y-2">
-                                        @foreach($categories as $category)
+                            <!-- Filter Dropdown Content -->
+                            <div id="filterDropdown" class="hidden fixed sm:absolute mt-2 w-full sm:w-80 bg-white rounded-xl sm:rounded-xl shadow-xl border border-gray-200 max-h-[calc(100vh-200px)] overflow-y-auto z-[9999] left-0 sm:left-auto right-0 sm:right-0">
+                                <div class="p-4 space-y-4">
+                                    <!-- Category Filter -->
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-3">Filter by Category</label>
+                                        <div class="space-y-2">
+                                            @foreach($categories as $category)
+                                                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                                    <input type="checkbox" name="categories[]" value="{{ $category->category_id }}"
+                                                        {{ in_array($category->category_id, request('categories', [])) ? 'checked' : '' }} onchange="updateFilterCount()"
+                                                        class="w-4 h-4 text-gray-600 rounded focus:ring-2 focus:ring-gray-500">
+                                                    <span class="ml-3 text-sm font-medium text-gray-700">{{ $category->name }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-gray-200"></div>
+
+                                    <!-- Status Filter -->
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-3">Filter by Status</label>
+                                        <div class="space-y-2">
                                             <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-                                                <input type="checkbox" name="categories[]" value="{{ $category->category_id }}"
-                                                    {{ in_array($category->category_id, request('categories', [])) ? 'checked' : '' }} onchange="updateFilterCount()"
-                                                    class="w-4 h-4 text-gray-600 rounded focus:ring-2 focus:ring-gray-500">
-                                                <span class="ml-3 text-sm font-medium text-gray-700">{{ $category->name }}</span>
+                                                <input type="checkbox" name="product_status[]" value="available" {{ in_array('available', request('product_status', [])) ? 'checked' : '' }}
+                                                    onchange="updateFilterCount()"
+                                                    class="w-4 h-4 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                                                <span class="ml-3 text-sm font-medium text-gray-700">Available</span>
+                                                <span class="ml-auto px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Available</span>
                                             </label>
-                                        @endforeach
+
+                                            <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                                                <input type="checkbox" name="product_status[]" value="unavailable"
+                                                    {{ in_array('unavailable', request('product_status', [])) ? 'checked' : '' }}
+                                                    onchange="updateFilterCount()"
+                                                    class="w-4 h-4 text-red-600 rounded focus:ring-2 focus:ring-red-500">
+                                                <span class="ml-3 text-sm font-medium text-gray-700">Unavailable</span>
+                                                <span class="ml-auto px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">Unavailable</span>
+                                            </label>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="border-t border-gray-200"></div>
-
-                                <!-- Status Filter -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-3">Filter by Status</label>
-                                    <div class="space-y-2">
-                                        <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-                                            <input type="checkbox" name="product_status[]" value="available" {{ in_array('available', request('product_status', [])) ? 'checked' : '' }}
-                                                onchange="updateFilterCount()"
-                                                class="w-4 h-4 text-green-600 rounded focus:ring-2 focus:ring-green-500">
-                                            <span class="ml-3 text-sm font-medium text-gray-700">Available</span>
-                                            <span class="ml-auto px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Available</span>
-                                        </label>
-
-                                        <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-                                            <input type="checkbox" name="product_status[]" value="unavailable"
-                                                {{ in_array('unavailable', request('product_status', [])) ? 'checked' : '' }}
-                                                onchange="updateFilterCount()"
-                                                class="w-4 h-4 text-red-600 rounded focus:ring-2 focus:ring-red-500">
-                                            <span class="ml-3 text-sm font-medium text-gray-700">Unavailable</span>
-                                            <span class="ml-auto px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">Unavailable</span>
-                                        </label>
+                                    <!-- Action Buttons -->
+                                    <div class="border-t border-gray-200 pt-4 flex gap-2">
+                                        <button type="button" onclick="clearAllFilters()"
+                                            class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                            Clear All
+                                        </button>
+                                        <button type="submit"
+                                            class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
+                                            Apply Filters
+                                        </button>
                                     </div>
-                                </div>
-
-                                <!-- Action Buttons -->
-                                <div class="border-t border-gray-200 pt-4 flex gap-2">
-                                    <button type="button" onclick="clearAllFilters()"
-                                        class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                                        Clear All
-                                    </button>
-                                    <button type="submit"
-                                        class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
-                                        Apply Filters
-                                    </button>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Search Button -->
-                    <div class="w-full sm:w-auto">
-                        <button type="submit"
-                            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                            Search
-                        </button>
+                        <!-- Search Button -->
+                        <div class="flex-1 sm:flex-initial">
+                            <button type="submit"
+                                class="w-full flex items-center justify-center gap-2 bg-gray-800 text-white px-4 sm:px-6 py-3 rounded-xl hover:bg-gray-700 shadow-md hover:shadow-lg transition-all duration-300 font-semibold whitespace-nowrap text-sm sm:text-base">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                                <span class="hidden sm:inline">Search</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Clear Filters -->
                     @if(request('search') || request('categories') || request('product_status'))
                         <div class="w-full sm:w-auto">
                             <a href="{{ route('products.index') }}"
-                                class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-all duration-300 font-semibold shadow-md whitespace-nowrap">
+                                class="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-all duration-300 font-semibold shadow-md whitespace-nowrap text-sm sm:text-base">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
@@ -191,17 +209,17 @@
             </form>
         </div>
 
-        <!-- Products Table -->
-        <div class="overflow-x-auto">
+        <!-- Products Table - Desktop View -->
+        <div class="hidden lg:block overflow-x-auto">
             <table class="min-w-full">
                 <thead>
                     <tr class="bg-gray-50 border-b border-gray-200">
-                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
-                        <th class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Branch</th>
-                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Price</th>
-                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Quantity</th>
-                        <th class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Branch</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Price</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Quantity</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
 
@@ -210,9 +228,9 @@
                         <tr class="clickable-row hover:bg-gray-50 transition-colors group" 
                             onclick="showProduct('{{ $inventory->product->product_id }}')">
 
-                            <td class="px-3 sm:px-6 py-3 sm:py-4">
+                            <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shadow flex-shrink-0">
+                                    <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shadow shrink-0">
                                         @if($inventory->product && $inventory->product->image)
                                             <img
                                                 src="{{ asset('storage/' . $inventory->product->image) }}"
@@ -230,13 +248,13 @@
 
                                     <div class="min-w-0 flex-1">
                                         @if($inventory->product)
-                                            <p class="font-semibold text-gray-900 truncate max-w-[180px] sm:max-w-[250px]">
+                                            <p class="font-semibold text-gray-900 truncate">
                                                 {{ $inventory->product->name }}
                                             </p>
                                             <p class="text-xs text-gray-500 mt-0.5">
                                                 {{ $inventory->product && $inventory->product->category ? $inventory->product->category->name : 'No Category' }}
                                             </p>
-                                            <p class="text-gray-500 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-[280px] mt-0.5">
+                                            <p class="text-gray-500 text-sm truncate mt-0.5">
                                                 {{ Str::limit($inventory->product->description, 60) }}
                                             </p>
                                         @else
@@ -246,19 +264,19 @@
                                 </div>
                             </td>
 
-                            <td class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4 text-gray-700 text-sm">
+                            <td class="px-6 py-4 text-gray-700 text-sm">
                                 {{ $inventory->product && $inventory->product->branch ? $inventory->product->branch->name : 'N/A' }}
                             </td>
 
-                            <td class="px-3 sm:px-6 py-3 sm:py-4 text-gray-700 font-semibold text-sm whitespace-nowrap">
+                            <td class="px-6 py-4 text-gray-700 font-semibold text-sm whitespace-nowrap">
                                 ₱{{ $inventory->product ? number_format($inventory->product->price, 2) : '0.00' }}
                             </td>
                             
-                            <td class="px-3 sm:px-6 py-3 sm:py-4 text-gray-700 font-semibold text-sm whitespace-nowrap">
+                            <td class="px-6 py-4 text-gray-700 font-semibold text-sm whitespace-nowrap">
                                 {{ number_format($inventory->quantity ?? 0, 0) }}
                             </td>
 
-                            <td class="hidden lg:table-cell px-3 sm:px-6 py-3 sm:py-4">
+                            <td class="px-6 py-4">
                                 @if($inventory->product)
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap
                                         {{ $inventory->product->status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
@@ -268,7 +286,7 @@
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap bg-gray-100 text-gray-700">N/A</span>
                                 @endif
                             </td>
-                          
+                        
                             <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
                                 <div class="relative inline-block text-left">
                                     <button onclick="toggleActionsMenu(event, '{{ $inventory->product->product_id }}')"
@@ -309,13 +327,13 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-3 sm:px-6 py-8 sm:py-12 text-center text-gray-500">
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
                                 <div class="flex flex-col items-center justify-center">
-                                    <svg class="w-12 h-12 sm:w-16 sm:h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                     </svg>
-                                    <p class="text-base sm:text-lg font-medium">No products found</p>
-                                    <p class="text-xs sm:text-sm mt-1">Try adjusting your search or filter criteria</p>
+                                    <p class="text-lg font-medium">No products found</p>
+                                    <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
                                 </div>
                             </td>
                         </tr>
@@ -324,10 +342,104 @@
             </table>
         </div>
 
+        <!-- Products Cards - Mobile View -->
+        <div class="lg:hidden divide-y divide-gray-200">
+            @forelse($products as $inventory)
+                <div class="p-4 hover:bg-gray-50 transition-colors" onclick="showProduct('{{ $inventory->product->product_id }}')">
+                    <!-- Product Header -->
+                    <div class="flex gap-3 mb-3">
+                        <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shadow shrink-0">
+                            @if($inventory->product && $inventory->product->image)
+                                <img
+                                    src="{{ asset('storage/' . $inventory->product->image) }}"
+                                    alt="{{ $inventory->product->name }}"
+                                    class="w-full h-full object-cover"
+                                >
+                            @else
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                </svg>
+                            @endif
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            @if($inventory->product)
+                                <p class="font-semibold text-gray-900 text-sm truncate">{{ $inventory->product->name }}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">
+                                    {{ $inventory->product->category ? $inventory->product->category->name : 'No Category' }}
+                                </p>
+                                @if($inventory->product)
+                                    <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full
+                                        {{ $inventory->product->status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        {{ ucfirst($inventory->product->status) }}
+                                    </span>
+                                @endif
+                            @else
+                                <p class="text-gray-500 text-sm">No Product</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Product Details Grid -->
+                    <div class="grid grid-cols-3 gap-3 mb-3">
+                        <div>
+                            <p class="text-xs text-gray-500">Price</p>
+                            <p class="font-semibold text-gray-900 text-sm">₱{{ $inventory->product ? number_format($inventory->product->price, 2) : '0.00' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Quantity</p>
+                            <p class="font-semibold text-gray-900 text-sm">{{ number_format($inventory->quantity ?? 0, 0) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Branch</p>
+                            <p class="font-medium text-gray-900 text-xs truncate">{{ $inventory->product && $inventory->product->branch ? $inventory->product->branch->name : 'N/A' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    @if($inventory->product && $inventory->product->description)
+                        <p class="text-xs text-gray-600 line-clamp-2 mb-3">{{ $inventory->product->description }}</p>
+                    @endif
+
+                    <!-- Actions -->
+                    <div class="flex gap-2" onclick="event.stopPropagation()">
+                        <button onclick="editProduct('{{ $inventory->product->product_id }}')"
+                            class="flex-1 px-3 py-2 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-3.5 h-3.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                            </svg>
+                            Edit
+                        </button>
+                        <button onclick="openDeleteModal('{{ route('products.destroy', $inventory->product->product_id) }}', '{{ $inventory->product->name }}')"
+                            class="flex-1 px-3 py-2 text-xs font-medium bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-3.5 h-3.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                            </svg>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            @empty
+                <div class="px-4 py-12 text-center text-gray-500">
+                    <div class="flex flex-col items-center justify-center">
+                        <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                        </svg>
+                        <p class="text-lg font-medium">No products found</p>
+                        <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                    </div>
+                </div>
+            @endforelse
+        </div>
+
         <!-- Pagination -->
         @if($products->total() > 0)
             <div class="flex flex-col sm:flex-row items-center justify-between p-4 sm:p-6 bg-gray-50 border-t border-gray-200 gap-4">
-                <div class="text-sm text-gray-600">
+                <div class="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                     Showing <span class="font-semibold text-gray-900">{{ $products->firstItem() }}</span> to
                     <span class="font-semibold text-gray-900">{{ $products->lastItem() }}</span> of
                     <span class="font-semibold text-gray-900">{{ $products->total() }}</span> products
@@ -335,19 +447,19 @@
 
                 <div class="flex gap-2">
                     @if($products->onFirstPage())
-                        <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Prev</span>
+                        <span class="px-3 sm:px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium text-sm">Prev</span>
                     @else
-                        <a href="{{ $products->previousPageUrl() }}" class="px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-gray-700 shadow-md transition-all duration-200 font-medium">Prev</a>
+                        <a href="{{ $products->previousPageUrl() }}" class="px-3 sm:px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-gray-700 shadow-md transition-all duration-200 font-medium text-sm">Prev</a>
                     @endif
 
-                    <span class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium sm:hidden">
+                    <span class="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium text-sm">
                         {{ $products->currentPage() }} / {{ $products->lastPage() }}
                     </span>
 
                     @if($products->hasMorePages())
-                        <a href="{{ $products->nextPageUrl() }}" class="px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-gray-700 shadow-md transition-all duration-200 font-medium">Next</a>
+                        <a href="{{ $products->nextPageUrl() }}" class="px-3 sm:px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-gray-700 shadow-md transition-all duration-200 font-medium text-sm">Next</a>
                     @else
-                        <span class="px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium">Next</span>
+                        <span class="px-3 sm:px-4 py-2 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium text-sm">Next</span>
                     @endif
                 </div>
             </div>
@@ -355,16 +467,16 @@
     </div>
 
     <!-- Add Product Modal -->
-    <div id="addProductModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+    <div id="addProductModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden p-4">
         <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeModal('addProductModal')"></div>
 
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
-            <header class="bg-gray-800 text-white p-5 rounded-t-2xl flex-shrink-0">
-                <h2 class="text-xl font-semibold">Add New Product</h2>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <header class="bg-gray-800 text-white p-4 sm:p-5 rounded-t-2xl shrink-0">
+                <h2 class="text-lg sm:text-xl font-semibold">Add New Product</h2>
             </header>
 
             <div class="overflow-y-auto flex-1 modal-scrollbar">
-                <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="p-6 md:p-8 space-y-6">
+                <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
                     @csrf
 
                     <!-- Image Upload -->
@@ -441,7 +553,7 @@
                         @enderror
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="price" class="block text-sm font-medium text-gray-700">Price (₱) <span class="text-red-500">*</span></label>
                             <input type="number" step="0.01" name="price" id="price" required min="0" placeholder="₱ ---"
@@ -511,7 +623,7 @@
         <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeModal('editProductModal')"></div>
 
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <header class="bg-gray-800 text-white p-4 sm:p-5 rounded-t-2xl flex-shrink-0">
+            <header class="bg-gray-800 text-white p-4 sm:p-5 rounded-t-2xl shrink-0">
                 <h2 class="text-lg sm:text-xl font-semibold">Edit Product</h2>
             </header>
 
@@ -579,7 +691,7 @@
                             class="mt-1 block w-full rounded-lg border-2 text-gray-800 border-gray-300 bg-white px-4 py-2 focus:ring-2 focus:ring-gray-800 focus:border-gray-800"></textarea>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="edit_price" class="block text-sm font-medium text-gray-700">Price (₱) <span class="text-red-500">*</span></label>
                             <input type="number" step="0.01" name="price" id="edit_price" required min="0" placeholder="₱ ---"
@@ -614,7 +726,7 @@
     </div>
 
     <!-- Delete Modal -->
-    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden p-4">
         <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeDeleteModal()"></div>
 
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
@@ -732,10 +844,6 @@
         const dropdown = document.getElementById('filterDropdown');
         const button = event.target.closest('button');
         const icon = document.getElementById('filterDropdownIcon');
-
-        const rect = button.getBoundingClientRect();
-        dropdown.style.left = rect.left + 'px';
-        dropdown.style.top = (rect.bottom + window.scrollY + 8) + 'px';
 
         dropdown.classList.toggle('hidden');
         icon.classList.toggle('rotate-180');
@@ -899,26 +1007,25 @@
         const content = document.getElementById('productShowContent');
         const statusColor = product.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
 
-        let html = `<div class="space-y-5">`;
+        let html = `<div class="space-y-4 sm:space-y-5">`;
 
         // Product Image
         if (product.image) {
             html += `
                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <img src="/storage/${product.image}" alt="${product.name}" class="w-full h-64 object-cover rounded-lg">
+                    <img src="/storage/${product.image}" alt="${product.name}" class="w-full h-48 sm:h-64 object-cover rounded-lg">
                 </div>
             `;
         }
 
         // Header with Title and Status
         html += `
-            <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
-                <div class="flex justify-between items-start">
+            <div class="bg-gray-50 p-4 sm:p-5 rounded-lg border border-gray-200">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                     <div>
-                        <h3 class="text-2xl font-bold text-gray-800">${product.name}</h3>
-                     
+                        <h3 class="text-xl sm:text-2xl font-bold text-gray-800">${product.name}</h3>
                     </div>
-                    <span class="px-3 py-1 text-sm rounded-full font-semibold ${statusColor}">
+                    <span class="px-3 py-1 text-sm rounded-full font-semibold ${statusColor} self-start">
                         ${product.status.charAt(0).toUpperCase() + product.status.slice(1)}
                     </span>
                 </div>
@@ -927,27 +1034,27 @@
 
         // Basic Information
         html += `
-            <div class="bg-white border border-gray-200 rounded-lg">
-                <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
-                    <h4 class="text-md font-semibold text-gray-800">Basic Information</h4>
+            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div class="px-4 sm:px-5 py-3 border-b border-gray-200 bg-gray-50">
+                    <h4 class="text-sm sm:text-md font-semibold text-gray-800">Basic Information</h4>
                 </div>
-                <div class="p-5 space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="p-4 sm:p-5 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                         <div>
-                            <p class="text-gray-500">Branch</p>
+                            <p class="text-gray-500 text-xs sm:text-sm">Branch</p>
                             <p class="font-semibold text-gray-800">${product.branch ? product.branch.name : 'N/A'}</p>
                         </div>
                         <div>
-                            <p class="text-gray-500">Category</p>
+                            <p class="text-gray-500 text-xs sm:text-sm">Category</p>
                             <p class="font-semibold text-gray-800">${product.category ? product.category.name : 'N/A'}</p>
                         </div>
                         <div>
-                            <p class="text-gray-500">Price</p>
-                            <p class="text-xl font-bold text-gray-800">₱${parseFloat(product.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                            <p class="text-gray-500 text-xs sm:text-sm">Price</p>
+                            <p class="text-lg sm:text-xl font-bold text-gray-800">₱${parseFloat(product.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                         </div>
                         ${product.inventory ? `
                             <div>
-                                <p class="text-gray-500">Quantity</p>
+                                <p class="text-gray-500 text-xs sm:text-sm">Quantity</p>
                                 <p class="font-semibold text-gray-800">${product.inventory.quantity || 0}</p>
                             </div>
                         ` : ''}
@@ -959,12 +1066,12 @@
         // Description
         if (product.description) {
             html += `
-                <div class="bg-white border border-gray-200 rounded-lg">
-                    <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
-                        <h4 class="text-md font-semibold text-gray-800">Description</h4>
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="px-4 sm:px-5 py-3 border-b border-gray-200 bg-gray-50">
+                        <h4 class="text-sm sm:text-md font-semibold text-gray-800">Description</h4>
                     </div>
-                    <div class="p-5">
-                        <p class="text-gray-600">${product.description}</p>
+                    <div class="p-4 sm:p-5">
+                        <p class="text-gray-600 text-sm">${product.description}</p>
                     </div>
                 </div>
             `;
@@ -973,17 +1080,16 @@
         // Timestamps
         if (product.created_at) {
             html += `
-                <div class="bg-white border border-gray-200 rounded-lg">
-                    <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
-                        <h4 class="text-md font-semibold text-gray-800">Additional Information</h4>
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="px-4 sm:px-5 py-3 border-b border-gray-200 bg-gray-50">
+                        <h4 class="text-sm sm:text-md font-semibold text-gray-800">Additional Information</h4>
                     </div>
-                    <div class="p-5">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="p-4 sm:p-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                             <div>
-                                <p class="text-gray-500">Created At</p>
-                                <p class="font-medium text-gray-800">${new Date(product.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                <p class="text-gray-500 text-xs sm:text-sm">Created At</p>
+                                <p class="font-medium text-gray-800 text-xs sm:text-sm">${new Date(product.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                             </div>
-                          
                         </div>
                     </div>
                 </div>

@@ -17,7 +17,8 @@ return new class extends Migration {
                 'active',
                 'expired',
                 'suspended',
-                'cancelled'
+                'cancelled',
+                'denied'
             ) DEFAULT 'inactive'
         ");
 
@@ -31,7 +32,8 @@ return new class extends Migration {
                 'active',
                 'expired',
                 'suspended',
-                'cancelled'
+                'cancelled',
+                'denied'
             ) DEFAULT 'inactive'
         ");
 

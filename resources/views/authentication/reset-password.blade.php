@@ -168,7 +168,7 @@
           <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
             Email Address
           </label>
-          <input type="email" id="email" name="email" value="{{ $email ?? old('email') }}" 
+          <input novalidate id="email" name="email" value="{{ $email ?? old('email') }}" 
             class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-gray-400 focus:border-transparent focus:outline-none bg-gray-50" 
             required readonly />
           @error('email')

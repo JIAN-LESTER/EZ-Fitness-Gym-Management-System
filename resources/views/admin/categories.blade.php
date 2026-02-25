@@ -120,15 +120,13 @@
                         <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $category->name }}</h3>
                     </div>
 
-                   
-
                     <!-- Action Buttons -->
                     <div class="flex gap-2">
                         <button onclick='editCategory(@json($category->category_id))'
                             class="flex-1 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold transition-all text-sm shadow-md">
                             Edit
                         </button>
-                        <button onclick='openDeleteModal(@json($category->category_id))'
+                        <button onclick='openDeleteModal("{{ route("categories.destroy", $category->category_id) }}", "{{ $category->name }}")'
                             class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition-all text-sm shadow-md">
                             Delete
                         </button>
@@ -251,7 +249,7 @@
         </div>
     </div>
 
-         <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm hidden">
         <div class="absolute inset-0 backdrop-blur bg-opacity-50" onclick="closeDeleteModal()"></div>
 
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
@@ -267,7 +265,7 @@
                 </h3>
 
                 <p class="text-center text-gray-600 mb-6">
-                    Are you sure you want to delete <span class="font-bold text-red-600">{{ $category->name }}</span>? This action cannot be undone.
+                 Are you sure you want to delete <span id="deleteCategoryName" class="font-bold text-red-600"></span>?
                 </p>
 
                 <form id="deleteForm" method="POST" action="">
@@ -436,34 +434,27 @@
     }
 
     // Delete Modal with SweetAlert
-            function openDeleteModal(actionUrl) {
-    const form = document.getElementById('deleteForm');
-    form.action = actionUrl;
+        function openDeleteModal(actionUrl, categoryName) {
+    document.getElementById('deleteCategoryName').textContent = categoryName;
+    document.getElementById('deleteForm').action = actionUrl;
 
     const modal = document.getElementById('deleteModal');
     const scrollY = window.scrollY;
-
-    // Prevent body scroll
     document.body.style.position = 'fixed';
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = '100%';
     document.body.style.overflowY = 'scroll';
-
     modal.classList.remove('hidden');
 }
 
 function closeDeleteModal() {
     const modal = document.getElementById('deleteModal');
     const scrollY = document.body.style.top;
-
     modal.classList.add('hidden');
-
-    // Restore body scroll
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.width = '';
     document.body.style.overflowY = '';
-
     window.scrollTo(0, parseInt(scrollY || '0') * -1);
 }
 
@@ -519,6 +510,7 @@ function closeDeleteModal() {
             });
         }
     });
+   
     </script>
 
 @endsection
