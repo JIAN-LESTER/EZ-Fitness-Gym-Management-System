@@ -111,7 +111,7 @@
         <p class="text-gray-600 mt-2 text-center md:text-left">No worries, we'll send you reset instructions.</p>
       </header>
 
-      <form id="forgotPasswordForm" method="POST" action="{{ route('password.email') }}" class="space-y-5">
+      <form id="forgotPasswordForm" method="POST" action="/forgot-password" class="space-y-5">
         @csrf
 
         <div>

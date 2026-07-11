@@ -141,7 +141,7 @@
         <p class="text-gray-600 mt-2 text-center md:text-left">Sign up to get started with EZ Fitness</p>
       </header>
 
-      <form id="registerForm" method="POST" action="{{ route('register') }}" class="space-y-4">
+      <form id="registerForm" method="POST" action="/register" class="space-y-4">
         @csrf
 
         <div class="grid grid-cols-2 gap-3">
@@ -279,7 +279,7 @@
       // ── Single combined endpoint ─────────────────────────────────────────────
       // Sends BOTH fields in one request when checking on submit.
       // Falls back to individual checks for real-time blur events.
-      const CHECK_URL = '{{ route('check.availability') }}'; // NEW combined route (see AuthController)
+      const CHECK_URL = '/check-availability'; // NEW combined route (see AuthController)
 
       async function checkField(field, value) {
         // Return cached result if value hasn't changed

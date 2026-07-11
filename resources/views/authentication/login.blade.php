@@ -75,7 +75,7 @@
         <p class="text-gray-600 mt-2 text-center md:text-left">Welcome back! Please login to your account.</p>
       </header>
 
-      <form id="loginForm" method="POST" action="{{ route('login') }}" class="space-y-5">
+      <form id="loginForm" method="POST" action="/login" class="space-y-5">
         @csrf
 
         {{-- Route server errors: password errors under password field, everything else to banner --}}
@@ -148,7 +148,7 @@
       </form>
 
       @if(session('resend_user_id'))
-        <form id="resendVerificationForm" method="POST" action="{{ route('verification.send') }}" class="mt-4">
+        <form id="resendVerificationForm" method="POST" action="/email/verification-notification" class="mt-4">
           @csrf
           <input type="hidden" name="user_id" value="{{ session('resend_user_id') }}">
           <button type="submit" id="resendBtn"

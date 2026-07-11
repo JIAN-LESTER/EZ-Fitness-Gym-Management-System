@@ -160,7 +160,7 @@
         <p class="text-gray-600 mt-2 text-center md:text-left">Enter your new password below</p>
       </header>
 
-      <form id="resetPasswordForm" method="POST" action="{{ route('password.update') }}" class="space-y-5">
+      <form id="resetPasswordForm" method="POST" action="/reset-password" class="space-y-5">
         @csrf
         <input type="hidden" name="token" value="{{ $token }}">
 
