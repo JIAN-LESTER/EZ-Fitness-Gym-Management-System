@@ -181,7 +181,7 @@ class UserManagementController extends Controller
                     WHEN EXISTS (
                         SELECT 1 FROM member_profiles 
                         WHERE member_profiles.user_id = users.user_id 
-                        AND member_profiles.isApproved = 0
+                        AND member_profiles.isApproved = false
                     ) THEN 1
                     ELSE 2
                 END

@@ -78,7 +78,7 @@ class StaffController extends Controller
             case 'month':
                 $startDate = Carbon::now()->subMonth();
                 $salesData = $query->where('created_at', '>=', $startDate)
-                    ->select(DB::raw('WEEK(created_at) as week'), DB::raw('SUM(total_amount) as total'))
+                    ->select(DB::raw('EXTRACT(WEEK FROM created_at) as week'), DB::raw('SUM(total_amount) as total'))
                     ->groupBy('week')
                     ->orderBy('week')
                     ->get();
@@ -87,7 +87,7 @@ class StaffController extends Controller
             case 'year':
                 $startDate = Carbon::now()->subYear();
                 $salesData = $query->where('created_at', '>=', $startDate)
-                    ->select(DB::raw('MONTH(created_at) as month'), DB::raw('SUM(total_amount) as total'))
+                    ->select(DB::raw('EXTRACT(MONTH FROM created_at) as month'), DB::raw('SUM(total_amount) as total'))
                     ->groupBy('month')
                     ->orderBy('month')
                     ->get();

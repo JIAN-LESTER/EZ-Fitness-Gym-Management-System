@@ -458,7 +458,7 @@ class DashboardController extends Controller
                     });
 
                     $sales = Sales::select(
-                        DB::raw('HOUR(created_at) as hour'),
+                        DB::raw('EXTRACT(HOUR FROM created_at) as hour'),
                         DB::raw('SUM(total_amount) as total_revenue'),
                         DB::raw('COUNT(*) as total_sales')
                     )
@@ -548,7 +548,7 @@ class DashboardController extends Controller
                     });
 
                     $members = MemberProfile::select(
-                        DB::raw('HOUR(start_date) as hour'),
+                        DB::raw('EXTRACT(HOUR FROM start_date) as hour'),
                         DB::raw('COUNT(*) as count')
                     )
                         ->whereDate('start_date', Carbon::today())
@@ -626,7 +626,7 @@ class DashboardController extends Controller
                     });
 
                     $subscriptions = MemberProfile::select(
-                        DB::raw('HOUR(member_profiles.start_date) as hour'),
+                        DB::raw('EXTRACT(HOUR FROM member_profiles.start_date) as hour'),
                         DB::raw('COUNT(*) as count'),
                         DB::raw('SUM(subscriptions.price) as total_revenue')
                     )

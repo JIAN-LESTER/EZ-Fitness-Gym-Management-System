@@ -26,8 +26,14 @@ return new class extends Migration {
             $table->string('mobile_number')->nullable();
             $table->string('qr_code')->unique()->nullable();
 
-            $table->enum('status', ['active', 'expired', 'suspended', 'inactive',])->default('inactive');
-            $table->enum('subscription_status', ['active', 'expired', 'suspended', 'inactive'])->default('inactive');
+            $table->enum('status', [
+                'inactive', 'pending_approval', 'approved', 'active', 'expired',
+                'suspended', 'cancelled', 'denied',
+            ])->default('inactive');
+            $table->enum('subscription_status', [
+                'inactive', 'pending_selection', 'pending_subscription_approval',
+                'active', 'expired', 'suspended', 'cancelled', 'denied',
+            ])->default('inactive');
 
             $table->boolean('renewal_pending')->default(false);
             $table->timestamp('suspended_at')->nullable();

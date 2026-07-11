@@ -140,7 +140,7 @@ class MemberProfileController extends Controller
             'stats',
             fn () => Attendance::selectRaw(
                     'COUNT(*) as total,
-                     SUM(CASE WHEN MONTH(check_in_time) = ? AND YEAR(check_in_time) = ? THEN 1 ELSE 0 END) as this_month',
+                     SUM(CASE WHEN EXTRACT(MONTH FROM check_in_time) = ? AND EXTRACT(YEAR FROM check_in_time) = ? THEN 1 ELSE 0 END) as this_month',
                     [Carbon::now()->month, Carbon::now()->year]
                 )
                 ->where('member_id', $memberProfile?->member_id)
