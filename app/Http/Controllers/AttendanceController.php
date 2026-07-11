@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Logs;
 use App\Models\MemberProfile;
 use App\Models\MembershipPlan;
-use App\Models\Logs;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class AttendanceController extends Controller
 {
@@ -20,11 +20,11 @@ class AttendanceController extends Controller
     private function getBranchId()
     {
         $currentUser = Auth::user();
-        
+
         if ($currentUser->role === 'super_admin') {
             return session('selected_branch_id');
         }
-        
+
         return $currentUser->branch_id;
     }
 
@@ -35,7 +35,7 @@ class AttendanceController extends Controller
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, ['admin', 'staff', 'super_admin'])) {
+        if (! in_array($user->role, ['admin', 'staff', 'super_admin'])) {
             abort(403, 'Unauthorized access. Only admin and staff can access the scanner.');
         }
 
@@ -61,29 +61,29 @@ class AttendanceController extends Controller
     public function scan(Request $request)
     {
         $currentUser = Auth::user();
-        if (!in_array($currentUser->role, ['admin', 'staff', 'super_admin'])) {
+        if (! in_array($currentUser->role, ['admin', 'staff', 'super_admin'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized. Only admin and staff can scan QR codes.'
+                'message' => 'Unauthorized. Only admin and staff can scan QR codes.',
             ], 403);
         }
 
         try {
             $qrData = json_decode($request->qr_data, true);
 
-            if (!$qrData || !isset($qrData['email'])) {
+            if (! $qrData || ! isset($qrData['email'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid QR code format'
+                    'message' => 'Invalid QR code format',
                 ], 400);
             }
 
             $user = User::where('email', $qrData['email'])->first();
 
-            if (!$user) {
+            if (! $user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Member not found'
+                    'message' => 'Member not found',
                 ], 404);
             }
 
@@ -92,23 +92,23 @@ class AttendanceController extends Controller
             if ($branchId && $user->branch_id != $branchId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'This member belongs to a different branch'
+                    'message' => 'This member belongs to a different branch',
                 ], 403);
             }
 
             $memberProfile = MemberProfile::where('user_id', $user->user_id)->first();
 
-            if (!$memberProfile) {
+            if (! $memberProfile) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Member profile not found'
+                    'message' => 'Member profile not found',
                 ], 404);
             }
 
             if ($memberProfile->status !== 'active') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Member account is not active'
+                    'message' => 'Member account is not active',
                 ], 403);
             }
 
@@ -142,13 +142,13 @@ class AttendanceController extends Controller
                     'action' => 'checkout',
                     'message' => 'Check-out successful!',
                     'member' => [
-                        'name' => $user->first_name . ' ' . $user->last_name,
+                        'name' => $user->first_name.' '.$user->last_name,
                         'email' => $user->email,
                         'plan' => $memberProfile->plan->name ?? 'N/A',
                         'check_in_time' => $checkInTime->format('M d, Y h:i A'),
                         'check_out_time' => $checkOutTime->format('M d, Y h:i A'),
                         'duration' => $this->formatDuration($duration),
-                    ]
+                    ],
                 ]);
             }
 
@@ -173,16 +173,16 @@ class AttendanceController extends Controller
                 'action' => 'checkin',
                 'message' => 'Check-in successful!',
                 'member' => [
-                    'name' => $user->first_name . ' ' . $user->last_name,
+                    'name' => $user->first_name.' '.$user->last_name,
                     'email' => $user->email,
                     'plan' => $memberProfile->plan->name ?? 'N/A',
                     'check_in_time' => $attendance->check_in_time->format('M d, Y h:i A'),
-                ]
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error processing QR code: ' . $e->getMessage()
+                'message' => 'Error processing QR code: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -193,7 +193,7 @@ class AttendanceController extends Controller
     public function getTodayAttendance()
     {
         $currentUser = Auth::user();
-        if (!in_array($currentUser->role, ['admin', 'staff', 'super_admin'])) {
+        if (! in_array($currentUser->role, ['admin', 'staff', 'super_admin'])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -218,7 +218,7 @@ class AttendanceController extends Controller
                 }
 
                 return [
-                    'name' => $attendance->member->user->first_name . ' ' . $attendance->member->user->last_name,
+                    'name' => $attendance->member->user->first_name.' '.$attendance->member->user->last_name,
                     'plan' => $attendance->member->plan->name ?? 'N/A',
                     'check_in_time' => $checkInTime->format('h:i A'),
                     'check_out_time' => $attendance->check_out_time ? Carbon::parse($attendance->check_out_time)->format('h:i A') : null,
@@ -241,6 +241,7 @@ class AttendanceController extends Controller
         if ($hours > 0) {
             return "{$hours}h {$mins}m";
         }
+
         return "{$mins}m";
     }
 
@@ -250,8 +251,8 @@ class AttendanceController extends Controller
     public function adminLogs(Request $request)
     {
         $currentUser = Auth::user();
-        
-        if (!in_array($currentUser->role, ['admin', 'super_admin'])) {
+
+        if (! in_array($currentUser->role, ['admin', 'super_admin'])) {
             abort(403, 'Unauthorized access');
         }
 
@@ -294,7 +295,7 @@ class AttendanceController extends Controller
             ->where('user_id', $user->user_id)
             ->first();
 
-        if (!$memberProfile) {
+        if (! $memberProfile) {
             return redirect()->back()->with('error', 'Member profile not found');
         }
 
@@ -309,12 +310,12 @@ class AttendanceController extends Controller
             ->whereNotNull('check_in_time')
             ->orderBy('check_in_time', 'desc')
             ->get();
-        
+
         // Calculate this month's count
         $thisMonthCount = 0;
         try {
-            $thisMonthCount = $allAttendances->filter(function($attendance) {
-                return $attendance->check_in_time && 
+            $thisMonthCount = $allAttendances->filter(function ($attendance) {
+                return $attendance->check_in_time &&
                        Carbon::parse($attendance->check_in_time)->isCurrentMonth();
             })->count();
         } catch (\Exception $e) {
@@ -328,8 +329,8 @@ class AttendanceController extends Controller
         $plans = MembershipPlan::all();
 
         return view('member.member_logs', compact(
-            'attendances', 
-            'memberProfile', 
+            'attendances',
+            'memberProfile',
             'plans',
             'thisMonthCount',
             'lastCheckIn'

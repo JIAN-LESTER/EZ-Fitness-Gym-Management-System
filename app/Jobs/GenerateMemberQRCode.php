@@ -4,27 +4,30 @@ namespace App\Jobs;
 
 use App\Mail\MemberQRCodeMail;
 use App\Models\MemberProfile;
-use App\Models\User;
 use App\Models\MembershipPlan;
 use App\Models\Subscriptions;
+use App\Models\User;
 use Endroid\QrCode\Builder\Builder;
-use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class GenerateMemberQRCode implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $userId;
+
     public $memberId;
+
     public $planId;
+
     public $subscriptionId;
 
     /**
@@ -77,7 +80,7 @@ class GenerateMemberQRCode implements ShouldQueue
 
             // Create directory if it doesn't exist
             $directory = dirname($fullPath);
-            if (!file_exists($directory)) {
+            if (! file_exists($directory)) {
                 mkdir($directory, 0755, true);
             }
 
@@ -88,7 +91,7 @@ class GenerateMemberQRCode implements ShouldQueue
 
             // Generate QR code
             $result = Builder::create()
-                ->writer(new PngWriter())
+                ->writer(new PngWriter)
                 ->data($qrData)
                 ->encoding(new Encoding('UTF-8'))
                 ->size(300)
@@ -97,36 +100,36 @@ class GenerateMemberQRCode implements ShouldQueue
 
             $result->saveToFile($fullPath);
 
-            if (!file_exists($fullPath)) {
-                throw new \Exception("QR code file was not created");
+            if (! file_exists($fullPath)) {
+                throw new \Exception('QR code file was not created');
             }
 
             $fileSize = filesize($fullPath);
             if ($fileSize === 0) {
-                throw new \Exception("QR code file is empty");
+                throw new \Exception('QR code file is empty');
             }
 
             // Update member profile with QR path
             $memberProfile->qr_code = $qrRelativePath;
             $memberProfile->save();
 
-            Log::info("QR Code generated successfully", [
+            Log::info('QR Code generated successfully', [
                 'user_id' => $user->user_id,
                 'path' => $qrRelativePath,
-                'file_size' => $fileSize
+                'file_size' => $fileSize,
             ]);
 
             // Send email with QR code
             Mail::to($user->email)->send(new MemberQRCodeMail($memberProfile, $fullPath));
-            
+
             Log::info("QR Code email sent to: {$user->email}");
 
         } catch (\Exception $e) {
-            Log::error("QR Code generation job failed", [
+            Log::error('QR Code generation job failed', [
                 'user_id' => $this->userId,
                 'member_id' => $this->memberId,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             // Retry the job if it fails (max 3 attempts)
@@ -141,10 +144,10 @@ class GenerateMemberQRCode implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error("QR Code generation job permanently failed", [
+        Log::error('QR Code generation job permanently failed', [
             'user_id' => $this->userId,
             'member_id' => $this->memberId,
-            'error' => $exception->getMessage()
+            'error' => $exception->getMessage(),
         ]);
     }
 }

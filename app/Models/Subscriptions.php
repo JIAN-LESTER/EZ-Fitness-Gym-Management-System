@@ -11,6 +11,7 @@ class Subscriptions extends Model
     use HasFactory, Notifiable;
 
     protected $table = 'subscriptions';
+
     protected $primaryKey = 'subscription_id';
 
     protected $fillable = [
@@ -18,7 +19,7 @@ class Subscriptions extends Model
         'branch_id',
         'details',
         'price',
-        'duration_days'
+        'duration_days',
     ];
 
     protected $casts = [
@@ -43,7 +44,6 @@ class Subscriptions extends Model
         return $this->hasMany(MemberProfile::class, 'subscription_id', 'subscription_id');
     }
 
-
     /**
      * Scope: Get subscriptions for a specific branch
      */
@@ -65,7 +65,7 @@ class Subscriptions extends Model
      */
     public function getFormattedPriceAttribute()
     {
-        return '₱' . number_format($this->price, 2);
+        return '₱'.number_format($this->price, 2);
     }
 
     /**
@@ -74,13 +74,15 @@ class Subscriptions extends Model
     public function getDurationTextAttribute()
     {
         if ($this->duration_days < 30) {
-            return $this->duration_days . ' day' . ($this->duration_days > 1 ? 's' : '');
+            return $this->duration_days.' day'.($this->duration_days > 1 ? 's' : '');
         } elseif ($this->duration_days < 365) {
             $months = round($this->duration_days / 30);
-            return $months . ' month' . ($months > 1 ? 's' : '');
+
+            return $months.' month'.($months > 1 ? 's' : '');
         } else {
             $years = round($this->duration_days / 365);
-            return $years . ' year' . ($years > 1 ? 's' : '');
+
+            return $years.' year'.($years > 1 ? 's' : '');
         }
     }
 }

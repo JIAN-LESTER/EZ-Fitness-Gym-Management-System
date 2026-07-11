@@ -1,6 +1,6 @@
 # EZ Fitness Gym Management System
 
-A modernized, cloud-hosted Gym Management Platform designed to replace the outdated local XAMPP system previously used by EZ Fitness Gym. Built with Laravel, Blade, TailwindCSS, and MySQL, this system streamlines daily operations, enhances member experience, and introduces secure, role-based workflow automation.
+A modernized, cloud-hosted Gym Management Platform designed to replace the outdated local XAMPP system previously used by EZ Fitness Gym. Built with Laravel, Blade, TailwindCSS, and PostgreSQL, this system streamlines daily operations, enhances member experience, and introduces secure, role-based workflow automation.
 
 ---
 
@@ -28,7 +28,7 @@ This system removes the limitations of the old single-computer setup and provide
 ## 🏗️ System Architecture
 - **Frontend:** Laravel Blade + TailwindCSS
 - **Backend:** Laravel Framework (MVC)
-- **Database:** MySQL (Hosted via Hostinger)
+- **Database:** PostgreSQL
 - **Deployment:** Hostinger Cloud Hosting
 - **Version Control:** Git + GitHub
 - **Design Tools:** Figma for UI/UX prototyping
@@ -83,8 +83,8 @@ cp .env.example .env
 php artisan key:generate
 ```
 Update the following in `.env`:
-- Database Name
-- Database User & Password
+- `DB_CONNECTION=pgsql`
+- PostgreSQL database name, user, and password
 - Mail Configuration (for verification & password resets)
 
 ### **4. Run Migrations**
@@ -101,8 +101,8 @@ php artisan serve
 
 ## 📦 Deployment
 The system is deployed via **Hostinger Cloud Hosting** using:
-- PHP 8+
-- MySQL Database
+- PHP 8+ with the `pdo_pgsql` extension
+- PostgreSQL Database
 - File Storage for QR Codes & Product Images
 
 Upload the project files, configure `.env`, set storage permissions, and run migrations via SSH or PHPMyAdmin.

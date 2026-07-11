@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class CacheService
 {
@@ -12,7 +12,7 @@ class CacheService
      */
     public static function getDuration(string $type): int
     {
-        return match($type) {
+        return match ($type) {
             'realtime' => 60,           // 1 minute for real-time data (occupancy, today's stats)
             'hourly' => 3600,           // 1 hour for semi-static data (inventory, products)
             'daily' => 86400,           // 24 hours for static data (plans, subscriptions)
@@ -28,6 +28,7 @@ class CacheService
     {
         $branchId = session('selected_branch_id') ?? Auth::user()->branch_id ?? 'all';
         $parts = array_merge([$prefix, $branchId], $params);
+
         return implode(':', array_filter($parts));
     }
 
@@ -38,7 +39,7 @@ class CacheService
     {
         $key = self::key($prefix, ...$params);
         $duration = self::getDuration($type);
-        
+
         return Cache::remember($key, $duration, $callback);
     }
 
@@ -57,10 +58,10 @@ class CacheService
     public static function flushBranch(?int $branchId = null): void
     {
         $branchId = $branchId ?? session('selected_branch_id') ?? Auth::user()->branch_id;
-        
+
         $patterns = [
-            'dashboard', 'stats', 'sales', 'members', 'inventory', 
-            'occupancy', 'subscriptions', 'attendance'
+            'dashboard', 'stats', 'sales', 'members', 'inventory',
+            'occupancy', 'subscriptions', 'attendance',
         ];
 
         foreach ($patterns as $pattern) {

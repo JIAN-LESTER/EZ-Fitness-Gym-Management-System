@@ -2,17 +2,17 @@
 
 namespace App\Providers;
 
-use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use App\Models\Sales;
-use App\Models\MemberProfile;
 use App\Models\Attendance;
 use App\Models\Inventory;
+use App\Models\MemberProfile;
+use App\Models\Sales;
 use App\Models\Transactions;
-use App\Observers\SalesObserver;
-use App\Observers\MemberProfileObserver;
 use App\Observers\AttendanceObserver;
 use App\Observers\InventoryObserver;
+use App\Observers\MemberProfileObserver;
+use App\Observers\SalesObserver;
 use App\Observers\TransactionObserver;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
 {

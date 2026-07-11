@@ -13,8 +13,8 @@ class Product extends Model
 {
     use HasFactory, Notifiable;
 
-
     protected $primaryKey = 'product_id';
+
     protected $fillable = [
         'category_id',
         'branch_id',
@@ -23,7 +23,6 @@ class Product extends Model
         'price',
         'status',
         'image',
-
 
     ];
 
@@ -41,7 +40,6 @@ class Product extends Model
     {
         return $this->hasMany(Transactions::class, 'product_id', 'product_id');
     }
-
 
     public function cartItems()
     {

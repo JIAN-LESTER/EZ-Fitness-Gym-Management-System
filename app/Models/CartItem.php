@@ -11,10 +11,10 @@ use Illuminate\Notifications\Notifiable;
  */
 class CartItem extends Model
 {
-   use HasFactory, Notifiable;
-
+    use HasFactory, Notifiable;
 
     protected $primaryKey = 'cart_item_id';
+
     protected $fillable = [
         'cart_id',
         'product_id',
@@ -22,16 +22,15 @@ class CartItem extends Model
         'price',
         'sub_total',
 
-
-
     ];
 
-public function cart() {
-    return $this->belongsTo(Cart::class, 'cart_id', 'cart_id');
-}
+    public function cart()
+    {
+        return $this->belongsTo(Cart::class, 'cart_id', 'cart_id');
+    }
 
-public function product() {
-    return $this->belongsTo(Product::class, 'product_id', 'product_id');
-}
-
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id', 'product_id');
+    }
 }

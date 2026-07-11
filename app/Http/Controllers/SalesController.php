@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SalesItem;
-use Illuminate\Http\Request;
-use App\Models\Sales;
-use App\Models\SaleItems;
-use App\Models\Transactions;
 use App\Models\Logs;
+use App\Models\Sales;
+use App\Models\SalesItem;
+use App\Models\Transactions;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,55 +14,55 @@ use Illuminate\Support\Facades\Log;
 
 class SalesController extends Controller
 {
-   public function index(Request $request)
-{
-    $currentUser = Auth::user();
-    $search = $request->get('search');
-    $statuses = $request->get('status', []);
-    $paymentMethods = $request->get('payment_method', []);
-    $startDate = $request->get('start_date');
-    $endDate = $request->get('end_date');
+    public function index(Request $request)
+    {
+        $currentUser = Auth::user();
+        $search = $request->get('search');
+        $statuses = $request->get('status', []);
+        $paymentMethods = $request->get('payment_method', []);
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
 
-    // Determine branch filter
-    $branchId = null;
-    if ($currentUser->role === 'super_admin') {
-        $branchId = session('selected_branch_id');
-    } else {
-        $branchId = $currentUser->branch_id;
-    }
+        // Determine branch filter
+        $branchId = null;
+        if ($currentUser->role === 'super_admin') {
+            $branchId = session('selected_branch_id');
+        } else {
+            $branchId = $currentUser->branch_id;
+        }
 
-    $sales = Sales::query()
-        ->with('user', 'items')
-        ->when($search, function ($query, $search) {
-            return $query->where(function ($q) use ($search) {
-                $q->where('sales_id', 'like', "%{$search}%")
-                    ->orWhere('reference_code', 'like', "%{$search}%")
-                    ->orWhereHas('user', function ($q2) use ($search) {
-                        $q2->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('username', 'like', "%{$search}%");
-                    });
-            });
-        })
-        ->when(!empty($statuses), function ($query) use ($statuses) {
-            return $query->whereIn('status', $statuses);
-        })
-        ->when(!empty($paymentMethods), function ($query) use ($paymentMethods) {
-            return $query->whereIn('payment_method', $paymentMethods);
-        })
-        ->when($startDate, function ($query) use ($startDate) {
-            return $query->whereDate('created_at', '>=', $startDate);
-        })
-        ->when($endDate, function ($query) use ($endDate) {
-            return $query->whereDate('created_at', '<=', $endDate);
-        })
-        // **ADD BRANCH FILTER HERE**
-        ->when($branchId, function ($query) use ($branchId) {
-            return $query->where('branch_id', $branchId);
-        })
-        ->orderBy('created_at', 'desc')
-        ->paginate(12)
-        ->appends($request->query());
+        $sales = Sales::query()
+            ->with('user', 'items')
+            ->when($search, function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('sales_id', 'like', "%{$search}%")
+                        ->orWhere('reference_code', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($q2) use ($search) {
+                            $q2->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('username', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when(! empty($statuses), function ($query) use ($statuses) {
+                return $query->whereIn('status', $statuses);
+            })
+            ->when(! empty($paymentMethods), function ($query) use ($paymentMethods) {
+                return $query->whereIn('payment_method', $paymentMethods);
+            })
+            ->when($startDate, function ($query) use ($startDate) {
+                return $query->whereDate('created_at', '>=', $startDate);
+            })
+            ->when($endDate, function ($query) use ($endDate) {
+                return $query->whereDate('created_at', '<=', $endDate);
+            })
+            // **ADD BRANCH FILTER HERE**
+            ->when($branchId, function ($query) use ($branchId) {
+                return $query->where('branch_id', $branchId);
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(12)
+            ->appends($request->query());
 
         // Create removeFilter function for the view
         $removeFilter = function ($key, $value = null) {
@@ -78,7 +77,7 @@ class SalesController extends Controller
                 unset($query[$key]);
             }
 
-            return url()->current() . '?' . http_build_query($query);
+            return url()->current().'?'.http_build_query($query);
         };
 
         return view('admin.sales', compact(
@@ -101,31 +100,31 @@ class SalesController extends Controller
             // Use where() with the correct primary key column name
             $sale = Sales::where('sales_id', $id)
                 ->with([
-                    'user', 
+                    'user',
                     'items.product',
                     'items.plan',
-                    'items.subscription'
+                    'items.subscription',
                 ])
                 ->first();
 
-            if (!$sale) {
+            if (! $sale) {
                 return response()->json([
-                    'error' => 'Sale not found'
+                    'error' => 'Sale not found',
                 ], 404);
             }
 
             return response()->json($sale);
-            
+
         } catch (\Exception $e) {
-            Log::error("Error loading sale details", [
+            Log::error('Error loading sale details', [
                 'sale_id' => $id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'error' => 'Server error',
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -135,10 +134,10 @@ class SalesController extends Controller
         try {
             $currentUser = Auth::user();
 
-                 $branchId = $currentUser->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $currentUser->branch_id;
-            
+            $branchId = $currentUser->role === 'super_admin'
+               ? session('selected_branch_id')
+               : $currentUser->branch_id;
+
             // Only admin can delete sales
             if ($currentUser->role !== 'admin') {
                 return redirect()->back()
@@ -152,24 +151,25 @@ class SalesController extends Controller
                 ->with(['items', 'user'])
                 ->first();
 
-            if (!$sale) {
+            if (! $sale) {
                 DB::rollBack();
+
                 return redirect()->back()
                     ->with('error', 'Sale not found.');
             }
-            
+
             // Store sale details for logging
             $saleId = $sale->sales_id;
             $totalAmount = $sale->total_amount;
-            $cashierName = $sale->user->first_name . ' ' . $sale->user->last_name;
+            $cashierName = $sale->user->first_name.' '.$sale->user->last_name;
             $itemCount = $sale->items->count();
-            
+
             // Delete related transactions first
             Transactions::where('sales_id', $saleId)->delete();
-            
+
             // Delete sale items
             SalesItem::where('sales_id', $saleId)->delete();
-            
+
             // Delete the sale
             $sale->delete();
 
@@ -177,7 +177,7 @@ class SalesController extends Controller
             Logs::create([
                 'user_id' => $currentUser->user_id,
                 'branch_id' => $branchId,
-                'action' => "{$currentUser->last_name} deleted sale #{$saleId} - Amount: ₱" . number_format($totalAmount, 2) . ", Items: {$itemCount}, Cashier: {$cashierName}",
+                'action' => "{$currentUser->last_name} deleted sale #{$saleId} - Amount: ₱".number_format($totalAmount, 2).", Items: {$itemCount}, Cashier: {$cashierName}",
                 'timestamp' => now(),
             ]);
 
@@ -188,14 +188,14 @@ class SalesController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
-            Log::error("Error deleting sale", [
+
+            Log::error('Error deleting sale', [
                 'sale_id' => $id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return redirect()->back()
-                ->with('error', 'Error deleting sale: ' . $e->getMessage());
+                ->with('error', 'Error deleting sale: '.$e->getMessage());
         }
     }
 }

@@ -2,20 +2,21 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\MemberProfile;
 use App\Models\Logs;
+use App\Models\MemberProfile;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
 
 class ExpireMemberships extends Command
 {
     protected $signature = 'memberships:expire';
+
     protected $description = 'Automatically expire memberships that have passed their end date';
 
     public function handle()
     {
         $now = Carbon::now();
-        
+
         // Find all active memberships that have expired
         $expiredMembers = MemberProfile::where('subscription_status', 'active')
             ->whereNotNull('end_date_for_subscription')
@@ -24,11 +25,11 @@ class ExpireMemberships extends Command
             ->get();
 
         $count = 0;
-        
+
         foreach ($expiredMembers as $member) {
             $member->update([
                 'subscription_status' => 'expired',
-                'status' => 'expired'
+                'status' => 'expired',
             ]);
 
             // Log the expiration
@@ -43,7 +44,7 @@ class ExpireMemberships extends Command
         }
 
         $this->info("Expired {$count} memberships.");
-        
+
         return 0;
     }
 }

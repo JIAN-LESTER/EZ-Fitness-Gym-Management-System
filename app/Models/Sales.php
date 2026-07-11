@@ -10,6 +10,7 @@ class Sales extends Model
     use HasFactory;
 
     protected $table = 'sales';
+
     protected $primaryKey = 'sales_id';
 
     protected $fillable = [
@@ -27,10 +28,10 @@ class Sales extends Model
 
     /**
      * FIXED: Get all items in this sale
-     * 
-     * The issue was Laravel was trying to use 'sale_items.sales_id' 
+     *
+     * The issue was Laravel was trying to use 'sale_items.sales_id'
      * but concatenating the model name incorrectly.
-     * 
+     *
      * Explicitly specify the foreign key to avoid this.
      */
     public function items()
@@ -116,6 +117,6 @@ class Sales extends Model
      */
     public function getFormattedTotalAttribute()
     {
-        return '₱' . number_format($this->total_amount, 2);
+        return '₱'.number_format($this->total_amount, 2);
     }
 }

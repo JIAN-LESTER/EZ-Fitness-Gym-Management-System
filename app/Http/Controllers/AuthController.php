@@ -3,26 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Logs;
-use App\Models\Member_Profile;
-use App\Models\member;
 use App\Models\MemberProfile;
 use App\Models\User;
 use DB;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Auth\Events\Verified;
-use Illuminate\Http\Request;
-use Str;
-use Illuminate\Auth\Notifications\VerifyEmail;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\URL;
 
 class AuthController extends Controller
 {
-
     public function showLoginForm()
     {
         return view('authentication.login');
@@ -33,49 +27,49 @@ class AuthController extends Controller
         return view('authentication.register');
     }
 
- public function register(Request $request)
+    public function register(Request $request)
     {
         $validated = $request->validate([
-            'email'      => 'required|string|email|max:100|unique:users,email',
+            'email' => 'required|string|email|max:100|unique:users,email',
             'first_name' => 'required|string|max:50',
-            'last_name'  => 'required|string|max:50',
-            'username'   => 'required|string|max:50|min:4|unique:users,username',
-            'password'   => 'required|string|min:6|confirmed',
+            'last_name' => 'required|string|max:50',
+            'username' => 'required|string|max:50|min:4|unique:users,username',
+            'password' => 'required|string|min:6|confirmed',
         ], [
-            'email.unique'          => 'The email has already been taken',
-            'email.required'        => 'Email is required',
-            'first_name.required'   => 'First name is required',
-            'last_name.required'    => 'Last name is required',
-            'username.unique'       => 'The username has already been taken',
-            'username.required'     => 'Username is required',
-            'password.required'     => 'Password is required',
-            'password.min'          => 'Password must be at least 6 characters',
-            'password.confirmed'    => 'Password confirmation does not match',
+            'email.unique' => 'The email has already been taken',
+            'email.required' => 'Email is required',
+            'first_name.required' => 'First name is required',
+            'last_name.required' => 'Last name is required',
+            'username.unique' => 'The username has already been taken',
+            'username.required' => 'Username is required',
+            'password.required' => 'Password is required',
+            'password.min' => 'Password must be at least 6 characters',
+            'password.confirmed' => 'Password confirmation does not match',
         ]);
 
         // Wrap DB writes in a transaction so nothing is left half-created on failure
         $user = DB::transaction(function () use ($validated) {
             $user = User::create([
                 'first_name' => $validated['first_name'],
-                'last_name'  => $validated['last_name'],
-                'username'   => $validated['username'],
-                'email'      => $validated['email'],
-                'password'   => bcrypt($validated['password']),
-                'role'       => 'member',
-                'status'     => 'active',
-                'branch_id'  => null,
+                'last_name' => $validated['last_name'],
+                'username' => $validated['username'],
+                'email' => $validated['email'],
+                'password' => bcrypt($validated['password']),
+                'role' => 'member',
+                'status' => 'active',
+                'branch_id' => null,
             ]);
 
             if ($user->role === 'member') {
                 MemberProfile::create([
                     'user_id' => $user->user_id,
-                    'status'  => 'inactive',
+                    'status' => 'inactive',
                 ]);
             }
 
             Logs::create([
-                'user_id'   => $user->user_id,
-                'action'    => "{$user->last_name} created his own account.",
+                'user_id' => $user->user_id,
+                'action' => "{$user->last_name} created his own account.",
                 'timestamp' => now(),
             ]);
 
@@ -110,17 +104,17 @@ class AuthController extends Controller
             $user = User::whereRaw('LOWER(username) = ?', [strtolower($request->login)])->first();
         }
 
-        if (!$user) {
+        if (! $user) {
             return back()->with('error', 'No account found')->withInput();
         }
 
-        if (!Hash::check($request->password, $user->password)) {
+        if (! Hash::check($request->password, $user->password)) {
             return back()
                 ->with('error', 'Incorrect credentials.')
                 ->withInput();
         }
 
-        if (!$user->hasVerifiedEmail()) {
+        if (! $user->hasVerifiedEmail()) {
             return back()->withInput()
                 ->with('error', 'Your email is not verified.')
                 ->with('resend_user_id', $user->user_id);
@@ -158,37 +152,36 @@ class AuthController extends Controller
         }
     }
 
-
     public function checkUsername(Request $request)
     {
         $exists = User::where('username', $request->username)->exists();
+
         return response()->json(['taken' => $exists]);
     }
 
     public function checkEmail(Request $request)
     {
         $exists = User::where('email', $request->email)->exists();
+
         return response()->json(['taken' => $exists]);
     }
-
 
     public function logout(Request $request)
     {
         $user = Auth::user();
-        
+
         if ($user) {
-       
-         $branchId = $user->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $user->branch_id;
 
+            $branchId = $user->role === 'super_admin'
+                       ? session('selected_branch_id')
+                       : $user->branch_id;
 
-               Logs::create([
-            'user_id' => $user->user_id,
-            'branch_id' => $branchId,
-            'action' => "{$user->last_name} has logged out successfully.",
-            'timestamp' => now(),
-        ]);
+            Logs::create([
+                'user_id' => $user->user_id,
+                'branch_id' => $branchId,
+                'action' => "{$user->last_name} has logged out successfully.",
+                'timestamp' => now(),
+            ]);
         }
 
         Auth::logout();
@@ -197,7 +190,6 @@ class AuthController extends Controller
 
         return redirect('/login')->with('success', 'Logged out successfully.');
     }
-
 
     /**
      * Resend verification email
@@ -211,7 +203,7 @@ class AuthController extends Controller
 
         $user = User::find($request->user_id);
 
-        if (!$user) {
+        if (! $user) {
             return back()->with('error', 'User not found.');
         }
 
@@ -231,7 +223,6 @@ class AuthController extends Controller
         return back()->with('success', 'Verification link has been sent to your email. Please check your inbox (and spam).');
     }
 
-
     /**
      * Verification handler — user clicks link in email and is marked as verified.
      * This route uses signed URL and expects both id & hash.
@@ -244,12 +235,12 @@ class AuthController extends Controller
             return redirect('/login')->with('success', 'Your email is already verified. You may log in.');
         }
 
-        if (!URL::hasValidSignature($request)) {
+        if (! URL::hasValidSignature($request)) {
             return redirect('/login')->with('error', 'Invalid or expired verification link.');
         }
 
         // Double-check that the hash matches the user's email
-        if (!hash_equals($hash, sha1($user->getEmailForVerification()))) {
+        if (! hash_equals($hash, sha1($user->getEmailForVerification()))) {
             return redirect('/login')->with('error', 'Invalid verification link.');
         }
 
@@ -267,7 +258,6 @@ class AuthController extends Controller
         return redirect('/login')->with('success', 'Email verified successfully. You may now log in.');
     }
 
-
     /**
      * Show the form to request a password reset link.
      */
@@ -281,14 +271,14 @@ class AuthController extends Controller
         $field = $request->query('field');
         $value = $request->query('value');
 
-        if (!in_array($field, ['username', 'email']) || empty($value)) {
+        if (! in_array($field, ['username', 'email']) || empty($value)) {
             return response()->json(['taken' => false]);
         }
 
         $exists = User::where($field, $value)->exists();
+
         return response()->json(['taken' => $exists]);
     }
-
 
     /**
      * Handle the password reset link request.
@@ -311,20 +301,19 @@ class AuthController extends Controller
         if ($status === Password::RESET_LINK_SENT) {
             // Log the action
             $user = User::where('email', $request->email)->first();
-            
+
             if ($user) {
 
-              $branchId = $user->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $user->branch_id;
+                $branchId = $user->role === 'super_admin'
+                      ? session('selected_branch_id')
+                      : $user->branch_id;
 
-
-               Logs::create([
-            'user_id' => $user->user_id,
-            'branch_id' => $branchId,
-            'action' => "{$user->last_name} has requested password reset.",
-            'timestamp' => now(),
-        ]);
+                Logs::create([
+                    'user_id' => $user->user_id,
+                    'branch_id' => $branchId,
+                    'action' => "{$user->last_name} has requested password reset.",
+                    'timestamp' => now(),
+                ]);
             }
 
             return back()->with('success', 'Password reset link sent! Please check your email.');
@@ -340,7 +329,7 @@ class AuthController extends Controller
     {
         return view('authentication.reset-password', [
             'token' => $token,
-            'email' => $request->email
+            'email' => $request->email,
         ]);
     }
 
@@ -365,20 +354,19 @@ class AuthController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill([
-                    'password' => Hash::make($password)
+                    'password' => Hash::make($password),
                 ])->save();
 
-                          $branchId = $user->role === 'super_admin'
+                $branchId = $user->role === 'super_admin'
                     ? session('selected_branch_id')
                     : $user->branch_id;
 
-
-               Logs::create([
-            'user_id' => $user->user_id,
-            'branch_id' => $branchId,
-            'action' => "{$user->last_name} has reset password successfully.",
-            'timestamp' => now(),
-        ]);
+                Logs::create([
+                    'user_id' => $user->user_id,
+                    'branch_id' => $branchId,
+                    'action' => "{$user->last_name} has reset password successfully.",
+                    'timestamp' => now(),
+                ]);
 
                 event(new PasswordReset($user));
             }

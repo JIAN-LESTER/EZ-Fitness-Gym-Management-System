@@ -14,7 +14,7 @@ class Attendance extends Model
     use HasFactory, Notifiable;
 
     protected $primaryKey = 'attendance_id';
-    
+
     protected $fillable = [
         'member_id',
         'branch_id',
@@ -34,7 +34,8 @@ class Attendance extends Model
         return $this->belongsTo(MemberProfile::class, 'member_id', 'member_id');
     }
 
-        public function branch(){
+    public function branch()
+    {
         return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
     }
 }

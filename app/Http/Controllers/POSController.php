@@ -8,14 +8,14 @@ use App\Models\Categories;
 use App\Models\Inventory;
 use App\Models\Logs;
 use App\Models\Product;
-use App\Models\SalesItem;
 use App\Models\Sales;
+use App\Models\SalesItem;
 use App\Models\Transactions;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class POSController extends Controller
 {
@@ -76,10 +76,10 @@ class POSController extends Controller
                 ->with('product')
                 ->first();
 
-            if (!$inventory) {
+            if (! $inventory) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product not found'
+                    'message' => 'Product not found',
                 ], 404);
             }
 
@@ -91,20 +91,20 @@ class POSController extends Controller
             if ($userBranchId && $inventory->product->branch_id != $userBranchId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product not available in your branch'
+                    'message' => 'Product not available in your branch',
                 ], 403);
             }
 
             if ($inventory->quantity <= 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product out of stock'
+                    'message' => 'Product out of stock',
                 ], 400);
             }
 
             $cart = Cart::firstOrCreate([
                 'user_id' => $user->user_id,
-                'status' => 'active'
+                'status' => 'active',
             ]);
 
             $cartItem = CartItem::where('cart_id', $cart->cart_id)
@@ -115,7 +115,7 @@ class POSController extends Controller
                 if ($cartItem->quantity + 1 > $inventory->quantity) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Not enough stock available. Only ' . $inventory->quantity . ' in stock.'
+                        'message' => 'Not enough stock available. Only '.$inventory->quantity.' in stock.',
                     ], 400);
                 }
 
@@ -134,13 +134,14 @@ class POSController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Product added to cart'
+                'message' => 'Product added to cart',
             ]);
         } catch (\Exception $e) {
-            Log::error('Add to cart error: ' . $e->getMessage());
+            Log::error('Add to cart error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to add to cart. Please try again.'
+                'message' => 'Failed to add to cart. Please try again.',
             ], 500);
         }
     }
@@ -154,11 +155,11 @@ class POSController extends Controller
                 ->with(['items.product'])
                 ->first();
 
-            if (!$cart) {
+            if (! $cart) {
                 return response()->json([
                     'success' => true,
                     'items' => [],
-                    'total' => 0
+                    'total' => 0,
                 ]);
             }
 
@@ -170,7 +171,7 @@ class POSController extends Controller
                     'price' => $item->price,
                     'quantity' => $item->quantity,
                     'subtotal' => $item->sub_total,
-                    'image' => $item->product->image
+                    'image' => $item->product->image,
                 ];
             });
 
@@ -179,13 +180,14 @@ class POSController extends Controller
             return response()->json([
                 'success' => true,
                 'items' => $items,
-                'total' => $total
+                'total' => $total,
             ]);
         } catch (\Exception $e) {
-            Log::error('Get cart error: ' . $e->getMessage());
+            Log::error('Get cart error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to get cart'
+                'message' => 'Failed to get cart',
             ], 500);
         }
     }
@@ -195,7 +197,7 @@ class POSController extends Controller
         try {
             $request->validate([
                 'cart_item_id' => 'required|exists:cart_items,cart_item_id',
-                'quantity' => 'required|integer|min:1'
+                'quantity' => 'required|integer|min:1',
             ]);
 
             $cartItem = CartItem::findOrFail($request->cart_item_id);
@@ -205,7 +207,7 @@ class POSController extends Controller
             if ($request->quantity > $inventory->quantity) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Not enough stock available. Only ' . $inventory->quantity . ' available.'
+                    'message' => 'Not enough stock available. Only '.$inventory->quantity.' available.',
                 ], 400);
             }
 
@@ -215,13 +217,14 @@ class POSController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cart updated successfully'
+                'message' => 'Cart updated successfully',
             ]);
         } catch (\Exception $e) {
-            Log::error('Update cart error: ' . $e->getMessage());
+            Log::error('Update cart error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update cart'
+                'message' => 'Failed to update cart',
             ], 500);
         }
     }
@@ -230,7 +233,7 @@ class POSController extends Controller
     {
         try {
             $request->validate([
-                'cart_item_id' => 'required|exists:cart_items,cart_item_id'
+                'cart_item_id' => 'required|exists:cart_items,cart_item_id',
             ]);
 
             $cartItem = CartItem::findOrFail($request->cart_item_id);
@@ -238,13 +241,14 @@ class POSController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Item removed from cart'
+                'message' => 'Item removed from cart',
             ]);
         } catch (\Exception $e) {
-            Log::error('Remove cart item error: ' . $e->getMessage());
+            Log::error('Remove cart item error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to remove item'
+                'message' => 'Failed to remove item',
             ], 500);
         }
     }
@@ -260,18 +264,15 @@ class POSController extends Controller
             if ($paymentMethod === 'gcash' && empty($referenceCode)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'GCash reference code is required'
+                    'message' => 'GCash reference code is required',
                 ], 400);
             }
 
             DB::transaction(function () use ($paymentMethod, $referenceCode, $userId, $user) {
 
-
-                
                 $branchId = $user->role === 'super_admin'
                     ? session('selected_branch_id')
                     : $user->branch_id;
-
 
                 $cart = Cart::where('user_id', $userId)
                     ->where('status', 'active')
@@ -295,10 +296,10 @@ class POSController extends Controller
                     'discount' => 0,
                     'payment_method' => $paymentMethod,
                     'status' => 'paid',
-                    'date' => now()
+                    'date' => now(),
                 ];
 
-                if ($paymentMethod === 'gcash' && !empty($referenceCode)) {
+                if ($paymentMethod === 'gcash' && ! empty($referenceCode)) {
                     $saleData['reference_code'] = $referenceCode;
                 }
 
@@ -309,7 +310,7 @@ class POSController extends Controller
                         ->lockForUpdate()
                         ->first();
 
-                    if (!$inventory || $inventory->quantity < $item->quantity) {
+                    if (! $inventory || $inventory->quantity < $item->quantity) {
                         throw new \Exception("Not enough stock for product ID: {$item->product_id}");
                     }
 
@@ -345,23 +346,24 @@ class POSController extends Controller
                     'timestamp' => now(),
                 ]);
 
-                        Logs::create([
-            'user_id' => $userId,
-            'branch_id' => $branchId,
-            'action' => "{$user->last_name} made a sale: {$sale->sales_id}.",
-            'timestamp' => now(),
-        ]);
+                Logs::create([
+                    'user_id' => $userId,
+                    'branch_id' => $branchId,
+                    'action' => "{$user->last_name} made a sale: {$sale->sales_id}.",
+                    'timestamp' => now(),
+                ]);
             });
 
             return response()->json([
                 'success' => true,
-                'message' => 'Checkout completed successfully!'
+                'message' => 'Checkout completed successfully!',
             ]);
         } catch (\Exception $e) {
-            Log::error('Checkout error: ' . $e->getMessage());
+            Log::error('Checkout error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Checkout failed: ' . $e->getMessage()
+                'message' => 'Checkout failed: '.$e->getMessage(),
             ], 500);
         }
     }

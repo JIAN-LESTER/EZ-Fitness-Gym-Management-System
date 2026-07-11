@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Logs;
 use App\Models\Branches;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Logs;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class BranchesController extends Controller
 {
@@ -33,12 +33,12 @@ class BranchesController extends Controller
     public function edit($branch_id)
     {
         $branch = Branches::where('branch_id', $branch_id)->firstOrFail();
-        
+
         // Return JSON for AJAX requests
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json($branch);
         }
-        
+
         // Otherwise return view (if needed)
         return view('admin.branches-edit', compact('branch'));
     }
@@ -69,9 +69,9 @@ class BranchesController extends Controller
             $validated['street'],
             $validated['city'],
             $validated['province'],
-            $validated['region']
+            $validated['region'],
         ]);
-        
+
         $address = implode(', ', $addressParts);
 
         $authUser = Auth::user();
@@ -101,7 +101,7 @@ class BranchesController extends Controller
 
         $validated = $request->validate([
             // Updated to specify branch_id as the column to ignore during unique check
-            'name' => 'required|string|max:255|unique:branches,name,' . $branch_id . ',branch_id',
+            'name' => 'required|string|max:255|unique:branches,name,'.$branch_id.',branch_id',
             'country' => 'required|string|max:100',
             'region' => 'required|string|max:100',
             'province' => 'required|string|max:100',
@@ -124,9 +124,9 @@ class BranchesController extends Controller
             $validated['street'],
             $validated['city'],
             $validated['province'],
-            $validated['region']
+            $validated['region'],
         ]);
-        
+
         $address = implode(', ', $addressParts);
 
         $authUser = Auth::user();
@@ -136,7 +136,7 @@ class BranchesController extends Controller
 
         Logs::create([
             'user_id' => $authUser->user_id,
-            'branch_id'=> $branchId,
+            'branch_id' => $branchId,
             'action' => "{$authUser->last_name} updated a branch: {$validated['name']}.",
             'timestamp' => now(),
         ]);
@@ -187,26 +187,27 @@ class BranchesController extends Controller
         }
 
         $request->validate([
-            'branch_id' => 'required|string'
+            'branch_id' => 'required|string',
         ]);
 
         if ($request->branch_id === 'all') {
             session()->forget(['selected_branch_id', 'selected_branch_name']);
+
             return back()->with('success', 'Viewing all branches');
         }
 
         $branch = Branches::where('branch_id', $request->branch_id)->first();
 
-        if (!$branch) {
+        if (! $branch) {
             return back()->with('error', 'Branch not found or inactive');
         }
 
         session([
             'selected_branch_id' => $branch->branch_id,
-            'selected_branch_name' => $branch->name
+            'selected_branch_name' => $branch->name,
         ]);
 
-        return back()->with('success', 'Switched to ' . $branch->name);
+        return back()->with('success', 'Switched to '.$branch->name);
     }
 
     protected function getSelectedBranchId()
@@ -217,11 +218,11 @@ class BranchesController extends Controller
     protected function applyBranchFilter($query, $column = 'branch_id')
     {
         $branchId = $this->getSelectedBranchId();
-        
+
         if ($branchId) {
             $query->where($column, $branchId);
         }
-        
+
         return $query;
     }
 }

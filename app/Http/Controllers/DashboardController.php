@@ -2,24 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Sales;
-use App\Models\MemberProfile;
-use App\Models\Inventory;
-use App\Models\Product;
 use App\Models\Attendance;
-use App\Models\StockIn;
-use App\Models\StockOut;
-use App\Models\SalesItem;
-use App\Models\Transactions;
-use App\Models\Subscriptions;
 use App\Models\Branches;
+use App\Models\Inventory;
+use App\Models\MemberProfile;
+use App\Models\Product;
+use App\Models\Sales;
+use App\Models\SalesItem;
+use App\Models\Subscriptions;
+use App\Models\Transactions;
 use App\Models\User;
 use App\Services\CacheService;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -57,9 +55,9 @@ class DashboardController extends Controller
         $currentOccupancy = CacheService::remember(
             'occupancy',
             'realtime',
-            fn() => Attendance::whereDate('check_in_time', Carbon::today())
+            fn () => Attendance::whereDate('check_in_time', Carbon::today())
                 ->where('status', 'checked_in')
-                ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
+                ->when($selectedBranchId, fn ($q) => $q->where('branch_id', $selectedBranchId))
                 ->count(),
             'current'
         );
@@ -94,15 +92,15 @@ class DashboardController extends Controller
             'products' => $monthlyProductSales,
             'memberships' => $monthlyMembershipRevenue,
             'subscriptions' => $monthlySubscriptionRevenue,
-            'total' => $monthlySales + $monthlySubscriptionRevenue
+            'total' => $monthlySales + $monthlySubscriptionRevenue,
         ];
 
         // === RECENT SALES (Short cache) ===
         $recentSales = CacheService::remember(
             'recent_sales',
             'realtime',
-            fn() => Sales::with(['user', 'items.product', 'items.plan', 'branch'])
-                ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
+            fn () => Sales::with(['user', 'items.product', 'items.plan', 'branch'])
+                ->when($selectedBranchId, fn ($q) => $q->where('branch_id', $selectedBranchId))
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get()
@@ -116,18 +114,18 @@ class DashboardController extends Controller
         $subscriptionsByType = CacheService::remember(
             'subscriptions_by_type',
             'hourly',
-            fn() => Subscriptions::select('subscriptions.*', DB::raw('COUNT(member_profiles.member_id) as member_count'))
+            fn () => Subscriptions::select('subscriptions.*', DB::raw('COUNT(member_profiles.member_id) as member_count'))
                 ->leftJoin('member_profiles', 'subscriptions.subscription_id', '=', 'member_profiles.subscription_id')
                 ->where('member_profiles.status', 'active')
-                ->when($selectedBranchId, fn($q) => $q->where('subscriptions.branch_id', $selectedBranchId))
-                ->groupBy('subscriptions.subscription_id', 'subscriptions.branch_id', 'subscriptions.name', 
-                         'subscriptions.details', 'subscriptions.price', 'subscriptions.duration_days', 
-                         'subscriptions.created_at', 'subscriptions.updated_at')
+                ->when($selectedBranchId, fn ($q) => $q->where('subscriptions.branch_id', $selectedBranchId))
+                ->groupBy('subscriptions.subscription_id', 'subscriptions.branch_id', 'subscriptions.name',
+                    'subscriptions.details', 'subscriptions.price', 'subscriptions.duration_days',
+                    'subscriptions.created_at', 'subscriptions.updated_at')
                 ->orderBy('member_count', 'desc')
                 ->get()
-                ->map(fn($subscription) => [
+                ->map(fn ($subscription) => [
                     'subscription_name' => $subscription->name,
-                    'count' => $subscription->member_count
+                    'count' => $subscription->member_count,
                 ])
         );
 
@@ -135,15 +133,15 @@ class DashboardController extends Controller
         $expiringMemberships = CacheService::remember(
             'expiring_memberships',
             'hourly',
-            fn() => MemberProfile::where('status', 'active')
+            fn () => MemberProfile::where('status', 'active')
                 ->whereBetween('end_date', [Carbon::now(), Carbon::now()->addDays(7)])
-                ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
+                ->when($selectedBranchId, fn ($q) => $q->where('branch_id', $selectedBranchId))
                 ->count()
         );
 
         // === BRANCH PERFORMANCE (Super Admin Only) ===
         $branchPerformance = [];
-        if (auth()->user()->role === 'super_admin' && !$selectedBranchId) {
+        if (auth()->user()->role === 'super_admin' && ! $selectedBranchId) {
             $branchPerformance = $this->getBranchPerformance();
         }
 
@@ -201,7 +199,7 @@ class DashboardController extends Controller
 
     private function getBranchStats(): array
     {
-        return CacheService::remember('branch_stats', 'stats', function() {
+        return CacheService::remember('branch_stats', 'stats', function () {
             return [
                 'totalBranches' => Branches::count(),
                 'activeBranches' => Branches::whereHas('users', function ($query) {
@@ -215,14 +213,14 @@ class DashboardController extends Controller
 
     private function getMembershipOverview($branchId): array
     {
-        return CacheService::remember('membership_overview', 'stats', function() use ($branchId) {
+        return CacheService::remember('membership_overview', 'stats', function () use ($branchId) {
             return [
                 'totalActiveMembers' => MemberProfile::where('status', 'active')
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                     ->count(),
                 'newMembersThisMonth' => MemberProfile::whereMonth('start_date', Carbon::now()->month)
                     ->whereYear('start_date', Carbon::now()->year)
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                     ->count(),
             ];
         }, $branchId);
@@ -230,19 +228,19 @@ class DashboardController extends Controller
 
     private function getSubscriptionStats($branchId): array
     {
-        return CacheService::remember('subscription_stats', 'stats', function() use ($branchId) {
-            $totalSubscriptions = Subscriptions::when($branchId, fn($q) => $q->where('branch_id', $branchId))->count();
-            
+        return CacheService::remember('subscription_stats', 'stats', function () use ($branchId) {
+            $totalSubscriptions = Subscriptions::when($branchId, fn ($q) => $q->where('branch_id', $branchId))->count();
+
             $activeSubscriptions = MemberProfile::where('status', 'active')
                 ->whereNotNull('subscription_id')
-                ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->count();
 
             $monthlySubscriptionRevenue = MemberProfile::where('status', 'active')
                 ->whereNotNull('member_profiles.subscription_id')
                 ->whereMonth('start_date', '<=', Carbon::now()->month)
                 ->whereYear('start_date', '<=', Carbon::now()->year)
-                ->when($branchId, fn($q) => $q->where('member_profiles.branch_id', $branchId))
+                ->when($branchId, fn ($q) => $q->where('member_profiles.branch_id', $branchId))
                 ->join('subscriptions', 'member_profiles.subscription_id', '=', 'subscriptions.subscription_id')
                 ->sum('subscriptions.price');
 
@@ -252,14 +250,14 @@ class DashboardController extends Controller
 
     private function getInventoryStats($branchId): array
     {
-        return CacheService::remember('inventory_stats', 'hourly', function() use ($branchId) {
+        return CacheService::remember('inventory_stats', 'hourly', function () use ($branchId) {
             $lowStockThreshold = 10;
-            
+
             return [
-                'totalItemsInStock' => Inventory::when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                'totalItemsInStock' => Inventory::when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                     ->sum('quantity'),
                 'lowStockItems' => Inventory::where('quantity', '<=', $lowStockThreshold)
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                     ->count(),
             ];
         }, $branchId);
@@ -267,14 +265,14 @@ class DashboardController extends Controller
 
     private function getSalesOverview($branchId): array
     {
-        return CacheService::remember('sales_overview', 'realtime', function() use ($branchId) {
+        return CacheService::remember('sales_overview', 'realtime', function () use ($branchId) {
             return [
                 'todaySales' => Sales::whereDate('created_at', Carbon::today())
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                     ->count(),
                 'todayRevenue' => Sales::whereDate('created_at', Carbon::today())
                     ->where('status', 'paid')
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                     ->sum('total_amount'),
             ];
         }, $branchId);
@@ -282,18 +280,18 @@ class DashboardController extends Controller
 
     private function getMonthlySalesStats($branchId): array
     {
-        return CacheService::remember('monthly_sales_stats', 'stats', function() use ($branchId) {
+        return CacheService::remember('monthly_sales_stats', 'stats', function () use ($branchId) {
             $monthlySales = Sales::whereMonth('created_at', Carbon::now()->month)
                 ->whereYear('created_at', Carbon::now()->year)
                 ->where('status', 'paid')
-                ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->sum('total_amount');
 
             $monthlyProductSales = SalesItem::whereHas('sale', function ($query) use ($branchId) {
                 $query->whereMonth('created_at', Carbon::now()->month)
                     ->whereYear('created_at', Carbon::now()->year)
                     ->where('status', 'paid')
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId));
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
             })
                 ->whereNotNull('product_id')
                 ->whereNull('plan_id')
@@ -303,7 +301,7 @@ class DashboardController extends Controller
                 $query->whereMonth('created_at', Carbon::now()->month)
                     ->whereYear('created_at', Carbon::now()->year)
                     ->where('status', 'paid')
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId));
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
             })
                 ->whereNotNull('plan_id')
                 ->sum('sub_total');
@@ -314,16 +312,16 @@ class DashboardController extends Controller
 
     private function getTransactionStats($branchId): array
     {
-        return CacheService::remember('transaction_stats', 'stats', function() use ($branchId) {
+        return CacheService::remember('transaction_stats', 'stats', function () use ($branchId) {
             return [
                 'stockInCount' => Transactions::where('type', 'stock_in')
                     ->whereMonth('created_at', Carbon::now()->month)
                     ->whereYear('created_at', Carbon::now()->year)
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                     ->count(),
                 'stockOutCount' => Transactions::whereMonth('created_at', Carbon::now()->month)
                     ->whereYear('created_at', Carbon::now()->year)
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                     ->count(),
             ];
         }, $branchId);
@@ -331,11 +329,11 @@ class DashboardController extends Controller
 
     private function getProductPerformance($branchId): array
     {
-        return CacheService::remember('product_performance', 'hourly', function() use ($branchId) {
+        return CacheService::remember('product_performance', 'hourly', function () use ($branchId) {
             $highestSellingProduct = SalesItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
                 ->whereNotNull('product_id')
                 ->whereNull('plan_id')
-                ->whereHas('sale', fn($q) => $q->when($branchId, fn($query) => $query->where('branch_id', $branchId)))
+                ->whereHas('sale', fn ($q) => $q->when($branchId, fn ($query) => $query->where('branch_id', $branchId)))
                 ->groupBy('product_id')
                 ->orderBy('total_sold', 'desc')
                 ->first();
@@ -347,7 +345,7 @@ class DashboardController extends Controller
             $lowestSellingProduct = SalesItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
                 ->whereNotNull('product_id')
                 ->whereNull('plan_id')
-                ->whereHas('sale', fn($q) => $q->when($branchId, fn($query) => $query->where('branch_id', $branchId)))
+                ->whereHas('sale', fn ($q) => $q->when($branchId, fn ($query) => $query->where('branch_id', $branchId)))
                 ->groupBy('product_id')
                 ->orderBy('total_sold', 'asc')
                 ->first();
@@ -362,12 +360,12 @@ class DashboardController extends Controller
 
     private function getPlanPerformance($branchId): array
     {
-        return CacheService::remember('plan_performance', 'hourly', function() use ($branchId) {
+        return CacheService::remember('plan_performance', 'hourly', function () use ($branchId) {
             $mostPopularPlan = SalesItem::select('plan_id', DB::raw('COUNT(*) as total_sales'))
                 ->whereNotNull('plan_id')
                 ->whereHas('sale', function ($query) use ($branchId) {
                     $query->where('status', 'paid')
-                        ->when($branchId, fn($q) => $q->where('branch_id', $branchId));
+                        ->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
                 })
                 ->groupBy('plan_id')
                 ->orderBy('total_sales', 'desc')
@@ -379,10 +377,10 @@ class DashboardController extends Controller
 
             $mostPopularSubscription = Subscriptions::select('subscriptions.*', DB::raw('COUNT(member_profiles.member_id) as member_count'))
                 ->leftJoin('member_profiles', 'subscriptions.subscription_id', '=', 'member_profiles.subscription_id')
-                ->when($branchId, fn($q) => $q->where('subscriptions.branch_id', $branchId))
-                ->groupBy('subscriptions.subscription_id', 'subscriptions.branch_id', 'subscriptions.name', 
-                         'subscriptions.details', 'subscriptions.price', 'subscriptions.duration_days', 
-                         'subscriptions.created_at', 'subscriptions.updated_at')
+                ->when($branchId, fn ($q) => $q->where('subscriptions.branch_id', $branchId))
+                ->groupBy('subscriptions.subscription_id', 'subscriptions.branch_id', 'subscriptions.name',
+                    'subscriptions.details', 'subscriptions.price', 'subscriptions.duration_days',
+                    'subscriptions.created_at', 'subscriptions.updated_at')
                 ->orderBy('member_count', 'desc')
                 ->first();
 
@@ -392,12 +390,12 @@ class DashboardController extends Controller
 
     private function getSalesByType($branchId): array
     {
-        return CacheService::remember('sales_by_type', 'stats', function() use ($branchId) {
+        return CacheService::remember('sales_by_type', 'stats', function () use ($branchId) {
             $productSalesCount = SalesItem::whereHas('sale', function ($query) use ($branchId) {
                 $query->whereMonth('created_at', Carbon::now()->month)
                     ->whereYear('created_at', Carbon::now()->year)
                     ->where('status', 'paid')
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId));
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
             })
                 ->whereNotNull('product_id')
                 ->whereNull('plan_id')
@@ -407,7 +405,7 @@ class DashboardController extends Controller
                 $query->whereMonth('created_at', Carbon::now()->month)
                     ->whereYear('created_at', Carbon::now()->year)
                     ->where('status', 'paid')
-                    ->when($branchId, fn($q) => $q->where('branch_id', $branchId));
+                    ->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
             })
                 ->whereNotNull('plan_id')
                 ->count();
@@ -418,19 +416,19 @@ class DashboardController extends Controller
 
     private function getBranchPerformance(): array
     {
-        return CacheService::remember('branch_performance', 'stats', function() {
+        return CacheService::remember('branch_performance', 'stats', function () {
             return Branches::select('branches.*')
                 ->withCount([
                     'users as member_count' => function ($query) {
-                        $query->whereHas('member', fn($q) => $q->where('status', 'active'));
-                    }
+                        $query->whereHas('member', fn ($q) => $q->where('status', 'active'));
+                    },
                 ])
                 ->with([
                     'sales' => function ($query) {
                         $query->whereMonth('created_at', Carbon::now()->month)
                             ->whereYear('created_at', Carbon::now()->year)
                             ->where('status', 'paid');
-                    }
+                    },
                 ])
                 ->get()
                 ->map(function ($branch) {
@@ -449,7 +447,7 @@ class DashboardController extends Controller
 
     private function getSalesTrend($period, $branchId = null)
     {
-        return CacheService::remember('sales_trend', 'stats', function() use ($period, $branchId) {
+        return CacheService::remember('sales_trend', 'stats', function () use ($period, $branchId) {
             switch ($period) {
                 case 'today':
                     // Generate all 24 hours with 0 values for missing hours
@@ -458,13 +456,13 @@ class DashboardController extends Controller
                     });
 
                     $sales = Sales::select(
-                        DB::raw('HOUR(created_at) as hour'),
+                        DB::raw('EXTRACT(HOUR FROM created_at) as hour'),
                         DB::raw('SUM(total_amount) as total_revenue'),
                         DB::raw('COUNT(*) as total_sales')
                     )
                         ->whereDate('created_at', Carbon::today())
                         ->where('status', 'paid')
-                        ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                        ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                         ->groupBy('hour')
                         ->get()
                         ->keyBy('hour');
@@ -472,6 +470,7 @@ class DashboardController extends Controller
                     // Merge actual sales data with all hours
                     return $hourlyData->map(function ($defaultValue, $hour) use ($sales) {
                         $data = $sales->get($hour, (object) $defaultValue);
+
                         return (object) [
                             'label' => Carbon::today()->setHour($hour)->format('h A'),
                             'total_revenue' => $data->total_revenue ?? 0,
@@ -494,13 +493,14 @@ class DashboardController extends Controller
                     )
                         ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
                         ->where('status', 'paid')
-                        ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                        ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                         ->groupBy('date')
                         ->get()
                         ->keyBy('date');
 
                     return $days->map(function ($defaultValue, $date) use ($sales) {
                         $data = $sales->get($date, (object) $defaultValue);
+
                         return (object) [
                             'label' => Carbon::parse($date)->format('D'),
                             'total_revenue' => $data->total_revenue ?? 0,
@@ -514,21 +514,21 @@ class DashboardController extends Controller
                     return collect(range(1, 4))->map(function ($weekNum) use ($branchId) {
                         $weekStart = Carbon::now()->subWeeks(4 - $weekNum)->startOfWeek();
                         $weekEnd = $weekStart->copy()->endOfWeek();
-                        
+
                         $revenue = Sales::whereDate('created_at', '>=', $weekStart)
                             ->whereDate('created_at', '<=', $weekEnd)
                             ->where('status', 'paid')
-                            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                             ->sum('total_amount');
-                            
+
                         $sales = Sales::whereDate('created_at', '>=', $weekStart)
                             ->whereDate('created_at', '<=', $weekEnd)
                             ->where('status', 'paid')
-                            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                             ->count();
-                        
+
                         return (object) [
-                            'label' => 'Week ' . $weekNum,
+                            'label' => 'Week '.$weekNum,
                             'total_revenue' => $revenue ?? 0,
                             'total_sales' => $sales ?? 0,
                         ];
@@ -539,7 +539,7 @@ class DashboardController extends Controller
 
     private function getMembershipTrend($period, $branchId = null)
     {
-        return CacheService::remember('membership_trend', 'stats', function() use ($period, $branchId) {
+        return CacheService::remember('membership_trend', 'stats', function () use ($period, $branchId) {
             switch ($period) {
                 case 'today':
                     // Generate all 24 hours
@@ -548,18 +548,19 @@ class DashboardController extends Controller
                     });
 
                     $members = MemberProfile::select(
-                        DB::raw('HOUR(start_date) as hour'),
+                        DB::raw('EXTRACT(HOUR FROM start_date) as hour'),
                         DB::raw('COUNT(*) as count')
                     )
                         ->whereDate('start_date', Carbon::today())
                         ->whereNotNull('start_date')
-                        ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                        ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                         ->groupBy('hour')
                         ->get()
                         ->keyBy('hour');
 
                     return $hourlyData->map(function ($defaultValue, $hour) use ($members) {
                         $data = $members->get($hour, (object) $defaultValue);
+
                         return (object) [
                             'label' => Carbon::today()->setHour($hour)->format('h A'),
                             'count' => $data->count ?? 0,
@@ -580,13 +581,14 @@ class DashboardController extends Controller
                     )
                         ->where('start_date', '>=', Carbon::now()->subDays(6)->startOfDay())
                         ->whereNotNull('start_date')
-                        ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                        ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                         ->groupBy('date')
                         ->get()
                         ->keyBy('date');
 
                     return $days->map(function ($defaultValue, $date) use ($members) {
                         $data = $members->get($date, (object) $defaultValue);
+
                         return (object) [
                             'label' => Carbon::parse($date)->format('D'),
                             'count' => $data->count ?? 0,
@@ -599,15 +601,15 @@ class DashboardController extends Controller
                     return collect(range(1, 4))->map(function ($weekNum) use ($branchId) {
                         $weekStart = Carbon::now()->subWeeks(4 - $weekNum)->startOfWeek();
                         $weekEnd = $weekStart->copy()->endOfWeek();
-                        
+
                         $count = MemberProfile::whereDate('start_date', '>=', $weekStart)
                             ->whereDate('start_date', '<=', $weekEnd)
                             ->whereNotNull('start_date')
-                            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                             ->count();
-                        
+
                         return (object) [
-                            'label' => 'Week ' . $weekNum,
+                            'label' => 'Week '.$weekNum,
                             'count' => $count ?? 0,
                         ];
                     });
@@ -617,7 +619,7 @@ class DashboardController extends Controller
 
     private function getSubscriptionTrend($period, $branchId = null)
     {
-        return CacheService::remember('subscription_trend', 'stats', function() use ($period, $branchId) {
+        return CacheService::remember('subscription_trend', 'stats', function () use ($period, $branchId) {
             switch ($period) {
                 case 'today':
                     // Generate all 24 hours
@@ -626,20 +628,21 @@ class DashboardController extends Controller
                     });
 
                     $subscriptions = MemberProfile::select(
-                        DB::raw('HOUR(member_profiles.start_date) as hour'),
+                        DB::raw('EXTRACT(HOUR FROM member_profiles.start_date) as hour'),
                         DB::raw('COUNT(*) as count'),
                         DB::raw('SUM(subscriptions.price) as total_revenue')
                     )
                         ->join('subscriptions', 'member_profiles.subscription_id', '=', 'subscriptions.subscription_id')
                         ->whereDate('member_profiles.start_date', Carbon::today())
                         ->whereNotNull('member_profiles.subscription_id')
-                        ->when($branchId, fn($q) => $q->where('member_profiles.branch_id', $branchId))
+                        ->when($branchId, fn ($q) => $q->where('member_profiles.branch_id', $branchId))
                         ->groupBy('hour')
                         ->get()
                         ->keyBy('hour');
 
                     return $hourlyData->map(function ($defaultValue, $hour) use ($subscriptions) {
                         $data = $subscriptions->get($hour, (object) $defaultValue);
+
                         return (object) [
                             'label' => Carbon::today()->setHour($hour)->format('h A'),
                             'count' => $data->count ?? 0,
@@ -663,13 +666,14 @@ class DashboardController extends Controller
                         ->join('subscriptions', 'member_profiles.subscription_id', '=', 'subscriptions.subscription_id')
                         ->where('member_profiles.start_date', '>=', Carbon::now()->subDays(6)->startOfDay())
                         ->whereNotNull('member_profiles.subscription_id')
-                        ->when($branchId, fn($q) => $q->where('member_profiles.branch_id', $branchId))
+                        ->when($branchId, fn ($q) => $q->where('member_profiles.branch_id', $branchId))
                         ->groupBy('date')
                         ->get()
                         ->keyBy('date');
 
                     return $days->map(function ($defaultValue, $date) use ($subscriptions) {
                         $data = $subscriptions->get($date, (object) $defaultValue);
+
                         return (object) [
                             'label' => Carbon::parse($date)->format('D'),
                             'count' => $data->count ?? 0,
@@ -683,7 +687,7 @@ class DashboardController extends Controller
                     return collect(range(1, 4))->map(function ($weekNum) use ($branchId) {
                         $weekStart = Carbon::now()->subWeeks(4 - $weekNum)->startOfWeek();
                         $weekEnd = $weekStart->copy()->endOfWeek();
-                        
+
                         $data = MemberProfile::select(
                             DB::raw('COUNT(*) as count'),
                             DB::raw('SUM(subscriptions.price) as total_revenue')
@@ -692,11 +696,11 @@ class DashboardController extends Controller
                             ->whereDate('member_profiles.start_date', '>=', $weekStart)
                             ->whereDate('member_profiles.start_date', '<=', $weekEnd)
                             ->whereNotNull('member_profiles.subscription_id')
-                            ->when($branchId, fn($q) => $q->where('member_profiles.branch_id', $branchId))
+                            ->when($branchId, fn ($q) => $q->where('member_profiles.branch_id', $branchId))
                             ->first();
-                        
+
                         return (object) [
-                            'label' => 'Week ' . $weekNum,
+                            'label' => 'Week '.$weekNum,
                             'count' => $data->count ?? 0,
                             'total_revenue' => $data->total_revenue ?? 0,
                         ];

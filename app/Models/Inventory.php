@@ -26,7 +26,8 @@ class Inventory extends Model
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
 
-        public function branch(){
+    public function branch()
+    {
         return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
     }
 }

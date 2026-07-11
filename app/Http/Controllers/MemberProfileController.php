@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class MemberProfileController extends Controller
 {
@@ -26,16 +27,16 @@ class MemberProfileController extends Controller
 
         // Always fresh – never cache critical membership state
         $memberProfile = MemberProfile::select([
-                'member_id', 'user_id', 'plan_id', 'subscription_id',
-                'start_date', 'end_date',
-                'start_date_for_subscription', 'end_date_for_subscription',
-                'subscription_status', 'status', 'qr_code',
-                'isApproved', 'isApprovedForSubscription',
-                'isDisabled', 'isDisabledForSubscription',
-                'renewal_pending', 'suspended_at',
-                'days_remaining_before_suspend',
-                'plan_days_remaining_before_suspend',
-            ])
+            'member_id', 'user_id', 'plan_id', 'subscription_id',
+            'start_date', 'end_date',
+            'start_date_for_subscription', 'end_date_for_subscription',
+            'subscription_status', 'status', 'qr_code',
+            'isApproved', 'isApprovedForSubscription',
+            'isDisabled', 'isDisabledForSubscription',
+            'renewal_pending', 'suspended_at',
+            'days_remaining_before_suspend',
+            'plan_days_remaining_before_suspend',
+        ])
             ->with([
                 'plan:plan_id,name,price,duration_days',
                 'subscription:subscription_id,name,price,duration_days',
@@ -46,13 +47,13 @@ class MemberProfileController extends Controller
 
         if ($memberProfile) {
             \Log::info('Dashboard loaded member profile', [
-                'member_id'                          => $memberProfile->member_id,
-                'status'                             => $memberProfile->status,
-                'subscription_status'                => $memberProfile->subscription_status,
+                'member_id' => $memberProfile->member_id,
+                'status' => $memberProfile->status,
+                'subscription_status' => $memberProfile->subscription_status,
                 'plan_days_remaining_before_suspend' => $memberProfile->plan_days_remaining_before_suspend,
-                'days_remaining_before_suspend'      => $memberProfile->days_remaining_before_suspend,
-                'end_date'                           => $memberProfile->end_date,
-                'end_date_for_subscription'          => $memberProfile->end_date_for_subscription,
+                'days_remaining_before_suspend' => $memberProfile->days_remaining_before_suspend,
+                'end_date' => $memberProfile->end_date,
+                'end_date_for_subscription' => $memberProfile->end_date_for_subscription,
             ]);
         }
 
@@ -62,19 +63,17 @@ class MemberProfileController extends Controller
             'realtime',
             fn () => Attendance::whereDate('check_in_time', Carbon::today())
                 ->where('status', 'checked_in')
-                ->when($user->branch_id, fn ($q) =>
-                    $q->whereHas('member.user', fn ($q2) =>
-                        $q2->where('branch_id', $user->branch_id)
-                    )
+                ->when($user->branch_id, fn ($q) => $q->whereHas('member.user', fn ($q2) => $q2->where('branch_id', $user->branch_id)
+                )
                 )
                 ->count(),
             $user->branch_id
         );
 
         // Subscription days left + derived status
-        $daysLeft         = null;
+        $daysLeft = null;
         $membershipStatus = null;
-        $isExpiringSoon   = false;
+        $isExpiringSoon = false;
 
         if ($memberProfile && $memberProfile->end_date_for_subscription) {
             $daysLeft = (int) ceil(
@@ -92,7 +91,7 @@ class MemberProfileController extends Controller
                 }
             } elseif ($daysLeft <= 7) {
                 $membershipStatus = 'expiring_soon';
-                $isExpiringSoon   = true;
+                $isExpiringSoon = true;
             } else {
                 $membershipStatus = 'active';
             }
@@ -139,28 +138,28 @@ class MemberProfileController extends Controller
             'attendance_counts',
             'stats',
             fn () => Attendance::selectRaw(
-                    'COUNT(*) as total,
-                     SUM(CASE WHEN MONTH(check_in_time) = ? AND YEAR(check_in_time) = ? THEN 1 ELSE 0 END) as this_month',
-                    [Carbon::now()->month, Carbon::now()->year]
-                )
+                'COUNT(*) as total,
+                     SUM(CASE WHEN EXTRACT(MONTH FROM check_in_time) = ? AND EXTRACT(YEAR FROM check_in_time) = ? THEN 1 ELSE 0 END) as this_month',
+                [Carbon::now()->month, Carbon::now()->year]
+            )
                 ->where('member_id', $memberProfile?->member_id)
                 ->first(),
             $memberProfile?->member_id
         );
 
         return view('member.dashboard', [
-            'member'            => $user,
-            'user'              => $user,
-            'plans'             => $plans,
-            'memberProfile'     => $memberProfile,
-            'daysRemaining'     => $daysLeft,
-            'daysLeft'          => $daysLeft,
-            'currentOccupancy'  => $currentOccupancy,
-            'membershipStatus'  => $membershipStatus,
-            'isExpiringSoon'    => $isExpiringSoon,
-            'subscriptions'     => $subscriptions,
-            'recentAttendance'  => $recentAttendance,
-            'totalCheckIns'     => $attendanceCounts->total ?? 0,
+            'member' => $user,
+            'user' => $user,
+            'plans' => $plans,
+            'memberProfile' => $memberProfile,
+            'daysRemaining' => $daysLeft,
+            'daysLeft' => $daysLeft,
+            'currentOccupancy' => $currentOccupancy,
+            'membershipStatus' => $membershipStatus,
+            'isExpiringSoon' => $isExpiringSoon,
+            'subscriptions' => $subscriptions,
+            'recentAttendance' => $recentAttendance,
+            'totalCheckIns' => $attendanceCounts->total ?? 0,
             'thisMonthCheckIns' => $attendanceCounts->this_month ?? 0,
         ]);
     }
@@ -168,98 +167,99 @@ class MemberProfileController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
     // Complete member profile - FIXED VERSION
     // ─────────────────────────────────────────────────────────────────────────
-public function completeMemberProfile(Request $request)
-{
-    $user = Auth::user();
+    public function completeMemberProfile(Request $request)
+    {
+        $user = Auth::user();
 
-    try {
-        $validated = $request->validate([
-            'branch_id'     => 'required|exists:branches,branch_id',
-            'sex'           => 'required|in:male,female',
-            'birthday'      => 'required|date|before:today',
-            'height'        => 'nullable|numeric|min:50|max:300',
-            'weight'        => 'nullable|numeric|min:10|max:500',
-            'mobile_number' => ['required', 'regex:#^(09|\+639)[0-9]{9}$#'],
-        ]);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        return back()->withErrors($e->errors())->withInput();
-    }
+        try {
+            $validated = $request->validate([
+                'branch_id' => 'required|exists:branches,branch_id',
+                'sex' => 'required|in:male,female',
+                'birthday' => 'required|date|before:today',
+                'height' => 'nullable|numeric|min:50|max:300',
+                'weight' => 'nullable|numeric|min:10|max:500',
+                'mobile_number' => ['required', 'regex:#^(09|\+639)[0-9]{9}$#'],
+            ]);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        }
 
-    try {
-        \DB::transaction(function () use ($user, $validated) {
+        try {
+            \DB::transaction(function () use ($user, $validated) {
 
-            // Step 1: Save branch_id directly to DB
-            \DB::table('users')
-                ->where('user_id', $user->user_id)
-                ->update(['branch_id' => $validated['branch_id']]);
-
-            // Step 2: Check if member profile already exists
-            $existing = \DB::table('member_profiles')
-                ->where('user_id', $user->user_id)
-                ->first();
-
-            $profileData = [
-                'sex'                       => $validated['sex'],
-                'birthday'                  => $validated['birthday'],
-                'height'                    => $validated['height'] ?? null,
-                'weight'                    => $validated['weight'] ?? null,
-                'mobile_number'             => $validated['mobile_number'],
-                'status'                    => 'inactive',
-                'subscription_status'       => 'pending_selection',
-                'isApproved'                => false,
-                'isApprovedForSubscription' => false,
-                'isDisabled'                => false,
-                'isDisabledForSubscription' => false,
-                // NO updated_at here — column doesn't exist
-            ];
-
-            if ($existing) {
-                // Only reset plan/subscription if not already selected
-                if (!$existing->plan_id) {
-                    $profileData['plan_id']         = null;
-                    $profileData['subscription_id'] = null;
-                }
-
-                \DB::table('member_profiles')
+                // Step 1: Save branch_id directly to DB
+                \DB::table('users')
                     ->where('user_id', $user->user_id)
-                    ->update($profileData);
+                    ->update(['branch_id' => $validated['branch_id']]);
 
-            } else {
-                // Insert brand new record — also no created_at if column missing
-                \DB::table('member_profiles')->insert(array_merge($profileData, [
-                    'user_id'         => $user->user_id,
-                    'plan_id'         => null,
-                    'subscription_id' => null,
-                ]));
-            }
-        });
+                // Step 2: Check if member profile already exists
+                $existing = \DB::table('member_profiles')
+                    ->where('user_id', $user->user_id)
+                    ->first();
 
-    } catch (\Exception $e) {
-        \Log::error('completeMemberProfile failed: ' . $e->getMessage());
-        return back()
-            ->with('error', 'Something went wrong saving your profile. Please try again.')
-            ->withInput();
+                $profileData = [
+                    'sex' => $validated['sex'],
+                    'birthday' => $validated['birthday'],
+                    'height' => $validated['height'] ?? null,
+                    'weight' => $validated['weight'] ?? null,
+                    'mobile_number' => $validated['mobile_number'],
+                    'status' => 'inactive',
+                    'subscription_status' => 'pending_selection',
+                    'isApproved' => false,
+                    'isApprovedForSubscription' => false,
+                    'isDisabled' => false,
+                    'isDisabledForSubscription' => false,
+                    // NO updated_at here — column doesn't exist
+                ];
+
+                if ($existing) {
+                    // Only reset plan/subscription if not already selected
+                    if (! $existing->plan_id) {
+                        $profileData['plan_id'] = null;
+                        $profileData['subscription_id'] = null;
+                    }
+
+                    \DB::table('member_profiles')
+                        ->where('user_id', $user->user_id)
+                        ->update($profileData);
+
+                } else {
+                    // Insert brand new record — also no created_at if column missing
+                    \DB::table('member_profiles')->insert(array_merge($profileData, [
+                        'user_id' => $user->user_id,
+                        'plan_id' => null,
+                        'subscription_id' => null,
+                    ]));
+                }
+            });
+
+        } catch (\Exception $e) {
+            \Log::error('completeMemberProfile failed: '.$e->getMessage());
+
+            return back()
+                ->with('error', 'Something went wrong saving your profile. Please try again.')
+                ->withInput();
+        }
+
+        if (class_exists('\App\Services\CacheService')) {
+            CacheService::forgetPattern('member_profile');
+            CacheService::forgetPattern('membership_plans');
+        }
+
+        return redirect()
+            ->route('member.dashboard')
+            ->with('success', 'Profile completed! Please select a membership plan.');
     }
-
-    if (class_exists('\App\Services\CacheService')) {
-        \App\Services\CacheService::forgetPattern('member_profile');
-        \App\Services\CacheService::forgetPattern('membership_plans');
-    }
-
-    return redirect()
-        ->route('member.dashboard')
-        ->with('success', 'Profile completed! Please select a membership plan.');
-}
     // ─────────────────────────────────────────────────────────────────────────
     // Select plan
     // ─────────────────────────────────────────────────────────────────────────
 
     public function selectPlan(Request $request)
     {
-        $user   = Auth::user();
+        $user = Auth::user();
         $member = $user->member;
 
-        if (!$member) {
+        if (! $member) {
             return redirect()->back()->with('error', 'Please complete your profile first.');
         }
 
@@ -272,24 +272,24 @@ public function completeMemberProfile(Request $request)
             ],
         ], [
             'plan_id.required' => 'Please select a membership plan.',
-            'plan_id.exists'   => 'The selected plan is not available for your branch.',
+            'plan_id.exists' => 'The selected plan is not available for your branch.',
         ]);
 
         $plan = MembershipPlan::findOrFail($validated['plan_id']);
 
         $member->update([
-            'plan_id'             => $plan->plan_id,
+            'plan_id' => $plan->plan_id,
             'subscription_status' => 'pending_selection',
-            'start_date'          => now(),
-            'end_date'            => now()->addDays($plan->duration_days),
+            'start_date' => now(),
+            'end_date' => now()->addDays($plan->duration_days),
         ]);
 
         CacheService::forgetPattern('member_profile');
 
         Logs::create([
-            'user_id'   => $user->user_id,
+            'user_id' => $user->user_id,
             'branch_id' => $user->branch_id,
-            'action'    => "Selected plan: {$plan->name}",
+            'action' => "Selected plan: {$plan->name}",
             'timestamp' => now(),
         ]);
 
@@ -303,10 +303,10 @@ public function completeMemberProfile(Request $request)
 
     public function selectSubscription(Request $request)
     {
-        $user   = Auth::user();
+        $user = Auth::user();
         $member = $user->member;
 
-        if (!$member || !$member->plan_id) {
+        if (! $member || ! $member->plan_id) {
             return redirect()->back()->with('error', 'Please select a membership plan first.');
         }
 
@@ -319,23 +319,23 @@ public function completeMemberProfile(Request $request)
             ],
         ], [
             'subscription_id.required' => 'Please select a subscription.',
-            'subscription_id.exists'   => 'The selected subscription is not available for your branch.',
+            'subscription_id.exists' => 'The selected subscription is not available for your branch.',
         ]);
 
         $subscription = Subscriptions::findOrFail($validated['subscription_id']);
 
         $member->update([
-            'subscription_id'           => $subscription->subscription_id,
-            'subscription_status'       => 'pending_subscription_approval',
+            'subscription_id' => $subscription->subscription_id,
+            'subscription_status' => 'pending_subscription_approval',
             'isApprovedForSubscription' => false,
         ]);
 
         CacheService::forgetPattern('member_profile');
 
         Logs::create([
-            'user_id'   => $user->user_id,
+            'user_id' => $user->user_id,
             'branch_id' => $user->branch_id,
-            'action'    => "Selected subscription: {$subscription->name} – awaiting approval",
+            'action' => "Selected subscription: {$subscription->name} – awaiting approval",
             'timestamp' => now(),
         ]);
 
@@ -350,59 +350,59 @@ public function completeMemberProfile(Request $request)
     public function checkApprovalStatus()
     {
         $user = Auth::user();
-        
+
         // Force fresh DB read — bypass any ORM identity map
         $member = MemberProfile::where('user_id', $user->user_id)
             ->lockForUpdate()  // ensure we read committed data
             ->first();
 
-        if (!$member) {
+        if (! $member) {
             return response()->json(['status' => 'no_profile', 'message' => 'No member profile found.']);
         }
 
         if ($member->isDisabled || $member->isDisabledForSubscription) {
             return response()->json([
-                'status' => 'rejected', 
-                'message' => 'Your membership application was not approved.'
+                'status' => 'rejected',
+                'message' => 'Your membership application was not approved.',
             ]);
         }
 
         // Approved condition — covers both new approval AND renewal approval
-        $isFullyApproved = $member->isApproved 
-            && $member->isApprovedForSubscription 
-            && !$member->renewal_pending
+        $isFullyApproved = $member->isApproved
+            && $member->isApprovedForSubscription
+            && ! $member->renewal_pending
             && in_array($member->subscription_status, ['active', 'subscribed']);
 
         if ($isFullyApproved) {
             // Load relationships for response
             $member->load(['plan:plan_id,name,price', 'subscription:subscription_id,name,price']);
-            
+
             $qrCodeUrl = null;
             if ($member->qr_code) {
                 $fullPath = storage_path("app/public/{$member->qr_code}");
                 if (file_exists($fullPath)) {
-                    $qrCodeUrl = asset("storage/{$member->qr_code}") . '?v=' . time();
+                    $qrCodeUrl = asset("storage/{$member->qr_code}").'?v='.time();
                 }
             }
 
             return response()->json([
-                'status'      => 'approved',
-                'message'     => 'Your membership has been approved!',
+                'status' => 'approved',
+                'message' => 'Your membership has been approved!',
                 'qr_code_url' => $qrCodeUrl,
                 'member_data' => [
-                    'plan'               => $member->plan->name ?? 'N/A',
-                    'plan_price'         => $member->plan ? '₱' . number_format($member->plan->price, 2) : 'N/A',
-                    'subscription'       => $member->subscription->name ?? 'N/A',
-                    'subscription_price' => $member->subscription ? '₱' . number_format($member->subscription->price, 2) : 'N/A',
-                    'end_date'           => $member->end_date_for_subscription
-                        ? Carbon::parse($member->end_date_for_subscription)->format('M d, Y') 
+                    'plan' => $member->plan->name ?? 'N/A',
+                    'plan_price' => $member->plan ? '₱'.number_format($member->plan->price, 2) : 'N/A',
+                    'subscription' => $member->subscription->name ?? 'N/A',
+                    'subscription_price' => $member->subscription ? '₱'.number_format($member->subscription->price, 2) : 'N/A',
+                    'end_date' => $member->end_date_for_subscription
+                        ? Carbon::parse($member->end_date_for_subscription)->format('M d, Y')
                         : 'N/A',
                 ],
             ]);
         }
 
         return response()->json([
-            'status'  => 'pending',
+            'status' => 'pending',
             'message' => 'Your application is still pending approval.',
         ]);
     }
@@ -413,10 +413,10 @@ public function completeMemberProfile(Request $request)
 
     public function requestRenewal(Request $request)
     {
-        $user   = Auth::user();
+        $user = Auth::user();
         $member = $user->member;
 
-        if (!$member) {
+        if (! $member) {
             return redirect()->back()->with('error', 'No membership profile found.');
         }
 
@@ -425,6 +425,7 @@ public function completeMemberProfile(Request $request)
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
             return redirect()->route('login')->with('info', 'You have been logged out.');
         }
 
@@ -447,32 +448,32 @@ public function completeMemberProfile(Request $request)
                     ->where('branch_id', $user->branch_id),
             ],
         ], [
-            'plan_id.required'         => 'Please select a membership plan.',
-            'plan_id.exists'           => 'The selected plan is not available for your branch.',
+            'plan_id.required' => 'Please select a membership plan.',
+            'plan_id.exists' => 'The selected plan is not available for your branch.',
             'subscription_id.required' => 'Please select a subscription.',
-            'subscription_id.exists'   => 'The selected subscription is not available for your branch.',
+            'subscription_id.exists' => 'The selected subscription is not available for your branch.',
         ]);
 
-        $plan         = MembershipPlan::findOrFail($validated['plan_id']);
+        $plan = MembershipPlan::findOrFail($validated['plan_id']);
         $subscription = Subscriptions::findOrFail($validated['subscription_id']);
 
         $member->update([
-            'plan_id'                   => $plan->plan_id,
-            'subscription_id'           => $subscription->subscription_id,
-            'isApproved'                => false,
+            'plan_id' => $plan->plan_id,
+            'subscription_id' => $subscription->subscription_id,
+            'isApproved' => false,
             'isApprovedForSubscription' => false,
             'isDisabledForSubscription' => false,
-            'renewal_pending'           => true,
-            'subscription_status'       => 'pending_subscription_approval',
-            'status'                    => 'pending_approval',
+            'renewal_pending' => true,
+            'subscription_status' => 'pending_subscription_approval',
+            'status' => 'pending_approval',
         ]);
 
         CacheService::forgetPattern('member_profile');
 
         Logs::create([
-            'user_id'   => $user->user_id,
+            'user_id' => $user->user_id,
             'branch_id' => $user->branch_id,
-            'action'    => "Renewal requested – Plan: {$plan->name}, Subscription: {$subscription->name}",
+            'action' => "Renewal requested – Plan: {$plan->name}, Subscription: {$subscription->name}",
             'timestamp' => now(),
         ]);
 

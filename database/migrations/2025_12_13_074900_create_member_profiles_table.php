@@ -4,13 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
-
-
-
     public function up(): void
     {
         Schema::create('member_profiles', function (Blueprint $table) {
@@ -26,8 +24,14 @@ return new class extends Migration {
             $table->string('mobile_number')->nullable();
             $table->string('qr_code')->unique()->nullable();
 
-            $table->enum('status', ['active', 'expired', 'suspended', 'inactive',])->default('inactive');
-            $table->enum('subscription_status', ['active', 'expired', 'suspended', 'inactive'])->default('inactive');
+            $table->enum('status', [
+                'inactive', 'pending_approval', 'approved', 'active', 'expired',
+                'suspended', 'cancelled', 'denied',
+            ])->default('inactive');
+            $table->enum('subscription_status', [
+                'inactive', 'pending_selection', 'pending_subscription_approval',
+                'active', 'expired', 'suspended', 'cancelled', 'denied',
+            ])->default('inactive');
 
             $table->boolean('renewal_pending')->default(false);
             $table->timestamp('suspended_at')->nullable();
@@ -48,7 +52,6 @@ return new class extends Migration {
 
             $table->timestamp('end_date')->nullable();
             $table->timestamp('end_date_for_subscription')->nullable();
-
 
         });
     }

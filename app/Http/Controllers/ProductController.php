@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branches;
+use App\Models\Categories;
 use App\Models\Inventory;
 use App\Models\Logs;
 use App\Models\Product;
-use App\Models\Categories;
-use App\Models\Branches;
 use App\Models\Transactions;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
@@ -21,7 +21,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $currentUser = Auth::user();
-        
+
         $branchId = null;
         if ($currentUser->role === 'super_admin') {
             $branchId = session('selected_branch_id');
@@ -41,14 +41,14 @@ class ProductController extends Controller
         }
 
         // Filter by category
-        if ($request->has('categories') && !empty($request->categories)) {
+        if ($request->has('categories') && ! empty($request->categories)) {
             $query->whereHas('product', function ($q) use ($request) {
                 $q->whereIn('category_id', $request->categories);
             });
         }
 
         // Filter by product status
-        if ($request->has('product_status') && !empty($request->product_status)) {
+        if ($request->has('product_status') && ! empty($request->product_status)) {
             $query->whereHas('product', function ($q) use ($request) {
                 $q->whereIn('status', $request->product_status);
             });
@@ -74,9 +74,9 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $currentUser = Auth::user();
-                $branchId = $currentUser->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $currentUser->branch_id;
+        $branchId = $currentUser->role === 'super_admin'
+            ? session('selected_branch_id')
+            : $currentUser->branch_id;
 
         $rules = [
             'category_id' => 'required|integer|exists:categories,category_id',
@@ -104,7 +104,7 @@ class ProductController extends Controller
         $imagePath = null;
         if ($request->hasFile('image')) {
             $file = $request->file('image');
-            $fileName = 'product_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $fileName = 'product_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
             $path = $file->storeAs('products', $fileName, 'public');
             $imagePath = $path;
         }
@@ -117,7 +117,7 @@ class ProductController extends Controller
             'description' => $validated['description'],
             'price' => $validated['price'],
             'status' => $validated['status'],
-            'image' => $imagePath
+            'image' => $imagePath,
         ]);
 
         // Create inventory
@@ -129,7 +129,7 @@ class ProductController extends Controller
 
         Transactions::create([
             'product_id' => $product->product_id,
-             'branch_id' => $branchId,
+            'branch_id' => $branchId,
             'performed_by' => $currentUser->user_id,
             'quantity' => $validated['quantity'],
             'type' => 'stock_in',
@@ -138,7 +138,7 @@ class ProductController extends Controller
 
         Logs::create([
             'user_id' => $currentUser->user_id,
-             'branch_id' => $branchId,
+            'branch_id' => $branchId,
             'action' => "{$currentUser->last_name} added a new product: {$product->name}.",
             'timestamp' => now(),
         ]);
@@ -203,7 +203,7 @@ class ProductController extends Controller
         $validated = $request->validate($rules);
 
         // Set branch_id based on user role
-        if ($currentUser->role !== 'super_admin' && !isset($validated['branch_id'])) {
+        if ($currentUser->role !== 'super_admin' && ! isset($validated['branch_id'])) {
             $validated['branch_id'] = $currentUser->branch_id;
         }
 
@@ -218,7 +218,7 @@ class ProductController extends Controller
             }
 
             $file = $request->file('image');
-            $fileName = 'product_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $fileName = 'product_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension();
             $path = $file->storeAs('products', $fileName, 'public');
             $validated['image'] = $path;
         }
@@ -264,7 +264,7 @@ class ProductController extends Controller
             if ($quantityIncreased) {
                 $logAction .= " (Stock increased by {$quantityDifference} units)";
             } else {
-                $logAction .= " (Stock decreased by " . abs($quantityDifference) . " units)";
+                $logAction .= ' (Stock decreased by '.abs($quantityDifference).' units)';
             }
         }
 

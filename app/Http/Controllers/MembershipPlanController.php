@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Logs;
 use App\Models\Branches;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
+use App\Models\Logs;
 use App\Models\MembershipPlan;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class MembershipPlanController extends Controller
@@ -95,7 +95,6 @@ class MembershipPlanController extends Controller
                 'name.unique' => 'This plan name already exists in your branch',
             ]);
 
-
             $validated['branch_id'] = $currentUser->branch_id;
         }
 
@@ -118,7 +117,7 @@ class MembershipPlanController extends Controller
         if ($currentUser->role === 'super_admin') {
             $validated = $request->validate([
                 'branch_id' => 'required|exists:branches,branch_id',
-                'name' => 'required|string|max:255|unique:membership_plans,name,' . $id . ',plan_id',
+                'name' => 'required|string|max:255|unique:membership_plans,name,'.$id.',plan_id',
                 'details' => 'nullable|string|max:255',
                 'price' => 'required|numeric|min:0',
                 'duration_days' => 'required|integer|min:1',
@@ -132,7 +131,7 @@ class MembershipPlanController extends Controller
             ]);
         } else {
             $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:membership_plans,name,' . $id . ',plan_id',
+                'name' => 'required|string|max:255|unique:membership_plans,name,'.$id.',plan_id',
                 'details' => 'nullable|string|max:255',
                 'price' => 'required|numeric|min:0',
                 'duration_days' => 'required|integer|min:1',

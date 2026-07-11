@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notifiable;
 
 class Branches extends Model
 {
-    use Notifiable, HasFactory;
+    use HasFactory, Notifiable;
 
     protected $primaryKey = 'branch_id';
 
@@ -17,8 +17,7 @@ class Branches extends Model
         'address',
     ];
 
-
-        public function users()
+    public function users()
     {
         return $this->hasMany(User::class, 'branch_id', 'branch_id');
     }
@@ -53,14 +52,13 @@ class Branches extends Model
         return $this->hasMany(Logs::class, 'branch_id', 'branch_id');
     }
 
-        public function products()
+    public function products()
     {
         return $this->hasMany(Product::class, 'branch_id', 'branch_id');
     }
-        public function transaction()
+
+    public function transaction()
     {
         return $this->hasMany(Transactions::class, 'branch_id', 'branch_id');
     }
-
-
 }
