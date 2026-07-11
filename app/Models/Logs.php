@@ -26,7 +26,8 @@ class Logs extends Model
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
-        public function branch(){
+    public function branch()
+    {
         return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
     }
 }

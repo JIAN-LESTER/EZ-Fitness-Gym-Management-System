@@ -13,8 +13,8 @@ class MembershipPlan extends Model
 {
     use HasFactory, Notifiable;
 
-
     protected $primaryKey = 'plan_id';
+
     protected $fillable = [
         'name',
         'branch_id',

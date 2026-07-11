@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class StaffController extends Controller
 {
@@ -122,7 +122,7 @@ class StaffController extends Controller
                     'message' => "New sale #{$sale->sales_id} by {$sale->first_name} {$sale->last_name}",
                     'amount' => $sale->total_amount,
                     'time' => Carbon::parse($sale->created_at)->diffForHumans(),
-                    'icon' => '💰'
+                    'icon' => '💰',
                 ];
             });
 
@@ -140,7 +140,7 @@ class StaffController extends Controller
                     'type' => 'checkin',
                     'message' => "{$checkin->first_name} {$checkin->last_name} checked in",
                     'time' => Carbon::parse($checkin->check_in)->diffForHumans(),
-                    'icon' => '✅'
+                    'icon' => '✅',
                 ];
             });
 
@@ -173,7 +173,7 @@ class StaffController extends Controller
                 return [
                     'type' => 'low_stock',
                     'message' => "{$product->name} is low on stock ({$product->stock_quantity} left)",
-                    'severity' => 'warning'
+                    'severity' => 'warning',
                 ];
             });
 
@@ -186,7 +186,7 @@ class StaffController extends Controller
                 return [
                     'type' => 'out_of_stock',
                     'message' => "{$product->name} is out of stock",
-                    'severity' => 'danger'
+                    'severity' => 'danger',
                 ];
             });
 
@@ -233,7 +233,7 @@ class StaffController extends Controller
         if ($request->has('start_date') && $request->has('end_date')) {
             $query->whereBetween('sales.created_at', [
                 $request->start_date,
-                $request->end_date
+                $request->end_date,
             ]);
         }
 

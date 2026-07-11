@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Categories;
 use App\Models\Logs;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 
 class CategoriesController extends Controller
 {
@@ -35,13 +35,13 @@ class CategoriesController extends Controller
         $currentUser = Auth::user();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name'
+            'name' => 'required|string|max:255|unique:categories,name',
         ]);
 
         $category = Categories::create($validated);
-          $branchId = $currentUser->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $currentUser->branch_id;
+        $branchId = $currentUser->role === 'super_admin'
+                  ? session('selected_branch_id')
+                  : $currentUser->branch_id;
 
         Logs::create([
             'user_id' => $currentUser->user_id,
@@ -61,6 +61,7 @@ class CategoriesController extends Controller
     {
         try {
             $category = Categories::where('category_id', $id)->firstOrFail();
+
             return response()->json($category);
         } catch (\Exception $e) {
             return response()->json([
@@ -76,6 +77,7 @@ class CategoriesController extends Controller
     public function edit(string $id)
     {
         $category = Categories::where('category_id', $id)->firstOrFail();
+
         return response()->json($category);
     }
 
@@ -85,13 +87,13 @@ class CategoriesController extends Controller
     public function update(Request $request, string $id)
     {
         $currentUser = Auth::user();
-          $branchId = $currentUser->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $currentUser->branch_id;
+        $branchId = $currentUser->role === 'super_admin'
+                  ? session('selected_branch_id')
+                  : $currentUser->branch_id;
         $category = Categories::where('category_id', $id)->firstOrFail();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $id . ',category_id'
+            'name' => 'required|string|max:255|unique:categories,name,'.$id.',category_id',
         ]);
 
         $oldName = $category->name;
@@ -114,9 +116,9 @@ class CategoriesController extends Controller
     public function destroy(string $id)
     {
         $currentUser = Auth::user();
-          $branchId = $currentUser->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $currentUser->branch_id;
+        $branchId = $currentUser->role === 'super_admin'
+                  ? session('selected_branch_id')
+                  : $currentUser->branch_id;
         $category = Categories::where('category_id', $id)->firstOrFail();
 
         $categoryName = $category->name;

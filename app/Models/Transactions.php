@@ -20,7 +20,7 @@ class Transactions extends Model
         'subscription_id',
         'type',
         'performed_by',
-        'quantity'
+        'quantity',
     ];
 
     public function sale()

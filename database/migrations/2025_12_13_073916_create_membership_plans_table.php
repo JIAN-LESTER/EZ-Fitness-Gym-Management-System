@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('membership_plans', function (Blueprint $table) {
-        $table->id('plan_id');
-          $table->foreignId('branch_id')->nullable()->references('branch_id')->on('branches')->onDelete('cascade');
+            $table->id('plan_id');
+            $table->foreignId('branch_id')->nullable()->references('branch_id')->on('branches')->onDelete('cascade');
             $table->string('name');
             $table->longText('details')->nullable();
             $table->decimal('price', 8, 2);

@@ -15,6 +15,7 @@ class MemberProfile extends Model
     use HasFactory, Notifiable;
 
     public $timestamps = false;
+
     protected $table = 'member_profiles';
 
     protected $primaryKey = 'member_id';
@@ -35,10 +36,8 @@ class MemberProfile extends Model
         'isApproved',
         'isApprovedForSubscription',
 
-    
         'isDisabled',
         'isDisabledForSubscription',
-
 
         'approved_at',
         'approved_at_for_subscription',
@@ -52,7 +51,7 @@ class MemberProfile extends Model
         'renewal_pending',
         'suspended_at',
         'days_remaining_before_suspend',
-        'plan_days_remaining_before_suspend'
+        'plan_days_remaining_before_suspend',
     ];
 
     public function user()
@@ -65,7 +64,7 @@ class MemberProfile extends Model
         return $this->belongsTo(MembershipPlan::class, 'plan_id', 'plan_id');
     }
 
-        public function subscription()
+    public function subscription()
     {
         return $this->belongsTo(Subscriptions::class, 'subscription_id', 'subscription_id');
     }
@@ -86,12 +85,12 @@ class MemberProfile extends Model
      */
     public function isFullyApproved(): bool
     {
-        return $this->isApproved == true 
+        return $this->isApproved == true
             && $this->isApprovedForSubscription == true
             && $this->subscription_status === 'active'
             && $this->status === 'active'
-            && !$this->isDisabled
-            && !$this->isDisabledForSubscription;
+            && ! $this->isDisabled
+            && ! $this->isDisabledForSubscription;
     }
 
     /**
@@ -105,10 +104,10 @@ class MemberProfile extends Model
         if ($this->isFullyApproved()) {
             return false;
         }
-        
+
         // Check if basic required fields are missing
-        return empty($this->sex) 
-            || empty($this->birthday) 
+        return empty($this->sex)
+            || empty($this->birthday)
             || empty($this->mobile_number);
     }
 
@@ -118,17 +117,16 @@ class MemberProfile extends Model
      */
     public function needsApproval(): bool
     {
-        return $this->plan_id 
-            && $this->subscription_id 
-            && (!$this->isApproved || !$this->isApprovedForSubscription)
-            && !$this->isDisabled
-            && !$this->isDisabledForSubscription;
+        return $this->plan_id
+            && $this->subscription_id
+            && (! $this->isApproved || ! $this->isApprovedForSubscription)
+            && ! $this->isDisabled
+            && ! $this->isDisabledForSubscription;
     }
-
 
     public function isExpired(): bool
     {
-        if (!$this->end_date) {
+        if (! $this->end_date) {
             return false;
         }
 
@@ -140,7 +138,7 @@ class MemberProfile extends Model
      */
     public function isExpiringSoon(int $days = 7): bool
     {
-        if (!$this->end_date || $this->isExpired()) {
+        if (! $this->end_date || $this->isExpired()) {
             return false;
         }
 
@@ -149,13 +147,13 @@ class MemberProfile extends Model
 
         return $today->diffInDays($endDate) <= $days;
     }
-    
+
     /**
      * Get days remaining (negative if expired)
      */
     public function daysRemaining(): int
     {
-        if (!$this->end_date) {
+        if (! $this->end_date) {
             return 0;
         }
 
@@ -193,7 +191,7 @@ class MemberProfile extends Model
     {
         return $query->whereBetween('end_date', [
             Carbon::now(),
-            Carbon::now()->addDays($days)
+            Carbon::now()->addDays($days),
         ])
             ->where('status', 'active')
             ->where('isApproved', true)

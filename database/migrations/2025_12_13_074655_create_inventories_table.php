@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('inventories', function (Blueprint $table) {
             $table->id('inventory_id');
-             $table->foreignId('branch_id')->nullable()->references('branch_id')->on('branches')->onDelete('cascade');
+            $table->foreignId('branch_id')->nullable()->references('branch_id')->on('branches')->onDelete('cascade');
             $table->foreignId('product_id')->references('product_id')->on('products')->onDelete('cascade');
             $table->integer('quantity')->default(0);
             $table->timestamps();

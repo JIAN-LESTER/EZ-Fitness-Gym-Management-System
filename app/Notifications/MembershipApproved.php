@@ -11,6 +11,7 @@ class MembershipApproved extends Notification
     use Queueable;
 
     protected $membershipDetails;
+
     protected $qrCodeBase64;
 
     /**

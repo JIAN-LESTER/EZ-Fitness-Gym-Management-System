@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branches;
 use App\Models\Logs;
 use App\Models\Subscriptions;
-use App\Models\Branches;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class SubscriptionController extends Controller
@@ -15,9 +15,9 @@ class SubscriptionController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
-               $currentUser = Auth::user();
+        $currentUser = Auth::user();
 
-                $branchId = null;
+        $branchId = null;
 
         if ($currentUser->role === 'super_admin') {
             // Super admin can see selected branch or all branches
@@ -52,9 +52,8 @@ class SubscriptionController extends Controller
     public function store(Request $request)
     {
 
-
         $authUser = Auth::user();
-                     $branchId = $authUser->role === 'super_admin'
+        $branchId = $authUser->role === 'super_admin'
                     ? session('selected_branch_id')
                     : $authUser->branch_id;
 
@@ -142,7 +141,7 @@ class SubscriptionController extends Controller
 
         $authUser = Auth::user();
 
-                     $branchId = $authUser->role === 'super_admin'
+        $branchId = $authUser->role === 'super_admin'
                     ? session('selected_branch_id')
                     : $authUser->branch_id;
 
@@ -164,7 +163,7 @@ class SubscriptionController extends Controller
 
         $authUser = Auth::user();
 
-                     $branchId = $authUser->role === 'super_admin'
+        $branchId = $authUser->role === 'super_admin'
                     ? session('selected_branch_id')
                     : $authUser->branch_id;
 

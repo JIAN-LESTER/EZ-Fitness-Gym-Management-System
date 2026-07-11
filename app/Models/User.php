@@ -4,23 +4,20 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-
-
 use App\Notifications\CustomResetPassword;
 use App\Notifications\CustomVerifyEmail;
-use Illuminate\Auth\Notifications\VerifyEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Log;
 
 /**
  * @mixin IdeHelperUser
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
     /**
@@ -28,10 +25,12 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var list<string>
      */
+    protected $primaryKey = 'user_id';
 
-        protected $primaryKey = 'user_id'; 
-    public $incrementing = true;       
-    protected $keyType = 'int';       
+    public $incrementing = true;
+
+    protected $keyType = 'int';
+
     protected $fillable = [
         'user_id',
         'branch_id',
@@ -71,25 +70,25 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-
-        /**
+    /**
      * Send the email verification notification.
      *
      * @return void
      */
     public function sendEmailVerificationNotification()
     {
-        $this->notify(new CustomVerifyEmail());
+        $this->notify(new CustomVerifyEmail);
     }
 
-        public function sendPasswordResetNotification($token)
+    public function sendPasswordResetNotification($token)
     {
         $this->notify(new CustomResetPassword($token));
     }
 
-    public function member() {
-    return $this->hasOne(MemberProfile::class, 'user_id', 'user_id');
-}
+    public function member()
+    {
+        return $this->hasOne(MemberProfile::class, 'user_id', 'user_id');
+    }
 
     public function sales()
     {
@@ -101,13 +100,13 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Logs::class, 'user_id', 'user_id');
     }
 
-    public function carts() {
-    return $this->hasMany(Cart::class, 'user_id', 'user_id');
-}
+    public function carts()
+    {
+        return $this->hasMany(Cart::class, 'user_id', 'user_id');
+    }
 
-   public function branch()
+    public function branch()
     {
         return $this->belongsTo(Branches::class, 'branch_id', 'branch_id');
     }
-
 }

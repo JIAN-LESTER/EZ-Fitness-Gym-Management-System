@@ -1,31 +1,23 @@
 <?php
 
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\AlertController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BranchesController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MemberProfileController;
 use App\Http\Controllers\MembershipPlanController;
 use App\Http\Controllers\POSController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SalesController;
-use App\Http\Controllers\SnapshotsController;
+use App\Http\Controllers\StaffController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\TwoFactorAuthController;
 use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\StaffController;
-use App\Models\SalesItem;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\MapsController;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\AttendanceController;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public / Auth Routes
@@ -191,6 +183,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/save-qrcode', function () {
         $fileName = 'qrcode.png';
         QrCode::format('png')->size(300)->generate('Hello, world!', storage_path("app/public/{$fileName}"));
+
         return "QR code saved as {$fileName}";
     });
 });

@@ -2,10 +2,10 @@
 
 namespace App\Notifications;
 
+use Carbon\Carbon;
 use Illuminate\Auth\Notifications\VerifyEmail as VerifyEmailBase;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\URL;
-use Carbon\Carbon;
 
 class CustomVerifyEmail extends VerifyEmailBase
 {
@@ -31,7 +31,7 @@ class CustomVerifyEmail extends VerifyEmailBase
      * Build the mail representation of the notification.
      *
      * @param  mixed  $notifiable
-     * @return \Illuminate\Notifications\Messages\MailMessage
+     * @return MailMessage
      */
     public function toMail($notifiable)
     {

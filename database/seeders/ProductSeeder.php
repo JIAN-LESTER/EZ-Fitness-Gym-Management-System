@@ -4,9 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Inventory;
 use App\Models\Product;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class ProductSeeder extends Seeder
 {
@@ -22,7 +20,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Adjustable dumbbell set for strength training.',
                 'price' => 75.50,
                 'status' => 'available',
-                "branch_id" => 1,
+                'branch_id' => 1,
                 'quantity' => 10,
             ],
             [
@@ -31,7 +29,7 @@ class ProductSeeder extends Seeder
                 'description' => 'High-quality treadmill for cardio workouts at home.',
                 'price' => 550.00,
                 'status' => 'available',
-                "branch_id" => 1,
+                'branch_id' => 1,
                 'quantity' => 5,
             ],
             [
@@ -40,7 +38,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Vanilla-flavored whey protein to support muscle growth.',
                 'price' => 49.99,
                 'status' => 'available',
-                "branch_id" => 1,
+                'branch_id' => 1,
                 'quantity' => 20,
             ],
             [
@@ -49,7 +47,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Daily multivitamins for overall health and wellness.',
                 'price' => 22.50,
                 'status' => 'available',
-                "branch_id" => 1,
+                'branch_id' => 1,
                 'quantity' => 30,
             ],
             [
@@ -58,7 +56,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Breathable cotton t-shirt for workouts.',
                 'price' => 15.99,
                 'status' => 'available',
-                "branch_id" => 1,
+                'branch_id' => 1,
                 'quantity' => 50,
             ],
             [
@@ -67,7 +65,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Lightweight and comfortable shorts for training.',
                 'price' => 18.50,
                 'status' => 'available',
-                "branch_id" => 1,
+                'branch_id' => 1,
                 'quantity' => 40,
             ],
             [
@@ -76,7 +74,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Non-slip yoga mat suitable for all exercises.',
                 'price' => 25.99,
                 'status' => 'available',
-                "branch_id" => 1,
+                'branch_id' => 1,
                 'quantity' => 25,
             ],
             [
@@ -85,17 +83,17 @@ class ProductSeeder extends Seeder
                 'description' => 'Set of 5 resistance bands for full-body workouts.',
                 'price' => 19.99,
                 'status' => 'available',
-                "branch_id" => 1,
+                'branch_id' => 1,
                 'quantity' => 30,
             ],
 
-                        [
+            [
                 'category_id' => 1,
                 'name' => 'Dumbbell Set',
                 'description' => 'Adjustable dumbbell set for strength training.',
                 'price' => 75.50,
                 'status' => 'available',
-                "branch_id" => 2,
+                'branch_id' => 2,
                 'quantity' => 10,
             ],
             [
@@ -104,7 +102,7 @@ class ProductSeeder extends Seeder
                 'description' => 'High-quality treadmill for cardio workouts at home.',
                 'price' => 550.00,
                 'status' => 'available',
-                "branch_id" => 2,
+                'branch_id' => 2,
                 'quantity' => 5,
             ],
             [
@@ -113,7 +111,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Vanilla-flavored whey protein to support muscle growth.',
                 'price' => 49.99,
                 'status' => 'available',
-                "branch_id" => 2,
+                'branch_id' => 2,
                 'quantity' => 20,
             ],
             [
@@ -122,7 +120,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Daily multivitamins for overall health and wellness.',
                 'price' => 22.50,
                 'status' => 'available',
-                "branch_id" => 2,
+                'branch_id' => 2,
                 'quantity' => 30,
             ],
             [
@@ -131,7 +129,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Breathable cotton t-shirt for workouts.',
                 'price' => 15.99,
                 'status' => 'available',
-                "branch_id" => 2,
+                'branch_id' => 2,
                 'quantity' => 50,
             ],
             [
@@ -140,7 +138,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Lightweight and comfortable shorts for training.',
                 'price' => 18.50,
                 'status' => 'available',
-                "branch_id" => 2,
+                'branch_id' => 2,
                 'quantity' => 40,
             ],
             [
@@ -149,7 +147,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Non-slip yoga mat suitable for all exercises.',
                 'price' => 25.99,
                 'status' => 'available',
-                "branch_id" => 2,
+                'branch_id' => 2,
                 'quantity' => 25,
             ],
             [
@@ -158,17 +156,17 @@ class ProductSeeder extends Seeder
                 'description' => 'Set of 5 resistance bands for full-body workouts.',
                 'price' => 19.99,
                 'status' => 'available',
-                "branch_id" => 2,
+                'branch_id' => 2,
                 'quantity' => 30,
             ],
 
-                        [
+            [
                 'category_id' => 1,
                 'name' => 'Dumbbell Set',
                 'description' => 'Adjustable dumbbell set for strength training.',
                 'price' => 75.50,
                 'status' => 'available',
-                "branch_id" => 3,
+                'branch_id' => 3,
                 'quantity' => 10,
             ],
             [
@@ -177,7 +175,7 @@ class ProductSeeder extends Seeder
                 'description' => 'High-quality treadmill for cardio workouts at home.',
                 'price' => 550.00,
                 'status' => 'available',
-                "branch_id" => 3,
+                'branch_id' => 3,
                 'quantity' => 5,
             ],
             [
@@ -186,7 +184,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Vanilla-flavored whey protein to support muscle growth.',
                 'price' => 49.99,
                 'status' => 'available',
-                "branch_id" => 3,
+                'branch_id' => 3,
                 'quantity' => 20,
             ],
             [
@@ -195,7 +193,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Daily multivitamins for overall health and wellness.',
                 'price' => 22.50,
                 'status' => 'available',
-                "branch_id" => 3,
+                'branch_id' => 3,
                 'quantity' => 30,
             ],
             [
@@ -204,7 +202,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Breathable cotton t-shirt for workouts.',
                 'price' => 15.99,
                 'status' => 'available',
-                "branch_id" => 3,
+                'branch_id' => 3,
                 'quantity' => 50,
             ],
             [
@@ -213,7 +211,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Lightweight and comfortable shorts for training.',
                 'price' => 18.50,
                 'status' => 'available',
-                "branch_id" => 3,
+                'branch_id' => 3,
                 'quantity' => 40,
             ],
             [
@@ -222,7 +220,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Non-slip yoga mat suitable for all exercises.',
                 'price' => 25.99,
                 'status' => 'available',
-                "branch_id" => 3,
+                'branch_id' => 3,
                 'quantity' => 25,
             ],
             [
@@ -231,7 +229,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Set of 5 resistance bands for full-body workouts.',
                 'price' => 19.99,
                 'status' => 'available',
-                "branch_id" => 3,
+                'branch_id' => 3,
                 'quantity' => 30,
             ],
         ];

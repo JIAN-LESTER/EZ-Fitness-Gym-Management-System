@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Logs;
 use App\Models\MemberProfile;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
@@ -24,15 +24,15 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-             $branchId = $user->role === 'super_admin'
-                    ? session('selected_branch_id')
-                    : $user->branch_id;
+        $branchId = $user->role === 'super_admin'
+               ? session('selected_branch_id')
+               : $user->branch_id;
 
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $user->user_id . ',user_id',
-            'email' => 'required|email|unique:users,email,' . $user->user_id . ',user_id',
+            'username' => 'required|string|max:255|unique:users,username,'.$user->user_id.',user_id',
+            'email' => 'required|email|unique:users,email,'.$user->user_id.',user_id',
             'old_password' => 'required_with:new_password',
             'new_password' => 'nullable|min:6|confirmed',
         ], [
@@ -55,7 +55,7 @@ class ProfileController extends Controller
 
         // Handle password change
         if ($request->filled('new_password')) {
-            if (!Hash::check($request->old_password, $user->password)) {
+            if (! Hash::check($request->old_password, $user->password)) {
                 return back()->withErrors(['old_password' => 'The current password is incorrect.'])->withInput();
             }
             $user->password = Hash::make($request->new_password);

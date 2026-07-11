@@ -2,15 +2,15 @@
 
 namespace App\Console\Commands;
 
-use App\Models\MemberProfile;
-use Illuminate\Console\Command;
-use App\Models\Member;
-use Carbon\Carbon;
 use App\Models\Logs;
+use App\Models\MemberProfile;
+use Carbon\Carbon;
+use Illuminate\Console\Command;
 
 class CheckMembershipExpirationCommand extends Command
 {
     protected $signature = 'membership:check-expiration';
+
     protected $description = 'Check membership expiration and update statuses';
 
     public function handle()
@@ -19,12 +19,12 @@ class CheckMembershipExpirationCommand extends Command
 
         // Get active members (NOT suspended or cancelled)
         $members = MemberProfile::where('status', 'active')
-                         ->where('subscription_status', 'active') // ADDED: Only check active subscriptions
-                         ->where('isApproved', true)
-                         ->where('isDisabled', false)
-                         ->whereNotNull('end_date')
-                         ->whereNotNull('end_date_for_subscription')
-                         ->get();
+            ->where('subscription_status', 'active') // ADDED: Only check active subscriptions
+            ->where('isApproved', true)
+            ->where('isDisabled', false)
+            ->whereNotNull('end_date')
+            ->whereNotNull('end_date_for_subscription')
+            ->get();
 
         $expiredCount = 0;
         $expiringSoonCount = 0;
@@ -55,13 +55,12 @@ class CheckMembershipExpirationCommand extends Command
 
                 $expiredCount++;
                 $this->info("Member {$member->member_id} ({$member->user->first_name} {$member->user->last_name}) expired.");
-            }
-            elseif ($relevantEndDate->diffInDays($now) <= 7 && $relevantEndDate->isFuture()) {
+            } elseif ($relevantEndDate->diffInDays($now) <= 7 && $relevantEndDate->isFuture()) {
                 // Membership expiring soon (optional: send notification)
                 $daysRemaining = (int) $relevantEndDate->diffInDays($now);
                 $expiringSoonCount++;
                 $this->info("Member {$member->member_id} ({$member->user->first_name} {$member->user->last_name}) expires in {$daysRemaining} days.");
-                
+
                 // TODO: Send email notification here if needed
             }
         }

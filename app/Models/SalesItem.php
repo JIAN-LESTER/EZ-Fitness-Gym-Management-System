@@ -11,6 +11,7 @@ class SalesItem extends Model
 
     // Explicitly set table name
     protected $table = 'sales_items';
+
     protected $primaryKey = 'sales_item_id';
 
     // Disable timestamps if your table doesn't have created_at/updated_at
@@ -76,6 +77,7 @@ class SalesItem extends Model
         } elseif ($this->subscription_id) {
             return 'subscription';
         }
+
         return 'unknown';
     }
 
@@ -92,6 +94,7 @@ class SalesItem extends Model
         } elseif ($this->subscription) {  // FIXED: was 'susbcription'
             return $this->subscription->name;
         }
+
         return 'Unknown Item';
     }
 
@@ -107,6 +110,7 @@ class SalesItem extends Model
         } elseif ($this->subscription) {
             return $this->subscription->details;
         }
+
         return '';
     }
 
@@ -115,7 +119,7 @@ class SalesItem extends Model
      */
     public function isProduct()
     {
-        return !is_null($this->product_id);
+        return ! is_null($this->product_id);
     }
 
     /**
@@ -123,7 +127,7 @@ class SalesItem extends Model
      */
     public function isPlan()
     {
-        return !is_null($this->plan_id);
+        return ! is_null($this->plan_id);
     }
 
     /**
@@ -131,6 +135,6 @@ class SalesItem extends Model
      */
     public function isSubscription()
     {
-        return !is_null($this->subscription_id);
+        return ! is_null($this->subscription_id);
     }
 }
