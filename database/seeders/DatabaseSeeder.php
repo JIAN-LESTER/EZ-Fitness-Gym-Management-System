@@ -22,5 +22,9 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             SubscriptionSeeder::class,
         ]);
+
+        if (app()->environment(['local', 'testing'])) {
+            $this->call(LocalTestingSeeder::class);
+        }
     }
 }
