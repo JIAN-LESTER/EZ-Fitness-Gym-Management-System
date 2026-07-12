@@ -2318,23 +2318,23 @@ function closeQRApprovedModal() {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             @if(session('success'))
-                Notifications.toast('success', '{{ session('success') }}');
+                Notifications.toast('success', @json(session('success')));
             @endif
 
             @if(session('error'))
-                Notifications.toast('error', '{{ session('error') }}');
+                Notifications.toast('error', @json(session('error')));
             @endif
 
             @if(session('warning'))
-                Notifications.toast('warning', '{{ session('warning') }}');
+                Notifications.toast('warning', @json(session('warning')));
             @endif
 
             @if(session('info'))
-                Notifications.toast('info', '{{ session('info') }}');
+                Notifications.toast('info', @json(session('info')));
             @endif
 
             @if(session('status'))
-                Notifications.toast('success', '{{ session('status') }}');
+                Notifications.toast('success', @json(session('status')));
             @endif
         });
     </script>
