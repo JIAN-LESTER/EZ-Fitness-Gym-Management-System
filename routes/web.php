@@ -49,9 +49,9 @@ Route::post('/email/verification-notification', [AuthController::class, 'resendV
 // Dashboards
 // ─────────────────────────────────────────────────────────────────────────────
 
-Route::get('/member/dashboard', [MemberProfileController::class, 'dashboard'])->name('member.dashboard');
-Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
+Route::get('/member/dashboard', [MemberProfileController::class, 'dashboard'])->middleware('auth')->name('member.dashboard');
+Route::get('/admin/dashboard', [DashboardController::class, 'index'])->middleware('auth')->name('admin.dashboard');
+Route::get('/staff/dashboard', [DashboardController::class, 'index'])->middleware('auth')->name('staff.dashboard');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Authenticated Routes

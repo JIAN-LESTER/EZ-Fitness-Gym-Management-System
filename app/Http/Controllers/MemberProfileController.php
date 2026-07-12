@@ -25,6 +25,10 @@ class MemberProfileController extends Controller
     {
         $user = Auth::user();
 
+        if (! $user) {
+            return redirect()->route('loginForm');
+        }
+
         // Always fresh – never cache critical membership state
         $memberProfile = MemberProfile::select([
             'member_id', 'user_id', 'plan_id', 'subscription_id',
