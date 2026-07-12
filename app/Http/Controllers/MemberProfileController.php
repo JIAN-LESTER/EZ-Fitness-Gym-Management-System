@@ -385,7 +385,7 @@ class MemberProfileController extends Controller
             if ($member->qr_code) {
                 $fullPath = storage_path("app/public/{$member->qr_code}");
                 if (file_exists($fullPath)) {
-                    $qrCodeUrl = asset("storage/{$member->qr_code}").'?v='.time();
+                    $qrCodeUrl = '/storage/'.ltrim($member->qr_code, '/').'?v='.filemtime($fullPath);
                 }
             }
 
