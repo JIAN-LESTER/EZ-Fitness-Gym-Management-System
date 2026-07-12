@@ -236,7 +236,7 @@ class LocalTestingSeeder extends Seeder
             'status' => 'active',
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ], 'cart_id');
 
         $items = $products->map(function (Product $product, int $index) use ($cartId) {
             $quantity = $index + 1;
@@ -354,7 +354,7 @@ class LocalTestingSeeder extends Seeder
             'discount' => 0,
             'created_at' => $sale['created_at'],
             'updated_at' => now(),
-        ]);
+        ], 'sales_id');
 
         foreach ($sale['items'] as $item) {
             DB::table('sales_items')->insert([

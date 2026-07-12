@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
             [
                 'first_name' => 'Super',
                 'last_name' => 'Admin',
-                'username' => 'sueradmin',
+                'username' => 'superadmin',
                 'email' => 'superadmin@gmail.com',
                 'password' => bcrypt('superadmin'),
                 'role' => 'super_admin',
@@ -84,6 +84,20 @@ class UserSeeder extends Seeder
 
         ];
 
-        DB::table('users')->insert($users);
+        DB::table('users')->upsert(
+            $users,
+            ['email'],
+            [
+                'first_name',
+                'last_name',
+                'username',
+                'password',
+                'role',
+                'status',
+                'branch_id',
+                'email_verified_at',
+                'updated_at',
+            ]
+        );
     }
 }
