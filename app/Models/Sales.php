@@ -17,9 +17,12 @@ class Sales extends Model
         'user_id',
         'branch_id',
         'total_amount',
+        'tax',
+        'discount',
         'payment_method',
         'reference_code',
         'status',
+        'type',
     ];
 
     protected $casts = [

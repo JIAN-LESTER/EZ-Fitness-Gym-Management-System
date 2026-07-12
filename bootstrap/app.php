@@ -26,7 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withSchedule(function ($schedule): void {
-        $schedule->command('member:check-expiration')
+        $schedule->command('membership:check-expiration')
             ->hourly()
             ->timezone('Asia/Manila')
             ->name('check-member-expiration-hourly');

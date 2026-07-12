@@ -25,6 +25,10 @@ class MemberProfileController extends Controller
     {
         $user = Auth::user();
 
+        if (! $user) {
+            return redirect()->route('loginForm');
+        }
+
         // Always fresh – never cache critical membership state
         $memberProfile = MemberProfile::select([
             'member_id', 'user_id', 'plan_id', 'subscription_id',
@@ -381,7 +385,7 @@ class MemberProfileController extends Controller
             if ($member->qr_code) {
                 $fullPath = storage_path("app/public/{$member->qr_code}");
                 if (file_exists($fullPath)) {
-                    $qrCodeUrl = asset("storage/{$member->qr_code}").'?v='.time();
+                    $qrCodeUrl = '/storage/'.ltrim($member->qr_code, '/').'?v='.filemtime($fullPath);
                 }
             }
 

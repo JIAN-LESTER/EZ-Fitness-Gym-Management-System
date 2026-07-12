@@ -1960,7 +1960,7 @@
         // ERROR HELPERS
         // ===========================
 
-        const showError = (element, message) => {
+        const accountShowError = (element, message) => {
             if (!element) return;
             element.classList.remove('border-gray-300');
             element.classList.add('border-red-500');
@@ -1974,7 +1974,7 @@
             errorSpan.textContent = message;
         };
 
-        const clearError = (element) => {
+        const accountClearError = (element) => {
             if (!element) return;
             element.classList.remove('border-red-500');
             element.classList.add('border-gray-300');
@@ -1983,7 +1983,7 @@
             if (errorSpan) errorSpan.remove();
         };
 
-        const clearAllErrors = (form) => {
+        const accountClearAllErrors = (form) => {
             if (!form) return;
             form.querySelectorAll('.error-message').forEach(el => el.remove());
             form.querySelectorAll('.border-red-500').forEach(el => {
@@ -2019,7 +2019,7 @@
             window.scrollTo(0, parseInt(scrollY || '0') * -1);
             const form = modal.querySelector('form');
             if (form) {
-                clearAllErrors(form);
+                accountClearAllErrors(form);
                 // Reset all text/email/password/number/date/tel inputs
                 form.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="date"], input[type="tel"]').forEach(el => {
                     // Don't wipe hidden inputs that hold fixed values (branch_id for non-super_admin)
@@ -2768,7 +2768,7 @@
 
         function validateForm(form, mode) {
             let valid = true;
-            clearAllErrors(form);
+            accountClearAllErrors(form);
 
             // FIX: Use explicit element IDs rather than fragile prefix logic
             const isEdit = mode === 'edit';
@@ -2785,23 +2785,23 @@
 
             // First Name
             if (firstName && !firstName.value.trim()) {
-                showError(firstName, 'First name is required');
+                accountShowError(firstName, 'First name is required');
                 valid = false;
             }
 
             // Last Name
             if (lastName && !lastName.value.trim()) {
-                showError(lastName, 'Last name is required');
+                accountShowError(lastName, 'Last name is required');
                 valid = false;
             }
 
             // Username
             if (username) {
                 if (!username.value.trim()) {
-                    showError(username, 'Username is required');
+                    accountShowError(username, 'Username is required');
                     valid = false;
                 } else if (username.value.trim().length < 3) {
-                    showError(username, 'Username must be at least 3 characters');
+                    accountShowError(username, 'Username must be at least 3 characters');
                     valid = false;
                 }
             }
@@ -2810,10 +2810,10 @@
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (email) {
                 if (!email.value.trim()) {
-                    showError(email, 'Email is required');
+                    accountShowError(email, 'Email is required');
                     valid = false;
                 } else if (!emailPattern.test(email.value.trim())) {
-                    showError(email, 'Please enter a valid email address');
+                    accountShowError(email, 'Please enter a valid email address');
                     valid = false;
                 }
             }
@@ -2821,19 +2821,19 @@
             // Password: required on add; optional on edit (validate only if filled)
             if (!isEdit) {
                 if (password && !password.value) {
-                    showError(password, 'Password is required');
+                    accountShowError(password, 'Password is required');
                     valid = false;
                 } else if (password && password.value.length < 6) {
-                    showError(password, 'Password must be at least 6 characters');
+                    accountShowError(password, 'Password must be at least 6 characters');
                     valid = false;
                 }
                 // Confirm password (add mode)
                 if (password && password.value && passwordConf) {
                     if (!passwordConf.value) {
-                        showError(passwordConf, 'Please confirm your password');
+                        accountShowError(passwordConf, 'Please confirm your password');
                         valid = false;
                     } else if (password.value !== passwordConf.value) {
-                        showError(passwordConf, 'Passwords do not match');
+                        accountShowError(passwordConf, 'Passwords do not match');
                         valid = false;
                     }
                 }
@@ -2841,10 +2841,10 @@
                 // Edit mode: only validate if a new password is being set
                 if (password && password.value) {
                     if (password.value.length < 6) {
-                        showError(password, 'Password must be at least 6 characters');
+                        accountShowError(password, 'Password must be at least 6 characters');
                         valid = false;
                     } else if (passwordConf && password.value !== passwordConf.value) {
-                        showError(passwordConf, 'Passwords do not match');
+                        accountShowError(passwordConf, 'Passwords do not match');
                         valid = false;
                     }
                 }
@@ -2854,7 +2854,7 @@
             if (height && height.value) {
                 const h = parseFloat(height.value);
                 if (h <= 0 || h > 300) {
-                    showError(height, 'Please enter a valid height (1–300 cm)');
+                    accountShowError(height, 'Please enter a valid height (1-300 cm)');
                     valid = false;
                 }
             }
@@ -2863,7 +2863,7 @@
             if (weight && weight.value) {
                 const w = parseFloat(weight.value);
                 if (w <= 0 || w > 500) {
-                    showError(weight, 'Please enter a valid weight (1–500 kg)');
+                    accountShowError(weight, 'Please enter a valid weight (1-500 kg)');
                     valid = false;
                 }
             }
@@ -2872,12 +2872,40 @@
             if (mobile && mobile.value) {
                 const mobilePattern = /^(09|\+639)\d{9}$/;
                 if (!mobilePattern.test(mobile.value.trim())) {
-                    showError(mobile, 'Enter a valid mobile number (e.g., 09123456789)');
+                    accountShowError(mobile, 'Enter a valid mobile number (e.g., 09123456789)');
                     valid = false;
                 }
             }
 
             return valid;
+        }
+
+        function setupLiveValidation() {
+            const bindForm = (form, mode) => {
+                if (!form) return;
+                const isEdit = mode === 'edit';
+                const fields = [
+                    isEdit ? '#edit_first_name' : '#first_name',
+                    isEdit ? '#edit_last_name' : '#last_name',
+                    isEdit ? '#edit_username' : '#username',
+                    isEdit ? '#edit_email' : '#email',
+                    isEdit ? '#edit_password' : '#password',
+                    isEdit ? '#edit_password_confirmation' : '#password_confirmation',
+                    isEdit ? '#edit_height' : '#height',
+                    isEdit ? '#edit_weight' : '#weight',
+                    isEdit ? '#edit_mobile_number' : '#mobile_number',
+                ];
+
+                fields.forEach((selector) => {
+                    const field = form.querySelector(selector);
+                    if (!field) return;
+                    const eventName = field.tagName === 'SELECT' ? 'change' : 'input';
+                    field.addEventListener(eventName, () => accountClearError(field));
+                });
+            };
+
+            bindForm(document.querySelector('#addUserModal form'), 'add');
+            bindForm(document.querySelector('#editUserForm'), 'edit');
         }
 
 
@@ -3362,7 +3390,7 @@
                 // Enter key in GCash reference input
                 if (e.key === 'Enter') {
                     const gcashInput = document.getElementById('gcashRefCode');
-                    const confirmBtn = document.getElementById('confirmGcashRef');
+                    const confirmBtn = document.getElementById('confirmGcashBtn');
                     if (gcashInput && document.activeElement === gcashInput && confirmBtn && !confirmBtn.disabled) {
                         confirmBtn.click();
                     }
