@@ -14,7 +14,13 @@
                     <!-- Header with Logo -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%); padding: 40px 30px; text-align: center;">
-                            <img src="{{ $message->embed(public_path('logo_image/ez_fitness_gym_logo.png')) }}" alt="EZ Fitness Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
+                            @php
+                                $logoPath = public_path('logo_image/ez_fitness_gym_logo.png');
+                                $logoSrc = is_file($logoPath) && is_readable($logoPath)
+                                    ? $message->embed($logoPath)
+                                    : asset('logo_image/ez_fitness_gym_logo.png');
+                            @endphp
+                            <img src="{{ $logoSrc }}" alt="EZ Fitness Logo" width="80" height="80" style="display: block; width: 80px; height: 80px; margin: 0 auto 15px auto;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
                                 <span style="color: #ff6b6b;">EZ</span> FITNESS GYM
                             </h1>
@@ -53,7 +59,7 @@
                     <tr>
                         <td style="background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
                             <p style="margin: 0; color: #6b7280; font-size: 12px;">
-                                © {{ date('Y') }} EZ Fitness Gym. All rights reserved.
+                                &copy; {{ date('Y') }} EZ Fitness Gym. All rights reserved.
                             </p>
                         </td>
                     </tr>
