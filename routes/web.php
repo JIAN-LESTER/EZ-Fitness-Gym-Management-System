@@ -40,7 +40,6 @@ Route::get('/check-email', [AuthController::class, 'checkEmail'])->name('check.e
 
 // Email Verification
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
-    ->middleware(['signed'])
     ->name('verification.verify');
 Route::post('/email/verification-notification', [AuthController::class, 'resendVerification'])
     ->name('verification.send');
