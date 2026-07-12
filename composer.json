@@ -54,7 +54,7 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
-        "lint:check": "pint --test",
+        "lint:check": "pint --test app config database routes tests",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
