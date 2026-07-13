@@ -347,7 +347,55 @@
         }
       }
 
-    
+      async function validateUsernameAsync(value) {
+        const username = value.trim();
+
+        if (!username) {
+          clearError(usernameInput, 'username-error');
+          return false;
+        }
+
+        if (username.length < 4) {
+          showError(usernameInput, 'Username must be at least 4 characters', 'username-error');
+          return false;
+        }
+
+        const taken = await checkField('username', username);
+        if (taken) {
+          showError(usernameInput, 'Username is already taken', 'username-error');
+          return false;
+        }
+
+        clearError(usernameInput, 'username-error');
+        return true;
+      }
+
+      async function validateEmailAsync(value) {
+        const email = value.trim();
+
+        if (!email) {
+          clearError(emailInput, 'email-error');
+          if (emailHint) emailHint.classList.remove('hidden');
+          return false;
+        }
+
+        if (!emailRegex.test(email)) {
+          showError(emailInput, 'Please enter a valid email address', 'email-error');
+          if (emailHint) emailHint.classList.add('hidden');
+          return false;
+        }
+
+        const taken = await checkField('email', email);
+        if (taken) {
+          showError(emailInput, 'Email is already taken', 'email-error');
+          if (emailHint) emailHint.classList.add('hidden');
+          return false;
+        }
+
+        clearError(emailInput, 'email-error');
+        if (emailHint) emailHint.classList.remove('hidden');
+        return true;
+      }
 
 
       const debouncedUsernameCheck = debounce(validateUsernameAsync, 400);
